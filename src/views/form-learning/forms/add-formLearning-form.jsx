@@ -18,7 +18,7 @@ class AddFormLearningForm extends Component {
     return (
       <Modal
         title="Tambah Bentuk Pembelajaran"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

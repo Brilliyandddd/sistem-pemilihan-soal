@@ -25,7 +25,7 @@ class AddQuestionCriteriaForm extends Component {
         return (
         <Modal
             title="Tambah Kriteria Pertanyaan"
-            visible={visible}
+            open={visible}
             onCancel={onCancel}
             onOk={onOk}
             confirmLoading={confirmLoading}

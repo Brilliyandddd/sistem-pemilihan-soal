@@ -32,7 +32,7 @@ class AddGradeForm extends Component {
     return (
       <Modal
         title="mengedit"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

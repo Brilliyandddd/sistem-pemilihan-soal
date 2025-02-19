@@ -1,7 +1,7 @@
 /* eslint-disable */
 // require('script-loader!file-saver');
 import { saveAs } from "file-saver";
-import XLSX from 'sheetjs'
+import * as XLSX from "xlsx"; 
 
 function generateArray(table) {
   var out = [];

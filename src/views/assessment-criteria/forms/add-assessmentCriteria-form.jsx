@@ -18,7 +18,7 @@ class AddAssessmentCriteriaForm extends Component {
     return (
       <Modal
         title="Tambah Penilaian"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

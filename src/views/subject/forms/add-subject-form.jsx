@@ -16,7 +16,7 @@ const AddSubjectForm = ({ visible, onCancel, onOk, confirmLoading, subjectGroups
   return (
     <Modal
       title="Tambah Mata Kuliah"
-      visible={visible}
+      open={visible}
       onCancel={onCancel}
       onOk={handleOk}
       confirmLoading={confirmLoading}

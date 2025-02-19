@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import {Form , Input, Modal , Select, Upload, Icon} from "antd";
+import {Form , Input, Modal , Select, Upload} from "antd";
 
 class AddLinguisticValueForm extends Component {
     state = {
@@ -31,7 +31,7 @@ class AddLinguisticValueForm extends Component {
         return(
             <Modal
                 title="Tambah Nilai Linguistik"
-                visible={visible}
+                open={visible}
                 onCancel={onCancel}
                 onOk={onOk}
                 confirmLoading={confirmLoading}

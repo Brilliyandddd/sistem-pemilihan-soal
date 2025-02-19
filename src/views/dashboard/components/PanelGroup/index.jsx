@@ -1,16 +1,17 @@
-import { Row, Col, Icon } from "antd";
+import { Row, Col } from "antd";
+import { chartList } from "@ant-design/icons";
 import CountUp from "react-countup";
 import "./index.less";
 import { getQuiz as fetchQuiz } from "@/api/quiz";
-import React, { useTransition, useEffect } from 'react';
+import React, { startTransition, useEffect } from 'react';
 import { getRPS } from "@/api/rps";
 import {reqUserInfo} from "@/api/user";
 
 
 const PanelGroup = (props) => {
   const { handleSetLineChartData } = props;
-  const [chartList, setChartList] = useTransition([]);
-  const [quizMessages, setQuizMessages] = useTransition([]);
+  const [chartList, setChartList] = startTransition([]);
+  const [quizMessages, setQuizMessages] = startTransition([]);
 
   
   useEffect(() => {

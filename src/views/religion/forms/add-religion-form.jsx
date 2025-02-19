@@ -14,7 +14,7 @@ const AddReligionForm = ({ visible, onCancel, onOk, confirmLoading }) => {
   return (
     <Modal
       title="Tambah Agama"
-      visible={visible}
+      open={visible}
       onCancel={onCancel}
       onOk={handleOk}
       confirmLoading={confirmLoading}

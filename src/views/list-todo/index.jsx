@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Row, Col, Icon } from "antd";
+import { Row, Col } from "antd";
 import CountUp from "react-countup";
 import { Card,  Table } from "antd";
 import TypingCard from "@/components/TypingCard";

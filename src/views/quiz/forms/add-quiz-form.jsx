@@ -30,7 +30,7 @@ class AddQuizForm extends Component {
       <Modal
         width={1000}
         title="Tambah Quiz"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

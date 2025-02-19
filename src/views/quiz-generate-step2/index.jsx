@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import TypingCard from "@/components/TypingCard";
-import {  Col, Icon, Button, Table, Tabs } from "antd";
+import {  Col, Button, Table, Tabs } from "antd";
 import{
     getQuestionsByRPSQuiz1,
   } from "@/api/quiz";

@@ -26,7 +26,7 @@ class EditStudyProgramForm extends Component {
     return (
       <Modal
         title="Edit Program Studi"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

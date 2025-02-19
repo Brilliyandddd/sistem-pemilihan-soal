@@ -14,7 +14,7 @@ const AddSubjectGroupForm = ({ visible, onCancel, onOk, confirmLoading }) => {
   return (
     <Modal
       title="Tambah Rumpun Mata Kuliah"
-      visible={visible}
+      open={visible}
       onCancel={onCancel}
       onOk={handleOk}
       confirmLoading={confirmLoading}

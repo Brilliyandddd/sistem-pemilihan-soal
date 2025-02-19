@@ -20,7 +20,7 @@ class EditLearningMediaForm extends Component {
     return (
       <Modal
         title="Edit Media Pembelajaran"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

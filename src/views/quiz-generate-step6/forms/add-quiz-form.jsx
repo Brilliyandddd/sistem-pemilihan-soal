@@ -38,7 +38,7 @@ class AddQuizForm extends Component {
       <Modal
         width={1000}
         title="Tambah Soal Dalam Quiz"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

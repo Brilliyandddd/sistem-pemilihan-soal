@@ -20,7 +20,7 @@ class EditAppraisalForm extends Component {
     return (
       <Modal
         title="Edit Formulir Penilaian"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

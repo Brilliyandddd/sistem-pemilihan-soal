@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Form, Input, Modal, Select, Upload, Icon, Checkbox } from "antd";
+import { Form, Input, Modal, Select, Upload, Checkbox } from "antd";
 const { TextArea } = Input;
 
 
@@ -38,7 +38,7 @@ class AddQuestionForm extends Component {
     return (
       <Modal
         title="Tambah Pertanyaan"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

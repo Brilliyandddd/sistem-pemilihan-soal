@@ -32,7 +32,7 @@ class AddTeamTeachingForm extends Component {
 
         return (
             <Modal
-                visible={visible}
+                open={visible}
                 title="Berikan Nilai Untuk Soal"
                 okText="Add"
                 onCancel={onCancel}
@@ -76,4 +76,4 @@ class AddTeamTeachingForm extends Component {
     }
 }
 
-export default Form.create()(AddTeamTeachingForm);
+export default Form.us()(AddTeamTeachingForm);

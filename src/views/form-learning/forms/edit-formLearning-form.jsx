@@ -20,7 +20,7 @@ class EditFormLearningForm extends Component {
     return (
       <Modal
         title="Edit Bentuk Pembelajaran"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

@@ -18,7 +18,7 @@ class AddDepartmentForm extends Component {
     return (
       <Modal
         title="Tambah Jurusan"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

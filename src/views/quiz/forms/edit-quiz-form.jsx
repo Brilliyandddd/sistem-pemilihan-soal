@@ -31,7 +31,7 @@ class EditQuizForm extends Component {
       <Modal
         width={1000}
         title="Edit Quiz"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

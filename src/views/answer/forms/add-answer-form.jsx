@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Form, Input, Modal, Select, Upload, Icon, Switch } from "antd";
+import { Form, Input, Modal, Select, Upload, Switch } from "antd";
 const { TextArea } = Input;
 class AddAnswerForm extends Component {
   render() {
@@ -18,7 +18,7 @@ class AddAnswerForm extends Component {
     return (
       <Modal
         title="Tambah Jawaban"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

@@ -1,4 +1,4 @@
-import React, { useTransition } from "react";
+import React, { startTransition } from "react";
 import { connect } from "react-redux";
 import { Drawer, Switch, Row, Col, Divider, Alert, Button } from "antd";
 import { NotificationOutlined, CopyOutlined } from "@ant-design/icons";
@@ -15,9 +15,9 @@ const RightPanel = (props) => {
     tagsView: defaultTagsView,
   } = props;
 
-  const [sidebarLogo, setSidebarLogo] = useTransition(defaultSidebarLogo);
-  const [fixedHeader, setFixedHeader] = useTransition(defaultFixedHeader);
-  const [tagsView, setTagsView] = useTransition(defaultTagsView);
+  const [sidebarLogo, setSidebarLogo] = startTransition(defaultSidebarLogo);
+  const [fixedHeader, setFixedHeader] = startTransition(defaultFixedHeader);
+  const [tagsView, setTagsView] = startTransition(defaultTagsView);
 
   const sidebarLogoChange = (checked) => {
     setSidebarLogo(checked);
@@ -53,7 +53,7 @@ const RightPanel = (props) => {
         placement="right"
         width={350}
         onClose={toggleSettingPanel}
-        visible={settingPanelVisible}
+        open={settingPanelVisible}
       >
         <Row>
           <Col span={12}>

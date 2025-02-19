@@ -1,4 +1,4 @@
-import React, { useTransition } from "react";
+import React, { startTransition } from "react";
 import { Card, Row, Col } from "antd";
 import { EditorState, convertToRaw } from "draft-js";
 import { Editor } from "react-draft-wysiwyg";
@@ -8,7 +8,7 @@ import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 import "./index.less";
 
 const RichTextEditor = () => {
-  const [editorState, setEditorState] = useTransition(EditorState.createEmpty());
+  const [editorState, setEditorState] = startTransition(EditorState.createEmpty());
 
   const onEditorStateChange = (editorState) => setEditorState(editorState);
 

@@ -11,7 +11,7 @@ import {
   getLearningMediasSoftware,
   getLearningMediasHardware,
 } from "@/api/learningMedia";
-import * as XLSX from 'sheetjs';
+import * as XLSX from 'xlsx';
 
 import TypingCard from "@/components/TypingCard";
 import EditRPSForm from "./forms/edit-rps-form";

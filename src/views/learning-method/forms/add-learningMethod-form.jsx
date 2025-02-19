@@ -18,7 +18,7 @@ class AddLearningMethodForm extends Component {
     return (
       <Modal
         title="Tambah Metode Pembelajaran"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

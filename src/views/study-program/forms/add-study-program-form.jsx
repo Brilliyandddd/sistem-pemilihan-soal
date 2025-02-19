@@ -35,7 +35,7 @@ class AddStudyProgramForm extends Component {
     return (
       <Modal
         title="Tambah Program Studi"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

@@ -18,7 +18,7 @@ class AddUserForm extends Component {
     return (
       <Modal
         title="Tambah Pengguna"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

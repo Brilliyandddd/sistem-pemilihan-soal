@@ -82,7 +82,7 @@ class AddExerciseForm extends Component {
       <Modal
         width={1000}
         title="Tambah Exercise"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

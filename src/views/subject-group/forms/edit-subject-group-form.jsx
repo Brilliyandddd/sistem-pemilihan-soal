@@ -15,7 +15,7 @@ const EditSubjectGroupForm = ({ visible, onCancel, onOk, confirmLoading, current
   return (
     <Modal
       title="Edit Rumpun Mata Kuliah"
-      visible={visible}
+      open={visible}
       onCancel={onCancel}
       onOk={handleOk}
       confirmLoading={confirmLoading}

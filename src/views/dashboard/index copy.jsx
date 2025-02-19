@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/anchor-has-content */
-import React, { useTransition } from "react";
+import React, { startTransition } from "react";
 import { Row, Col } from "antd";
 import "./index.less";
 import PanelGroup from "./components/PanelGroup";
@@ -30,7 +30,7 @@ const lineChartDefaultData = {
 };
 
 const Dashboard = () => {
-  const [lineChartData, setLineChartData] = useTransition(
+  const [lineChartData, setLineChartData] = startTransition(
     lineChartDefaultData["New Visits"]
   );
 

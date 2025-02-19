@@ -1,5 +1,5 @@
 import React from "react";
-import Driver from "driver.js"; // import driver.js
+import * as Driver from "driver.js";
 import "driver.js/dist/driver.css"; // import driver.js css
 import { Button } from "antd";
 import TypingCard from '@/components/TypingCard'

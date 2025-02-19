@@ -20,7 +20,7 @@ class EditAssessmentCriteriaForm extends Component {
     return (
       <Modal
         title="Edit Penilaian"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

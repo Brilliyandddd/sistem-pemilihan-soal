@@ -1,4 +1,4 @@
-import React, { useTransition, useEffect } from "react";
+import React, { startTransition, useEffect } from "react";
 import screenfull from "screenfull";
 import {message, Tooltip } from "antd";
 import { FullscreenOutlined, FullscreenExitOutlined } from "@ant-design/icons";
@@ -13,7 +13,7 @@ const click = () => {
 };
 
 const FullScreen = () => {
-  const [isFullscreen, setIsFullscreen] = useTransition(false);
+  const [isFullscreen, setIsFullscreen] = startTransition(false);
 
   const change = () => {
     setIsFullscreen(screenfull.isFullscreen);

@@ -30,7 +30,7 @@ class EditLinguisticValueForm extends Component {
     return (
         <Modal
             title="Edit Linguistic Value"
-            visible={visible}
+            open={visible}
             onCancel={onCancel}
             onOk={onOk}
             confirmLoading={confirmLoading}

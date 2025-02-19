@@ -23,7 +23,7 @@ const AddStudentForm = ({
   return (
     <Modal
       title="Tambah Mahasiswa"
-      visible={visible}
+      open={visible}
       onCancel={onCancel}
       onOk={handleOk}
       confirmLoading={confirmLoading}

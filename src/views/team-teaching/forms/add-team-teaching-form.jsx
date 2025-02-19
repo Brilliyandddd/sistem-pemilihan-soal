@@ -19,7 +19,7 @@ class AddTeamTeachingForm extends Component{
         return(
             <Modal
                 title="Tambah Team Teaching"
-                visible={visible}
+                open={visible}
                 onCancel={onCancel}
                 onOk={onOk}
                 confirmLoading={confirmLoading}

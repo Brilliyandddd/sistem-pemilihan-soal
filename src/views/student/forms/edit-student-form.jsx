@@ -15,7 +15,7 @@ const EditStudentForm = ({ visible, onCancel, onOk, confirmLoading, currentRowDa
   return (
     <Modal
       title="Mengedit Mahasiswa"
-      visible={visible}
+      open={visible}
       onCancel={onCancel}
       onOk={handleOk}
       confirmLoading={confirmLoading}

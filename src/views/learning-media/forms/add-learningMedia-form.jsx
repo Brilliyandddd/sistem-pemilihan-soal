@@ -18,7 +18,7 @@ class AddLearningMediaForm extends Component {
     return (
       <Modal
         title="Tambah Media Pembelajaran"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

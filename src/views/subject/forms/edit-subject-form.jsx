@@ -16,7 +16,7 @@ const EditSubjectForm = ({ visible, onCancel, onOk, confirmLoading, currentRowDa
   return (
     <Modal
       title="Edit Mata Kuliah"
-      visible={visible}
+      open={visible}
       onCancel={onCancel}
       onOk={handleOk}
       confirmLoading={confirmLoading}

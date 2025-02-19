@@ -1,7 +1,7 @@
 import React from "react";
 import "./index.less";
 import PanelGroup from "./components/PanelGroup";
-import { useTransition } from "react";
+import { startTransition } from "react";
 
 const lineChartDefaultData = {
   Pertanyaan: {
@@ -22,7 +22,7 @@ const lineChartDefaultData = {
   },
 };
 const Dashboard = () => {
-  const [lineChartData, setLineChartData] = useTransition(
+  const [lineChartData, setLineChartData] = startTransition(
     lineChartDefaultData["New Visits"]
   );
 

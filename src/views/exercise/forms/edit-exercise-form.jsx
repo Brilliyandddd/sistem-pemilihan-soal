@@ -31,7 +31,7 @@ class EditExerciseForm extends Component {
       <Modal
         width={1000}
         title="Edit Exercise"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

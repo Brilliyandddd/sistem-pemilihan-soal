@@ -30,7 +30,7 @@ class AddRPSForm extends Component {
       <Modal
         width={1000}
         title="Tambah RPS"
-        visible={visible}
+        open={visible}
         onCancel={onCancel}
         onOk={onOk}
         confirmLoading={confirmLoading}

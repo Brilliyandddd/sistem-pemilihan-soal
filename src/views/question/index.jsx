@@ -151,12 +151,22 @@ class Question extends  React.Component {
         });
     });
   };
-  handleCheckboxChange = (e) => {
-    const { name, checked } = e.target;
+  // handleCheckboxChange = (e) => {
+  //   const { name, checked } = e.target;
+  //   this.setState(prevState => ({
+  //     selectedExamTypes: {
+  //       ...prevState.selectedExamTypes,
+  //       [name]: checked,
+  //     },
+  //   }), this.filterQuestions);
+  // }
+
+  handleCheckboxChange = (checkedValues) => {
     this.setState(prevState => ({
       selectedExamTypes: {
-        ...prevState.selectedExamTypes,
-        [name]: checked,
+        EXERCISE: checkedValues.includes('EXERCISE'),
+        QUIZ: checkedValues.includes('QUIZ'),
+        EXAM: checkedValues.includes('EXAM'),
       },
     }), this.filterQuestions);
   }
@@ -189,16 +199,6 @@ class Question extends  React.Component {
     //   });
     // }
   }
-  handleCheckboxChange = (checkedValues) => {
-    this.setState(prevState => ({
-      selectedExamTypes: {
-        EXERCISE: checkedValues.includes('EXERCISE'),
-        QUIZ: checkedValues.includes('QUIZ'),
-        EXAM: checkedValues.includes('EXAM'),
-      },
-    }), this.filterQuestions);
-  }
-
   
   render() {
     const { questions, rpsID, rpsDetailID,images } = this.state;

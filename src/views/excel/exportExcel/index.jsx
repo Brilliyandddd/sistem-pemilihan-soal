@@ -3,7 +3,6 @@ import {
   Table,
   Tag,
   Form,
-  Icon,
   Button,
   Input,
   Radio,

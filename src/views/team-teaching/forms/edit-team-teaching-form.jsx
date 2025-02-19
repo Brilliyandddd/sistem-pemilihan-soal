@@ -20,7 +20,7 @@ class EditTeamTeachingForm extends Component{
         return(
             <Modal
             title="Edit Team Teaching"
-            visible={visible}
+            open={visible}
             onCancel={onCancel}
             onOk={onOk}
             confirmLoading={confirmLoading}
