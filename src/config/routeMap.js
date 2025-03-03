@@ -1,313 +1,77 @@
-import Loadable from "react-loadable";
+import React from 'react';
 import Loading from "@/components/Loading";
 import Religion from "../views/religion";
-
 import SubjectGroup from "../views/subject-group";
 import Student from "../views/student";
 import Subject from "../views/subject";
 import questionIndex from "../views/question-index";
-const Dashboard = Loadable({
-  loader: () => import(/*webpackChunkName:'Dashboard'*/ "@/views/dashboard"),
-  loading: Loading,
-});
-const Doc = Loadable({
-  loader: () => import(/*webpackChunkName:'Doc'*/ "@/views/doc"),
-  loading: Loading,
-});
-const Guide = Loadable({
-  loader: () => import(/*webpackChunkName:'Guide'*/ "@/views/guide"),
-  loading: Loading,
-});
-const Explanation = Loadable({
-  loader: () => import(/*webpackChunkName:'Explanation'*/ "@/views/permission"),
-  loading: Loading,
-});
-const AdminPage = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'AdminPage'*/ "@/views/permission/adminPage"),
-  loading: Loading,
-});
-const GuestPage = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'GuestPage'*/ "@/views/permission/guestPage"),
-  loading: Loading,
-});
-const EditorPage = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'EditorPage'*/ "@/views/permission/editorPage"),
-  loading: Loading,
-});
-const RichTextEditor = Loadable({
-  loader: () =>
-    import(
-      /*webpackChunkName:'RichTextEditor'*/ "@/views/components-demo/richTextEditor"
-    ),
-  loading: Loading,
-});
-const Markdown = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'Markdown'*/ "@/views/components-demo/Markdown"),
-  loading: Loading,
-});
-const Draggable = Loadable({
-  loader: () =>
-    import(
-      /*webpackChunkName:'Draggable'*/ "@/views/components-demo/draggable"
-    ),
-  loading: Loading,
-});
-const KeyboardChart = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'KeyboardChart'*/ "@/views/charts/keyboard"),
-  loading: Loading,
-});
-const LineChart = Loadable({
-  loader: () => import(/*webpackChunkName:'LineChart'*/ "@/views/charts/line"),
-  loading: Loading,
-});
-const MixChart = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'MixChart'*/ "@/views/charts/mixChart"),
-  loading: Loading,
-});
-const Menu1_1 = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'Menu1_1'*/ "@/views/nested/menu1/menu1-1"),
-  loading: Loading,
-});
-const Menu1_2_1 = Loadable({
-  loader: () =>
-    import(
-      /*webpackChunkName:'Menu1_2_1'*/ "@/views/nested/menu1/menu1-2/menu1-2-1"
-    ),
-  loading: Loading,
-});
-const Table = Loadable({
-  loader: () => import(/*webpackChunkName:'Table'*/ "@/views/table"),
-  loading: Loading,
-});
-const ExportExcel = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'ExportExcel'*/ "@/views/excel/exportExcel"),
-  loading: Loading,
-});
-const UploadExcel = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'UploadExcel'*/ "@/views/excel/uploadExcel"),
-  loading: Loading,
-});
-const Zip = Loadable({
-  loader: () => import(/*webpackChunkName:'Zip'*/ "@/views/zip"),
-  loading: Loading,
-});
-const Clipboard = Loadable({
-  loader: () => import(/*webpackChunkName:'Clipboard'*/ "@/views/clipboard"),
-  loading: Loading,
-});
-const Error404 = Loadable({
-  loader: () => import(/*webpackChunkName:'Error404'*/ "@/views/error/404"),
-  loading: Loading,
-});
-const User = Loadable({
-  loader: () => import(/*webpackChunkName:'User'*/ "@/views/user"),
-  loading: Loading,
-});
-const Question = Loadable({
-  loader: () => import(/*webpackChunkName:'Question'*/ "@/views/question"),
-  loading: Loading,
-});
-const Answer = Loadable({
-  loader: () => import(/*webpackChunkName:'Answer'*/ "@/views/answer"),
-  loading: Loading,
-});
-const Department = Loadable({
-  loader: () => import(/*webpackChunkName:'Department'*/ "@/views/department"),
-  loading: Loading,
-});
-const StudyProgram = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'StudyProgram'*/ "@/views/study-program"),
-  loading: Loading,
-});
-const Lecture = Loadable({
-  loader: () => import(/*webpackChunkName:'Lecture'*/ "@/views/lecture"),
-  loading: Loading,
-});
-const RPS = Loadable({
-  loader: () => import(/*webpackChunkName:'RPS'*/ "@/views/rps"),
-  loading: Loading,
-});
-const RPSDetail = Loadable({
-  loader: () => import(/*webpackChunkName:'RPS'*/ "@/views/rps-detail"),
-  loading: Loading,
-});
-const FormLearning = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'FormLearning'*/ "@/views/form-learning"),
-  loading: Loading,
-});
-const LearningMedia = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'LearningMedia'*/ "@/views/learning-media"),
-  loading: Loading,
-});
-const LearningMethod = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'LearningMethod'*/ "@/views/learning-method"),
-  loading: Loading,
-});
-const AssessmentCriteria = Loadable({
-  loader: () =>
-    import(
-      /*webpackChunkName:'AssessmentCriteria'*/ "@/views/assessment-criteria"
-    ),
-  loading: Loading,
-});
-const QuestionCriteria = Loadable({
-  loader: () => import(/*webpackChunkName:'QuestionCriteria'*/ "@/views/question-criteria"),
-  loading: Loading,
-});
-const LinguiticValue = Loadable({
-  loader: () => import(/*webpackChunkName:'LinguiticValue'*/ "@/views/linguistic-value"),
-  loading: Loading,
-});
-const TeamTeaching = Loadable({
-  loader: () => import(/*webpackChunkName:'TeamTeaching'*/ "@/views/team-teaching"),
-  loading: Loading,
-});
 
-const CriteriaValue = Loadable({
-  loader: () => import(/*webpackChunkName:'criteriaValue'*/ "@/views/criteria-value"),
-  loading: Loading,
-});
-const ListTodo = Loadable({
-  loader: () => import(/*webpackChunkName:'criteriaValue'*/ "@/views/list-todo"),
-  loading: Loading,
-});
-const ListTodoAdmin = Loadable({
-  loader: () => import(/*webpackChunkName:'criteriaValue'*/ "@/views/list-todo-admin"),
-  loading: Loading,
-});
-
-//questionIndex
-// const QuestionIndex = Loadable({
-//   loader: () => import(/*webpackChunkName:'questionIndex'*/ "@/views/question-index"),
-//   loading: Loading,
-// });
-const QuestionIndexQuiz1 = Loadable({
-  loader: () => import(/*webpackChunkName:'questionIndex'*/ "@/views/question-index-quiz1"),
-  loading: Loading,
-});
-const QuestionIndexQuiz2 = Loadable({
-  loader: () => import(/*webpackChunkName:'questionIndex'*/ "@/views/question-index-quiz2"),
-  loading: Loading,
-});
-const QuizGenerateQuiz1 = Loadable({
-  loader: () => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-quiz1"),
-  loading: Loading,
-})
-const QuizGenerateQuizStep2 = Loadable({
-  loader: () => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step2"),
-  loading: Loading,
-})
-const QuizGenerateQuizStep3 = Loadable({
-  loader: () => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step3"),
-  loading: Loading,
-})
-const QuizGenerateQuizStep4 = Loadable({
-  loader: () => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step4"),
-  loading: Loading,
-})
-const QuizGenerateQuizStep5 = Loadable({
-  loader: () => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step5"),
-  loading: Loading,
-})
-const QuizGenerateQuizStep6 = Loadable({
-  loader: () => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step6"),
-  loading: Loading,
-})
-const CriteriaIndex = Loadable({
-  loader: () => import(/*webpackChunkName:'questionIndex'*/ "@/views/criteria-index"),
-  loading: Loading,
-});
-const ExerciseIndex = Loadable({
-  loader: () => import(/*webpackChunkName:'questionIndex'*/ "@/views/exercise-index"),
-  loading: Loading,
-});
-const AppraisalForm = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'AppraisalForm'*/ "@/views/appraisal-form"),
-  loading: Loading,
-});
-const Exam = Loadable({
-  loader: () => import(/*webpackChunkName:'Exam'*/ "@/views/exam"),
-  loading: Loading,
-});
-const Quiz = Loadable({
-  loader: () => import(/*webpackChunkName:'Quiz'*/ "@/views/quiz"),
-  loading: Loading,
-});
-const Exercise = Loadable({
-  loader: () => import(/*webpackChunkName:'Exercise'*/ "@/views/exercise"),
-  loading: Loading,
-});
-const ResultExam = Loadable({
-  loader: () => import(/*webpackChunkName:'Exam'*/ "@/views/result-exam"),
-  loading: Loading,
-});
-const ResultQuiz = Loadable({
-  loader: () => import(/*webpackChunkName:'Quiz'*/ "@/views/result-quiz"),
-  loading: Loading,
-});
-const ResultExercise = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'Exercise'*/ "@/views/result-exercise"),
-  loading: Loading,
-});
-const StudentExam = Loadable({
-  loader: () => import(/*webpackChunkName:'Exam'*/ "@/views/student-exam"),
-  loading: Loading,
-});
-const DoStudentExam = Loadable({
-  loader: () => import(/*webpackChunkName:'Exam'*/ "@/views/do-student-exam"),
-  loading: Loading,
-});
-const DoStudentExercise = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'Exam'*/ "@/views/do-student-exercise"),
-  loading: Loading,
-});
-const DoStudentQuiz = Loadable({
-  loader: () => import(/*webpackChunkName:'Exam'*/ "@/views/do-student-quiz"),
-  loading: Loading,
-});
-const StudentQuiz = Loadable({
-  loader: () => import(/*webpackChunkName:'Quiz'*/ "@/views/student-quiz"),
-  loading: Loading,
-});
-const StudentExercise = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'Exercise'*/ "@/views/student-exercise"),
-  loading: Loading,
-});
-const StudentExerciseReview = Loadable({
-  loader: () =>
-    import(/*webpackChunkName:'Exercise'*/ "@/views/student-exercise-review"),
-  loading: Loading,
-});
-const Grade = Loadable({
-  loader: () => import(/*webpackChunkName:'Grade'*/ "@/views/grade"),
-  loading: Loading,
-});
-
-const About = Loadable({
-  loader: () => import(/*webpackChunkName:'About'*/ "@/views/about"),
-  loading: Loading,
-});
-const Bug = Loadable({
-  loader: () => import(/*webpackChunkName:'Bug'*/ "@/views/bug"),
-  loading: Loading,
-});
+const Dashboard = React.lazy(() => import(/*webpackChunkName:'Dashboard'*/ "@/views/dashboard"));
+const Doc = React.lazy(() => import(/*webpackChunkName:'Doc'*/ "@/views/doc"));
+const Guide = React.lazy(() => import(/*webpackChunkName:'Guide'*/ "@/views/guide"));
+const Explanation = React.lazy(() => import(/*webpackChunkName:'Explanation'*/ "@/views/permission"));
+const AdminPage = React.lazy(() => import(/*webpackChunkName:'AdminPage'*/ "@/views/permission/adminPage"));
+const GuestPage = React.lazy(() => import(/*webpackChunkName:'GuestPage'*/ "@/views/permission/guestPage"));
+const EditorPage = React.lazy(() => import(/*webpackChunkName:'EditorPage'*/ "@/views/permission/editorPage"));
+const RichTextEditor = React.lazy(() => import(/*webpackChunkName:'RichTextEditor'*/ "@/views/components-demo/richTextEditor"));
+const Markdown = React.lazy(() => import(/*webpackChunkName:'Markdown'*/ "@/views/components-demo/Markdown"));
+const Draggable = React.lazy(() => import(/*webpackChunkName:'Draggable'*/ "@/views/components-demo/draggable"));
+const KeyboardChart = React.lazy(() => import(/*webpackChunkName:'KeyboardChart'*/ "@/views/charts/keyboard"));
+const LineChart = React.lazy(() => import(/*webpackChunkName:'LineChart'*/ "@/views/charts/line"));
+const MixChart = React.lazy(() => import(/*webpackChunkName:'MixChart'*/ "@/views/charts/mixChart"));
+const Menu1_1 = React.lazy(() => import(/*webpackChunkName:'Menu1_1'*/ "@/views/nested/menu1/menu1-1"));
+const Menu1_2_1 = React.lazy(() => import(/*webpackChunkName:'Menu1_2_1'*/ "@/views/nested/menu1/menu1-2/menu1-2-1"));
+const Table = React.lazy(() => import(/*webpackChunkName:'Table'*/ "@/views/table"));
+const ExportExcel = React.lazy(() => import(/*webpackChunkName:'ExportExcel'*/ "@/views/excel/exportExcel"));
+const UploadExcel = React.lazy(() => import(/*webpackChunkName:'UploadExcel'*/ "@/views/excel/uploadExcel"));
+const Zip = React.lazy(() => import(/*webpackChunkName:'Zip'*/ "@/views/zip"));
+const Clipboard = React.lazy(() => import(/*webpackChunkName:'Clipboard'*/ "@/views/clipboard"));
+const Error404 = React.lazy(() => import(/*webpackChunkName:'Error404'*/ "@/views/error/404"));
+const User = React.lazy(() => import(/*webpackChunkName:'User'*/ "@/views/user"));
+const Question = React.lazy(() => import(/*webpackChunkName:'Question'*/ "@/views/question"));
+const Answer = React.lazy(() => import(/*webpackChunkName:'Answer'*/ "@/views/answer"));
+const Department = React.lazy(() => import(/*webpackChunkName:'Department'*/ "@/views/department"));
+const StudyProgram = React.lazy(() => import(/*webpackChunkName:'StudyProgram'*/ "@/views/study-program"));
+const Lecture = React.lazy(() => import(/*webpackChunkName:'Lecture'*/ "@/views/lecture"));
+const RPS = React.lazy(() => import(/*webpackChunkName:'RPS'*/ "@/views/rps"));
+const RPSDetail = React.lazy(() => import(/*webpackChunkName:'RPS'*/ "@/views/rps-detail"));
+const FormLearning = React.lazy(() => import(/*webpackChunkName:'FormLearning'*/ "@/views/form-learning"));
+const LearningMedia = React.lazy(() => import(/*webpackChunkName:'LearningMedia'*/ "@/views/learning-media"));
+const LearningMethod = React.lazy(() => import(/*webpackChunkName:'LearningMethod'*/ "@/views/learning-method"));
+const AssessmentCriteria = React.lazy(() => import(/*webpackChunkName:'AssessmentCriteria'*/ "@/views/assessment-criteria"));
+const QuestionCriteria = React.lazy(() => import(/*webpackChunkName:'QuestionCriteria'*/ "@/views/question-criteria"));
+const LinguiticValue = React.lazy(() => import(/*webpackChunkName:'LinguiticValue'*/ "@/views/linguistic-value"));
+const TeamTeaching = React.lazy(() => import(/*webpackChunkName:'TeamTeaching'*/ "@/views/team-teaching"));
+const CriteriaValue = React.lazy(() => import(/*webpackChunkName:'criteriaValue'*/ "@/views/criteria-value"));
+const ListTodo = React.lazy(() => import(/*webpackChunkName:'criteriaValue'*/ "@/views/list-todo"));
+const ListTodoAdmin = React.lazy(() => import(/*webpackChunkName:'criteriaValue'*/ "@/views/list-todo-admin"));
+const QuestionIndexQuiz1 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/question-index-quiz1"));
+const QuestionIndexQuiz2 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/question-index-quiz2"));
+const QuizGenerateQuiz1 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-quiz1"));
+const QuizGenerateQuizStep2 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step2"));
+const QuizGenerateQuizStep3 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step3"));
+const QuizGenerateQuizStep4 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step4"));
+const QuizGenerateQuizStep5 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step5"));
+const QuizGenerateQuizStep6 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step6"));
+const CriteriaIndex = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/criteria-index"));
+const ExerciseIndex = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/exercise-index"));
+const AppraisalForm = React.lazy(() => import(/*webpackChunkName:'AppraisalForm'*/ "@/views/appraisal-form"));
+const Exam = React.lazy(() => import(/*webpackChunkName:'Exam'*/ "@/views/exam"));
+const Quiz = React.lazy(() => import(/*webpackChunkName:'Quiz'*/ "@/views/quiz"));
+const Exercise = React.lazy(() => import(/*webpackChunkName:'Exercise'*/ "@/views/exercise"));
+const ResultExam = React.lazy(() => import(/*webpackChunkName:'Exam'*/ "@/views/result-exam"));
+const ResultQuiz = React.lazy(() => import(/*webpackChunkName:'Quiz'*/ "@/views/result-quiz"));
+const ResultExercise = React.lazy(() => import(/*webpackChunkName:'Exercise'*/ "@/views/result-exercise"));
+const StudentExam = React.lazy(() => import(/*webpackChunkName:'Exam'*/ "@/views/student-exam"));
+const DoStudentExam = React.lazy(() => import(/*webpackChunkName:'Exam'*/ "@/views/do-student-exam"));
+const DoStudentExercise = React.lazy(() => import(/*webpackChunkName:'Exam'*/ "@/views/do-student-exercise"));
+const DoStudentQuiz = React.lazy(() => import(/*webpackChunkName:'Exam'*/ "@/views/do-student-quiz"));
+const StudentQuiz = React.lazy(() => import(/*webpackChunkName:'Quiz'*/ "@/views/student-quiz"));
+const StudentExercise = React.lazy(() => import(/*webpackChunkName:'Exercise'*/ "@/views/student-exercise"));
+const StudentExerciseReview = React.lazy(() => import(/*webpackChunkName:'Exercise'*/ "@/views/student-exercise-review"));
+const Grade = React.lazy(() => import(/*webpackChunkName:'Grade'*/ "@/views/grade"));
+const About = React.lazy(() => import(/*webpackChunkName:'About'*/ "@/views/about"));
+const Bug = React.lazy(() => import(/*webpackChunkName:'Bug'*/ "@/views/bug"));
 
 export default [
   {

@@ -1,7 +1,7 @@
 import React from "react";
 import { connect } from "react-redux";
 import { Tooltip } from "antd";
-import { FullscreenOutlined } from "@ant-design/icons";
+import { SettingOutlined } from "@ant-design/icons";
 import { toggleSettingPanel } from "@/store/actions";
 import "./index.less";
 const Settings = (props) => {
@@ -9,7 +9,7 @@ const Settings = (props) => {
   return (
     <div className="settings-container">
       <Tooltip placement="bottom" title="Pengaturan Sistem">
-      <SettingOutlined onClick={toggleSettingPanel} />
+        <SettingOutlined onClick={toggleSettingPanel} />
       </Tooltip>
     </div>
   );

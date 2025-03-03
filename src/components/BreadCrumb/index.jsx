@@ -1,30 +1,26 @@
 import React from "react";
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-// import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { Breadcrumb } from "antd";
 import menuList from "@/config/menuConfig";
 import "./index.less";
+
 /**
- * 根据当前浏览器地址栏的路由地址，在menuConfig中查找路由跳转的路径
- * 如路由地址为/charts/keyboard,则查找到的路径为[{title: "图表",...},{title: "键盘图表",...}]
+ * Menentukan breadcrumb berdasarkan URL saat ini.
  */
 const getPath = (menuList, pathname) => {
   let temppath = [];
   try {
     function getNodePath(node) {
-      temppath.push(node);
-      //找到符合条件的节点，通过throw终止掉递归
+      temppath.push({ title: node.title, path: node.path });
       if (node.path === pathname) {
         throw new Error("GOT IT!");
       }
       if (node.children && node.children.length > 0) {
-        for (var i = 0; i < node.children.length; i++) {
+        for (let i = 0; i < node.children.length; i++) {
           getNodePath(node.children[i]);
         }
-        //当前节点的子节点遍历完依旧没找到，则menghapus路径中的该节点
         temppath.pop();
       } else {
-        //找到叶子节点时，menghapus路径当中的该叶子节点
         temppath.pop();
       }
     }
@@ -36,30 +32,31 @@ const getPath = (menuList, pathname) => {
   }
 };
 
-const BreadCrumb = (props) => {
-  const { location } = props;
+const BreadCrumb = () => {
+  const location = useLocation();
   const { pathname } = location;
+
   let path = getPath(menuList, pathname);
   const first = path && path[0];
+
   if (first && first.title.trim() !== "Beranda") {
-    path = [{ title: "Beranda", path: "/dashboard" }].concat(path);
+    path = [{ title: "Beranda", path: "/dashboard" }, ...path];
   }
+
   return (
     <div className="Breadcrumb-container">
-      <Breadcrumb>
-        {path &&
-          path.map((item) =>
+      <Breadcrumb
+        items={(path || []).map((item) => ({
+          title:
             item.title === "Beranda" ? (
-              <Breadcrumb.Item key={item.path}>
-                <a href={`#${item.path}`}>{item.title}</a>
-              </Breadcrumb.Item>
+              <a href={`#${item.path}`}>{item.title}</a>
             ) : (
-              <Breadcrumb.Item key={item.path}>{item.title}</Breadcrumb.Item>
-            )
-          )}
-      </Breadcrumb>
+              item.title
+            ),
+        }))}
+      />
     </div>
   );
 };
 
-export default (BreadCrumb);
+export default BreadCrumb;

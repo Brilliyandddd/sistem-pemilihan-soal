@@ -1,94 +1,127 @@
-import React from "react";
-import { connect } from "react-redux";
+/* eslint-disable react/prop-types */
+import { useEffect, useState } from "react";
 import { Menu, Dropdown, Modal, Layout, Avatar } from "antd";
-import { CaretDownOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
+import { connect } from "react-redux";
 import { logout, getUserInfo } from "@/store/actions";
 import FullScreen from "@/components/FullScreen";
-import Settings from "@/components/Settings";
 import Hamburger from "@/components/Hamburger";
 import BreadCrumb from "@/components/BreadCrumb";
 import "./index.less";
+import { reqUserInfo } from "@/api/user";
+import { CaretDownOutlined } from "@ant-design/icons";
+import assets from "../../../assets";
+
 const { Header } = Layout;
 
 const LayoutHeader = (props) => {
-  const {
-    token,
-    avatar,
-    sidebarCollapsed,
-    logout,
-    getUserInfo,
-    showSettings,
-    fixedHeader,
-  } = props;
-  token && getUserInfo(token);
+  const { sidebarCollapsed } = props;
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Fetch user info
+    reqUserInfo()
+      .then((response) => {
+        setUser(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching user data:", error);
+      });
+
+    const { token, getUserInfo } = props;
+    if (token) getUserInfo(token);
+  }, [props]);
+
   const handleLogout = (token) => {
     Modal.confirm({
-      title: "Keluar",
-      content: "Apakah Anda yakin ingin keluar dari sistem?",
-      okText: "Iya",
-      cancelText: "Tidak",
+      title: "Logout",
+      content: "Are you sure you want to log out?",
+      okText: "Yes",
+      cancelText: "No",
       onOk: () => {
-        logout(token);
+        props.logout(token);
       },
     });
   };
+
   const onClick = ({ key }) => {
     switch (key) {
       case "logout":
-        handleLogout(token);
+        handleLogout(props.token);
         break;
       default:
         break;
     }
   };
+
+  const computedStyle = () => {
+    // if (fixedHeader) {
+    return {
+      width: sidebarCollapsed ? "calc(100% - 80px)" : "calc(100% - 200px)",
+      marginLeft: sidebarCollapsed ? "80px" : "200px",
+      position: "fixed",
+    };
+    // }
+    // return {
+    //   width: '100%',
+    // }
+  };
+
   const menu = (
     <Menu onClick={onClick}>
+      {user ? (
+        <div>
+          <p
+            style={{
+              maxWidth: 180,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {user.name}
+          </p>
+        </div>
+      ) : (
+        <p>Loading...</p>
+      )}
       <Menu.Item key="dashboard">
-        <Link to="/dashboard">Beranda</Link>
+        <Link to="/dashboard">Home</Link>
       </Menu.Item>
       <Menu.Divider />
-      <Menu.Item key="logout">Keluar</Menu.Item>
+      <Menu.Item key="logout">Logout</Menu.Item>
     </Menu>
   );
-  const computedStyle = () => {
-    let styles;
-    if (fixedHeader) {
-      if (sidebarCollapsed) {
-        styles = {
-          width: "calc(100% - 80px)",
-        };
-      } else {
-        styles = {
-          width: "calc(100% - 200px)",
-        };
-      }
-    } else {
-      styles = {
-        width: "100%",
-      };
-    }
-    return styles;
-  };
+
   return (
     <>
-      {/* 这里是仿照antd pro的做法,如果固定header，
-      则header的定位变为fixed，此时需要一个定位为relative的header把原来的header位置撑起来 */}
-      {fixedHeader ? <Header /> : null}
+      {props.fixedHeader ? <Header /> : null}
+
       <Header
         style={computedStyle()}
-        className={fixedHeader ? "fix-header" : ""}
+        className={props.fixedHeader ? "fix-header" : ""}
       >
         <Hamburger />
-        <BreadCrumb />
+        {sidebarCollapsed ? <></> : <BreadCrumb />}
         <div className="right-menu">
           <FullScreen />
-          {showSettings ? <Settings /> : null}
+          {/* {props.showSettings && <Settings />} */}
           <div className="dropdown-wrap">
-            <Dropdown overlay={menu}>
-              <div>
-                <Avatar shape="square" size="medium" src={avatar} />
-                <CaretDownOutlined style={{ color: "rgba(0,0,0,.3)" }} />
+            <Dropdown overlay={menu} destroyPopupOnHide>
+              {/* Wrap children in a single container */}
+              <div style={{ display: "flex", alignItems: "center" }}>
+                {user ? (
+                  <Avatar
+                    shape="square"
+                    size="medium"
+                    src={assets.images.avatar}
+                  />
+                ) : (
+                  <p>Loading...</p>
+                )}
+                <CaretDownOutlined
+                  style={{ color: "rgba(0,0,0,.3)", marginLeft: 8 }}
+                />
               </div>
             </Dropdown>
           </div>
@@ -98,11 +131,10 @@ const LayoutHeader = (props) => {
   );
 };
 
-const mapStateToProps = (state) => {
-  return {
-    ...state.app,
-    ...state.user,
-    ...state.settings,
-  };
-};
+const mapStateToProps = (state) => ({
+  ...state.app,
+  ...state.user,
+  ...state.settings,
+});
+
 export default connect(mapStateToProps, { logout, getUserInfo })(LayoutHeader);

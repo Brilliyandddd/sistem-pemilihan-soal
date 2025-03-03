@@ -1,4 +1,5 @@
-import React, { Component } from "react";
+/* eslint-disable no-unused-vars */
+import React, { useState, useEffect } from "react";
 import { Table, Tag } from "antd";
 import { transactionList } from "@/api/remoteSearch";
 
@@ -14,7 +15,7 @@ const columns = [
     dataIndex: "price",
     key: "price",
     width: 195,
-    render: text => (`$${text}`),
+    render: (text) => `$${text}`,
   },
   {
     title: "Status",
@@ -29,35 +30,32 @@ const columns = [
   },
 ];
 
-class TransactionTable extends Component {
-  _isMounted = false;   // 这个变量是用来标志当前组件是否挂载
-  state = {
-    list: [],
-  };
-  fetchData = () => {
-    transactionList().then((response) => {
-      const list = response.data.data.items.slice(0, 13);
-      if (this._isMounted) { 
-        this.setState({ list });
+const TransactionTable = () => {
+  const [list, setList] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchData = async () => {
+      try {
+        const response = await transactionList();
+        if (mounted) {
+          const data = response.data.data.items.slice(0, 13);
+          setList(data);
+        }
+      } catch (error) {
+        console.error("Error fetching transaction list:", error);
       }
-    });
-  };
-  componentDidMount() {
-    this._isMounted = true;
-    this.fetchData();
-  }
-  componentWillUnmount() {
-    this._isMounted = false;
-  }
-  render() {
-    return (
-      <Table
-        columns={columns}
-        dataSource={this.state.list}
-        pagination={false}
-      />
-    );
-  }
-}
+    };
+
+    fetchData();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return <Table columns={columns} dataSource={list} pagination={false} />;
+};
 
 export default TransactionTable;

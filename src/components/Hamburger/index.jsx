@@ -1,6 +1,7 @@
+/* eslint-disable react/prop-types */
 import React from "react";
 import { connect } from "react-redux";
-import { MenuUnfoldOutlined, MenuFoldOutlined } from "@ant-design/icons";
+import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { toggleSiderBar } from "@/store/actions";
 import "./index.less";
 const Hamburger = (props) => {

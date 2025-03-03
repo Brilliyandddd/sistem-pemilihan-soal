@@ -1,7 +1,6 @@
 /* eslint-disable */
-// require('script-loader!file-saver');
-import { saveAs } from "file-saver";
-import * as XLSX from "xlsx"; 
+require('script-loader!file-saver');
+import * as XLSX from 'xlsx';
 
 function generateArray(table) {
   var out = [];

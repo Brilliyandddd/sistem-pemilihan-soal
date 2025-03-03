@@ -1,9 +1,10 @@
-import React, { startTransition } from "react";
-import { connect } from "react-redux";
-import { Drawer, Switch, Row, Col, Divider, Alert, Button } from "antd";
-import { NotificationOutlined, CopyOutlined } from "@ant-design/icons";
-import { toggleSettingPanel, changeSetting } from "@/store/actions";
-import clip from "@/utils/clipboard";
+/* eslint-disable react/prop-types */
+import { useState } from 'react'
+import { connect } from 'react-redux'
+import { Drawer, Switch, Row, Col, Divider, Alert, Button } from 'antd'
+import { toggleSettingPanel, changeSetting } from '@/store/actions'
+import clip from '@/utils/clipboard'
+import { NotificationOutlined } from '@ant-design/icons'
 
 const RightPanel = (props) => {
   const {
@@ -13,26 +14,26 @@ const RightPanel = (props) => {
     sidebarLogo: defaultSidebarLogo,
     fixedHeader: defaultFixedHeader,
     tagsView: defaultTagsView,
-  } = props;
+  } = props
 
-  const [sidebarLogo, setSidebarLogo] = startTransition(defaultSidebarLogo);
-  const [fixedHeader, setFixedHeader] = startTransition(defaultFixedHeader);
-  const [tagsView, setTagsView] = startTransition(defaultTagsView);
+  const [sidebarLogo, setSidebarLogo] = useState(defaultSidebarLogo)
+  const [fixedHeader, setFixedHeader] = useState(defaultFixedHeader)
+  const [tagsView, setTagsView] = useState(defaultTagsView)
 
   const sidebarLogoChange = (checked) => {
-    setSidebarLogo(checked);
-    changeSetting({ key: "sidebarLogo", value: checked });
-  };
+    setSidebarLogo(checked)
+    changeSetting({ key: 'sidebarLogo', value: checked })
+  }
 
   const fixedHeaderChange = (checked) => {
-    setFixedHeader(checked);
-    changeSetting({ key: "fixedHeader", value: checked });
-  };
+    setFixedHeader(checked)
+    changeSetting({ key: 'fixedHeader', value: checked })
+  }
 
   const tagsViewChange = (checked) => {
-    setTagsView(checked);
-    changeSetting({ key: "tagsView", value: checked });
-  };
+    setTagsView(checked)
+    changeSetting({ key: 'tagsView', value: checked })
+  }
 
   const handleCopy = (e) => {
     let config = `
@@ -42,14 +43,14 @@ const RightPanel = (props) => {
       fixedHeader: ${fixedHeader},
       tagsView: ${tagsView},
     }
-    `;
-    clip(config, e);
-  };
+    `
+    clip(config, e)
+  }
 
   return (
     <div className="rightSettings">
       <Drawer
-        title="Pengaturan Sistem"
+        title="Pengaturan"
         placement="right"
         width={350}
         onClose={toggleSettingPanel}
@@ -57,12 +58,12 @@ const RightPanel = (props) => {
       >
         <Row>
           <Col span={12}>
-            <span>Logo Sidebar</span>
+            <span>Logo</span>
           </Col>
           <Col span={12}>
             <Switch
-              checkedChildren="Iya"
-              unCheckedChildren="Tidak"
+              checkedChildren="On"
+              unCheckedChildren="Off"
               defaultChecked={sidebarLogo}
               onChange={sidebarLogoChange}
             />
@@ -71,12 +72,12 @@ const RightPanel = (props) => {
         <Divider dashed />
         <Row>
           <Col span={12}>
-            <span>Tampilkan Header</span>
+            <span>Header</span>
           </Col>
           <Col span={12}>
             <Switch
-              checkedChildren="Iya"
-              unCheckedChildren="Tidak"
+              checkedChildren="On"
+              unCheckedChildren="Off"
               defaultChecked={fixedHeader}
               onChange={fixedHeaderChange}
             />
@@ -85,45 +86,45 @@ const RightPanel = (props) => {
         <Divider dashed />
         <Row>
           <Col span={12}>
-            <span>Aktifkan Tags-View</span>
+            <span>Tags-View</span>
           </Col>
           <Col span={12}>
             <Switch
-              checkedChildren="Iya"
-              unCheckedChildren="Tidak"
+              checkedChildren="On"
+              unCheckedChildren="Off"
               defaultChecked={tagsView}
               onChange={tagsViewChange}
             />
           </Col>
         </Row>
         <Divider dashed />
-        {/* <Row>
+        <Row>
           <Col span={24}>
             <Alert
               message="Catatan untuk pengembang:"
-              description="配置栏只在开发环境用于预览，生产环境不会展现，请拷贝后手动修改/src/defaultSettings.js配置文件"
+              description="Bilah konfigurasi hanya digunakan untuk pratinjau di lingkungan pengembangan, dan tidak akan ditampilkan di lingkungan produksi. Harap salin dan ubah file konfigurasi /src/defaultSettings.js secara manual"
               type="warning"
               showIcon
-              icon={<Icon type="notification" />}
-              style={{ marginBottom: "16px" }}
+              icon={<NotificationOutlined />}
+              style={{ marginBottom: '16px' }}
             />
-            <Button style={{ width: "100%" }} icon="copy" onClick={handleCopy}>
-              拷贝配置
+            <Button style={{ width: '100%' }} icon="copy" onClick={handleCopy}>
+              Salin konfigurasi
             </Button>
           </Col>
-        </Row> */}
+        </Row>
       </Drawer>
     </div>
-  );
-};
+  )
+}
 
 const mapStateToProps = (state) => {
   return {
     ...state.app,
     ...state.settings,
-  };
-};
+  }
+}
 
 export default connect(mapStateToProps, { toggleSettingPanel, changeSetting })(
   RightPanel
-);
+)

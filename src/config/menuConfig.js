@@ -1,8 +1,32 @@
+/* eslint-disable no-unused-vars */
+import {
+  HomeOutlined,
+  DatabaseOutlined,
+  ApartmentOutlined,
+  AppstoreOutlined,
+  GlobalOutlined,
+  BranchesOutlined,
+  AuditOutlined,
+  ContainerOutlined,
+  ControlOutlined,
+  FileDoneOutlined,
+  FileSyncOutlined,
+  TeamOutlined,
+  SolutionOutlined,
+  FileTextOutlined,
+  FileSearchOutlined,
+  UsergroupAddOutlined,
+  RadarChartOutlined,
+  FileProtectOutlined,
+  CopyrightOutlined,
+  BugOutlined,
+} from "@ant-design/icons";
+
 const menuList = [
   {
     title: "Beranda",
     path: "/dashboard",
-    icon: "home",
+    icon: HomeOutlined,
     roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE", "ROLE_STUDENT"],
   },
   // {
@@ -162,67 +186,67 @@ const menuList = [
   {
     title: "Master Data",
     path: "/master",
-    icon: "database",
+    icon: DatabaseOutlined,
     roles: ["ROLE_ADMINISTRATOR"],
     children: [
       {
         title: "Jurusan",
         path: "/department",
-        icon: "apartment",
+        icon: ApartmentOutlined,
         roles: ["ROLE_ADMINISTRATOR"],
       },
       {
         title: "Prodi",
         path: "/study-program",
-        icon: "appstore",
+        icon: AppstoreOutlined,
         roles: ["ROLE_ADMINISTRATOR"],
       },
       {
         title: "Agama",
         path: "/religion",
-        icon: "global",
+        icon: GlobalOutlined,
         roles: ["ROLE_ADMINISTRATOR"],
       },
       {
         title: "Rumpun Matkul",
         path: "/subject-group",
-        icon: "branches",
+        icon: BranchesOutlined,
         roles: ["ROLE_ADMINISTRATOR"],
       },
       {
         title: "Mata Kuliah",
         path: "/subject",
-        icon: "audit",
+        icon: AuditOutlined,
         roles: ["ROLE_ADMINISTRATOR"],
       },
       {
         title: "Media Pembelajaran",
         path: "/learning-media",
-        icon: "apartment",
+        icon: ApartmentOutlined,
         roles: ["ROLE_ADMINISTRATOR"],
       },
       {
         title: "Bentuk Pembelajaran",
         path: "/form-learning",
-        icon: "container",
+        icon: ContainerOutlined,
         roles: ["ROLE_ADMINISTRATOR"],
       },
       {
         title: "Metode Pembelajaran",
         path: "/learning-method",
-        icon: "control",
+        icon: ControlOutlined,
         roles: ["ROLE_ADMINISTRATOR"],
       },
       {
         title: "Kriteria Penilaian",
         path: "/assessment-criteria",
-        icon: "file-done",
+        icon: FileDoneOutlined,
         roles: ["ROLE_ADMINISTRATOR"],
       },
       {
         title: "Formulir Penilaian",
         path: "/appraisal-form",
-        icon: "file-sync",
+        icon: FileSyncOutlined,
         roles: ["ROLE_ADMINISTRATOR"],
       },
     ],
@@ -231,44 +255,44 @@ const menuList = [
   {
     title: "Dosen",
     path: "/lecture",
-    icon: "team",
+    icon: TeamOutlined,
     roles: ["ROLE_ADMINISTRATOR"],
   },
 
   {
     title: "Mahasiswa",
     path: "/student",
-    icon: "team",
+    icon: TeamOutlined,
     roles: ["ROLE_ADMINISTRATOR"],
   },
   {
     title: "List Todo",
     path: "/list-todo-admin",
-    icon: "solution",
+    icon: SolutionOutlined,
     roles: ["ROLE_ADMINISTRATOR","ROLE_LECTURE"]
   },
   // Lecture
   {  title: "Master Soal",
     path: "/question",
-    icon: "database",
+    icon: DatabaseOutlined,
     roles: ["ROLE_LECTURE","ROLE_ADMINISTRATOR"],
     children: [
       {
         title: "Kriteria Pertanyaan",
         path: "/question-criteria",
-        icon: "apartment",
+        icon: ApartmentOutlined,
         roles: ["ROLE_LECTURE","ROLE_ADMINISTRATOR"],
       },
       {
         title: "Tabel Nilai Linguistik",
         path: "/linguistic-value",
-        icon: "file-text",
+        icon: FileTextOutlined,
         roles: ["ROLE_LECTURE","ROLE_ADMINISTRATOR"],
       },
       {
         title : "Pengujian Soal",
         path : "/criteria-value",
-        icon : "file-search",
+        icon : FileSearchOutlined,
         // roles : ["ROLE_ADMINISTRATOR"],
         roles : ["ROLE_LECTURE","ROLE_ADMINISTRATOR"],
       },
@@ -277,68 +301,68 @@ const menuList = [
   {
     title: "List Todo",
     path: "/list-todo",
-    icon: "solution",
+    icon: SolutionOutlined,
     roles: ["ROLE_LECTURE"]
   },
   {
     title: "Pengguna",
     path: "/user",
-    icon: "usergroup-add",
+    icon: UsergroupAddOutlined,
     roles: ["ROLE_ADMINISTRATOR"],
   },
 
   {
     title: "RPS",
     path: "/rps",
-    icon: "radar-chart",
+    icon: RadarChartOutlined,
     roles: ["ROLE_LECTURE", "ROLE_ADMINISTRATOR"],
   },
   {
     title: "Manajemen Soal",
     path: "/question",
-    icon: "file-search",
+    icon: FileSearchOutlined,
     roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
   },
   {
     title: "Setting Ujian",
     path: "/setting-exam",
-    icon: "solution",
+    icon: SolutionOutlined,
     roles: ["ROLE_ADMINISTRATOR"],
   },
   {
     title: "Setting Kuis",
     path: "/setting-quiz",
-    icon: "solution",
+    icon: SolutionOutlined,
     roles: ["ROLE_LECTURE", "ROLE_ADMINISTRATOR"],
   },
   {
     title: "Setting Latihan",
     path: "/setting-exercise",
-    icon: "solution",
+    icon: SolutionOutlined,
     roles: ["ROLE_LECTURE", "ROLE_ADMINISTRATOR"],
   },
   {
     title: "Ujian",
     path: "/exam",
-    icon: "solution",
+    icon: SolutionOutlined,
     roles: ["ROLE_STUDENT"],
   },
   {
     title: "Kuis",
     path: "/quiz",
-    icon: "solution",
+    icon: SolutionOutlined,
     roles: ["ROLE_STUDENT"],
   },
   {
     title: "Latihan",
     path: "/exercise",
-    icon: "solution",
+    icon: SolutionOutlined,
     roles: ["ROLE_STUDENT"],
   },
   {
     title: "Nilai",
     path: "/result",
-    icon: "file-protect",
+    icon: FileProtectOutlined,
     roles: ["ROLE_LECTURE"],
     children: [
       {
@@ -361,7 +385,7 @@ const menuList = [
   {
     title: "Tentang Penulis",
     path: "/about",
-    icon: "copyright",
+    icon: CopyrightOutlined,
     roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE", "ROLE_STUDENT"],
   },
 

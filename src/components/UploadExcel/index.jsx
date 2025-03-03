@@ -1,6 +1,8 @@
+/* eslint-disable no-unused-vars */
 import React, { Component } from "react";
 import { PropTypes } from "prop-types";
 import { Upload, message } from "antd";
+import { InboxOutlined } from "@ant-design/icons";
 import * as XLSX from "xlsx";
 const { Dragger } = Upload;
 
@@ -58,7 +60,7 @@ class UploadExcel extends Component {
         _this.readerData(e.file).then(() => {
           e.onSuccess();
         });
-      }
+      },
     };
   };
   readerData = (rawFile) => {
@@ -88,7 +90,7 @@ class UploadExcel extends Component {
       <div>
         <Dragger {...this.draggerProps()}>
           <p className="ant-upload-drag-icon">
-            <Icon type="inbox" />
+            <InboxOutlined />
           </p>
           <p className="ant-upload-text">
             Click or drag file to this area to upload

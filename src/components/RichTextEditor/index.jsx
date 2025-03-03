@@ -1,4 +1,4 @@
-import React, { startTransition } from "react";
+import React, { useState } from "react";
 import { Card, Row, Col } from "antd";
 import { EditorState, convertToRaw } from "draft-js";
 import { Editor } from "react-draft-wysiwyg";
@@ -8,13 +8,13 @@ import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 import "./index.less";
 
 const RichTextEditor = () => {
-  const [editorState, setEditorState] = startTransition(EditorState.createEmpty());
+  const [editorState, setEditorState] = useState(EditorState.createEmpty());
 
   const onEditorStateChange = (editorState) => setEditorState(editorState);
 
   return (
     <div>
-      <Card bordered={false}>
+      <Card variant={false}>
         <Editor
           editorState={editorState}
           onEditorStateChange={onEditorStateChange}
@@ -27,11 +27,7 @@ const RichTextEditor = () => {
       <br />
       <Row gutter={10}>
         <Col span={12}>
-          <Card
-            title="同步转换HTML"
-            bordered={false}
-            style={{ minHeight: 200 }}
-          >
+          <Card title="同步转换HTML" variant={false} style={{ minHeight: 200 }}>
             {editorState &&
               draftToHtml(convertToRaw(editorState.getCurrentContent()))}
           </Card>
@@ -39,7 +35,7 @@ const RichTextEditor = () => {
         <Col span={12}>
           <Card
             title="同步转换MarkDown"
-            bordered={false}
+            variant={false}
             style={{ minHeight: 200 }}
           >
             {editorState &&

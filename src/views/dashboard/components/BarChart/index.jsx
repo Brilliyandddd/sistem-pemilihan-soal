@@ -1,66 +1,28 @@
-import React, { Component } from "react";
-import { PropTypes } from "prop-types";
-import { connect } from "react-redux";
+/* eslint-disable no-unused-vars */
+/* eslint-disable react/prop-types */
+import React, { useState, useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
 import echarts from "@/lib/echarts";
 import { debounce } from "@/utils";
 
-class BarChart extends Component {
-  static propTypes = {
-    width: PropTypes.string,
-    height: PropTypes.string,
-    className: PropTypes.string,
-    styles: PropTypes.object,
-  };
-  static defaultProps = {
-    width: "100%",
-    height: "300px",
-    styles: {},
-    className: "",
-  };
-  state = {
-    chart: null,
-  };
+const BarChart = ({
+  width = "100%",
+  height = "300px",
+  styles = {},
+  className = "",
+  chartData,
+}) => {
+  const [chart, setChart] = useState(null);
+  const chartRef = useRef(null);
+  const sidebarCollapsed = useSelector((state) => state.app.sidebarCollapsed);
 
-  componentDidMount() {
-    debounce(this.initChart.bind(this), 300)();
-    window.addEventListener("resize", () => this.resize());
-  }
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.sidebarCollapsed !== this.props.sidebarCollapsed) {
-      this.resize();
-    }
-    if (nextProps.chartData !== this.props.chartData) {
-      debounce(this.initChart.bind(this), 300)();
-    }
-  }
-
-  componentWillUnmount() {
-    this.dispose();
-  }
-
-  resize() {
-    const chart = this.state.chart;
-    if (chart) {
-      debounce(chart.resize.bind(this), 300)();
-    }
-  }
-
-  dispose() {
-    if (!this.state.chart) {
-      return;
-    }
-    window.removeEventListener("resize", () => this.resize()); // 移除窗口，变化时重置图表
-    this.setState({ chart: null });
-  }
-
-  setOptions() {
+  const setOptions = (chart) => {
     const animationDuration = 3000;
-    this.state.chart.setOption({
+    chart.setOption({
       tooltip: {
         trigger: "axis",
         axisPointer: {
-          // 坐标轴指示器，坐标轴触发有效
-          type: "shadow", // 默认为直线，可选为：'line' | 'shadow'
+          type: "shadow",
         },
       },
       grid: {
@@ -114,29 +76,56 @@ class BarChart extends Component {
         },
       ],
     });
-  }
+  };
 
-  initChart() {
-    if (!this.el) return;
-    this.setState({ chart: echarts.init(this.el, "macarons") }, () => {
-      this.setOptions(this.props.chartData);
-    });
-  }
+  const initChart = () => {
+    if (!chartRef.current) return;
+    const newChart = echarts.init(chartRef.current, "macarons");
+    setChart(newChart);
+    setOptions(newChart, chartData);
+  };
 
-  render() {
-    const { className, height, width, styles } = this.props;
-    return (
-      <div
-        className={className}
-        ref={(el) => (this.el = el)}
-        style={{
-          ...styles,
-          height,
-          width,
-        }}
-      />
-    );
-  }
-}
+  const resize = () => {
+    if (chart) {
+      debounce(chart.resize.bind(chart), 300)();
+    }
+  };
 
-export default connect((state) => state.app)(BarChart);
+  useEffect(() => {
+    debounce(initChart, 300)();
+    window.addEventListener("resize", resize);
+
+    return () => {
+      if (chart) {
+        window.removeEventListener("resize", resize);
+        chart.dispose();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (chart) {
+      resize();
+    }
+  }, [sidebarCollapsed]);
+
+  useEffect(() => {
+    if (chart && chartData) {
+      debounce(initChart, 300)();
+    }
+  }, [chartData]);
+
+  return (
+    <div
+      className={className}
+      ref={chartRef}
+      style={{
+        ...styles,
+        height,
+        width,
+      }}
+    />
+  );
+};
+
+export default BarChart;

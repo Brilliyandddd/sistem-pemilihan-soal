@@ -1,5 +1,5 @@
 import * as types from "../action-types";
-import defaultSettings from "@/defaultSettings";
+import defaultSettings from "@/utils/defaultSettings";
 const { showSettings, sidebarLogo, fixedHeader, tagsView } = defaultSettings;
 
 const initState = {

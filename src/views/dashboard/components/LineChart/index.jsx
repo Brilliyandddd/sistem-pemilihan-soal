@@ -1,61 +1,22 @@
-import React, { Component } from "react";
-import { PropTypes } from "prop-types";
-import { connect } from "react-redux";
+/* eslint-disable no-unused-vars */
+import React, { useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
 import echarts from "@/lib/echarts";
 import { debounce } from "@/utils";
 
-class LineChart extends Component {
-  static propTypes = {
-    width: PropTypes.string,
-    height: PropTypes.string,
-    className: PropTypes.string,
-    styles: PropTypes.object,
-    chartData: PropTypes.object.isRequired,
-  };
-  static defaultProps = {
-    width: "100%",
-    height: "350px",
-    styles: {},
-    className: "",
-  };
-  state = {
-    chart: null,
-  };
+const LineChart = () => {
+  const [chart, setChart] = useState(null);
+  const chartRef = useRef(null);
+  const sidebarCollapsed = useSelector((state) => state.app.sidebarCollapsed);
+  const chartData = useSelector((state) => state.app.chartData);
 
-  componentDidMount() {
-    debounce(this.initChart.bind(this), 300)();
-    window.addEventListener("resize", () => this.resize());
-  }
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.sidebarCollapsed !== this.props.sidebarCollapsed) {
-      this.resize();
-    }
-    if (nextProps.chartData !== this.props.chartData) {
-      debounce(this.initChart.bind(this), 300)();
-    }
-  }
+  const width = "100%";
+  const height = "350px";
+  const styles = {};
+  const className = "";
 
-  componentWillUnmount() {
-    this.dispose();
-  }
-
-  resize() {
-    const chart = this.state.chart;
-    if (chart) {
-      debounce(chart.resize.bind(this), 300)();
-    }
-  }
-
-  dispose() {
-    if (!this.state.chart) {
-      return;
-    }
-    window.removeEventListener("resize", () => this.resize()); // 移除窗口，变化时重置图表
-    this.setState({ chart: null });
-  }
-
-  setOptions({ expectedData, actualData } = {}) {
-    this.state.chart.setOption({
+  const setOptions = (chart, { expectedData, actualData } = {}) => {
+    chart.setOption({
       backgroundColor: "#fff",
       xAxis: {
         data: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
@@ -126,29 +87,55 @@ class LineChart extends Component {
         },
       ],
     });
-  }
+  };
 
-  initChart() {
-    if (!this.el) return;
-    this.setState({ chart: echarts.init(this.el,"macarons") }, () => {
-      this.setOptions(this.props.chartData);
-    });
-  }
+  const initChart = () => {
+    if (!chartRef.current) return;
+    const newChart = echarts.init(chartRef.current, "macarons");
+    setChart(newChart);
+    setOptions(newChart, chartData);
+  };
 
-  render() {
-    const { className, height, width,styles } = this.props;
-    return (
-      <div
-        className={className}
-        ref={(el) => (this.el = el)}
-        style={{
-          ...styles,
-          height,
-          width,
-        }}
-      />
-    );
-  }
-}
+  const resize = () => {
+    if (chart) {
+      debounce(chart.resize.bind(chart), 300)();
+    }
+  };
 
-export default connect(state=>state.app)(LineChart);
+  // Initialize chart
+  useEffect(() => {
+    debounce(initChart, 300)();
+    window.addEventListener("resize", resize);
+    return () => {
+      if (chart) {
+        window.removeEventListener("resize", resize);
+        chart.dispose();
+        setChart(null);
+      }
+    };
+  }, []);
+
+  // Handle sidebar collapse and chartData changes
+  useEffect(() => {
+    if (chart) {
+      resize();
+      if (chartData) {
+        setOptions(chart, chartData);
+      }
+    }
+  }, [sidebarCollapsed, chartData]);
+
+  return (
+    <div
+      className={className}
+      ref={chartRef}
+      style={{
+        ...styles,
+        height,
+        width,
+      }}
+    />
+  );
+};
+
+export default LineChart;

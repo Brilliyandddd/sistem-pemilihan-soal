@@ -1,9 +1,10 @@
-import React from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
+/* eslint-disable react/prop-types */
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useRef } from "react";
 import { connect } from "react-redux";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import { Layout } from "antd";
+import DocumentTitle from "react-document-title";
 import { getMenuItemInMenuListByProperty } from "@/utils";
 import routeList from "@/config/routeMap";
 import menuList from "@/config/menuConfig";
@@ -11,54 +12,60 @@ import menuList from "@/config/menuConfig";
 const { Content } = Layout;
 
 const getPageTitle = (menuList, pathname) => {
-  let title = "Ant Design Pro";
-  let item = getMenuItemInMenuListByProperty(menuList, "path", pathname);
-  if (item) {
-    title = `${item.title} - Ant Design Pro`;
-  }
-  return title;
+  const defaultTitle = "Bank Soal";
+  const item = getMenuItemInMenuListByProperty(menuList, "path", pathname);
+  return item ? item.title : defaultTitle;
 };
 
-const LayoutContent = (props) => {
-  const { role } = props;
-  const location = useLocation(); // useLocation untuk mendapatkan pathname
+const LayoutContent = ({ role, sidebarCollapsed }) => {
+  const location = useLocation();
   const { pathname } = location;
 
-  const handleFilter = (route) => {
-    return role === "admin" || !route.roles || route.roles.includes(role);
-  };
+  const nodeRef = useRef(null);
+
+  // Filter routes based on role
+  const filteredRoutes = routeList.filter(
+    (route) => role === "admin" || !route.roles || route.roles.includes(role)
+  );
 
   return (
-    <>
-      <Helmet>
-        <title>{getPageTitle(menuList, pathname)}</title>
-      </Helmet>
-      <Content style={{ height: "calc(100% - 100px)" }}>
+    <DocumentTitle title={getPageTitle(menuList, pathname)}>
+      <Content
+        style={{
+          height: "calc(100% - 100px)",
+          marginLeft: sidebarCollapsed ? "80px" : "200px",
+        }}
+      >
         <TransitionGroup>
           <CSSTransition
             key={pathname}
             timeout={500}
             classNames="fade"
             exit={false}
+            nodeRef={nodeRef}
           >
             <Routes location={location}>
-              <Route path="/" element={<Navigate to="/dashboard" />} />
-              {routeList.map((route) =>
-                handleFilter(route) ? (
-                  <Route
-                    key={route.path}
-                    path={route.path}
-                    element={<route.component />}
-                  />
-                ) : null
-              )}
-              <Route path="*" element={<Navigate to="/error/404" />} />
+              <Route path="/" element={<Navigate replace to="/dashboard" />} />
+              {filteredRoutes.map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={<route.component />}
+                />
+              ))}
+              <Route path="*" element={<Navigate replace to="/error/404" />} />
             </Routes>
           </CSSTransition>
         </TransitionGroup>
       </Content>
-    </>
+    </DocumentTitle>
   );
 };
 
-export default connect((state) => state.user)(LayoutContent);
+// Map state to props
+const mapStateToProps = (state) => ({
+  role: state.user.role,
+  sidebarCollapsed: state.app.sidebarCollapsed,
+});
+
+export default connect(mapStateToProps)(LayoutContent);

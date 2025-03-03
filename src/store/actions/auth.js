@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { setUserToken, resetUser } from "./user";
 import { reqLogin, reqLogout } from "@/api/login";
 import { setToken, removeToken } from "@/utils/auth";
@@ -25,20 +26,21 @@ export const login = (username, password) => (dispatch) => {
 
 export const logout = (token) => (dispatch) => {
   return new Promise((resolve, reject) => {
-    reqLogout(token)
-      .then((response) => {
-        const { data } = response;
-        if (data.status === 0) {
-          dispatch(resetUser());
-          removeToken();
-          resolve(data);
-        } else {
-          const msg = data.message;
-          reject(msg);
-        }
-      })
-      .catch((error) => {
-        reject(error);
-      });
+    console.log(token);
+    // reqLogout(token)
+    //   .then((response) => {
+    //     const { data } = response
+    //     if (data.status === 0) {
+    dispatch(resetUser());
+    removeToken();
+    //     resolve(data)
+    //   } else {
+    //     const msg = data.message
+    //     reject(msg)
+    //   }
+    // })
+    // .catch((error) => {
+    //   reject(error)
+    // })
   });
 };
