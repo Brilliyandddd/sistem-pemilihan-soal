@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import echarts from "@/lib/echarts";
+import * as echarts from 'echarts';
 import { debounce } from "@/utils";
 class KeyboardChart extends Component {
   state = {

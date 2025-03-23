@@ -39,6 +39,7 @@ const FormLearning = React.lazy(() => import(/*webpackChunkName:'FormLearning'*/
 const LearningMedia = React.lazy(() => import(/*webpackChunkName:'LearningMedia'*/ "@/views/learning-media"));
 const LearningMethod = React.lazy(() => import(/*webpackChunkName:'LearningMethod'*/ "@/views/learning-method"));
 const AssessmentCriteria = React.lazy(() => import(/*webpackChunkName:'AssessmentCriteria'*/ "@/views/assessment-criteria"));
+const SubAssessmentCriteria = React.lazy(() => import(/*webpackChunkName:'SubAssessmentCriteria'*/ "@/views/sub-assessment-criteria"));
 const QuestionCriteria = React.lazy(() => import(/*webpackChunkName:'QuestionCriteria'*/ "@/views/question-criteria"));
 const LinguiticValue = React.lazy(() => import(/*webpackChunkName:'LinguiticValue'*/ "@/views/linguistic-value"));
 const TeamTeaching = React.lazy(() => import(/*webpackChunkName:'TeamTeaching'*/ "@/views/team-teaching"));
@@ -292,6 +293,11 @@ export default [
   {
     path: "/assessment-criteria",
     component: AssessmentCriteria,
+    roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+  },
+  {
+    path: "/sub-assessment-criteria",
+    component: SubAssessmentCriteria,
     roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
   },
   {

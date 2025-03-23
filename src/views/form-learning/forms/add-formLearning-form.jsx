@@ -1,55 +1,53 @@
-import React, { Component } from "react";
+import React, { useEffect } from "react";
 import { Form, Input, Modal } from "antd";
-const { TextArea } = Input;
-class AddFormLearningForm extends Component {
-  render() {
-    const { visible, onCancel, onOk, form, confirmLoading } = this.props;
-    const { getFieldDecorator } = form;
-    const formItemLayout = {
-      labelCol: {
-        xs: { span: 24 },
-        sm: { span: 8 },
-      },
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 16 },
-      },
-    };
-    return (
-      <Modal
-        title="Tambah Bentuk Pembelajaran"
-        open={visible}
-        onCancel={onCancel}
-        onOk={onOk}
-        confirmLoading={confirmLoading}
-      >
-        <Form {...formItemLayout}>
-          <Form.Item label="Nama Bentuk Pembelajaran:">
-            {getFieldDecorator("name", {
-              rules: [
-                {
-                  required: true,
-                  message: "Silahkan isikan nama bentuk pembelajaran",
-                },
-              ],
-            })(<Input placeholder="Nama Bentuk Pembelajaran" />)}
-          </Form.Item>
-          <Form.Item label="Deskripsi Bentuk Pembelajaran:">
-            {getFieldDecorator("description", {
-              rules: [
-                {
-                  required: true,
-                  message: "Silahkan isikan deskripsi bentuk pembelajaran",
-                },
-              ],
-            })(<TextArea rows={4} placeholder="Deskripsi Pengguna" />)}
-          </Form.Item>
-        </Form>
-      </Modal>
-    );
-  }
-}
 
-export default Form.create({ name: "AddFormLearningForm" })(
-  AddFormLearningForm
-);
+const { TextArea } = Input;
+
+const AddFormLearningForm = ({ visible, onCancel, onOk, confirmLoading }) => {
+  const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (!visible) {
+      form.resetFields(); // Reset form ketika modal ditutup
+    }
+  }, [visible, form]);
+
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      onOk(values); // Kirim data yang tervalidasi
+      form.resetFields();
+    } catch (error) {
+      console.error("Validasi gagal:", error);
+    }
+  };
+
+  return (
+    <Modal
+      title="Tambah Bentuk Pembelajaran"
+      open={visible}
+      onCancel={onCancel}
+      onOk={handleOk}
+      confirmLoading={confirmLoading}
+    >
+      <Form form={form} layout="vertical">
+        <Form.Item
+          label="Nama Bentuk Pembelajaran:"
+          name="name"
+          rules={[{ required: true, message: "Silahkan isikan nama bentuk pembelajaran" }]}
+        >
+          <Input placeholder="Nama Bentuk Pembelajaran" />
+        </Form.Item>
+        <Form.Item
+          label="Deskripsi Bentuk Pembelajaran:"
+          name="description"
+          rules={[{ required: true, message: "Silahkan isikan deskripsi bentuk pembelajaran" }]}
+        >
+          <TextArea rows={4} placeholder="Deskripsi Pengguna" />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
+
+export default AddFormLearningForm;

@@ -1,50 +1,45 @@
-import React, { Component } from "react";
+import React from "react";
 import { Form, Input, Modal } from "antd";
-const { TextArea } = Input;
-class AddDepartmentForm extends Component {
-  render() {
-    const { visible, onCancel, onOk, form, confirmLoading } = this.props;
-    const { getFieldDecorator } = form;
-    const formItemLayout = {
-      labelCol: {
-        xs: { span: 24 },
-        sm: { span: 8 },
-      },
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 16 },
-      },
-    };
-    return (
-      <Modal
-        title="Tambah Jurusan"
-        open={visible}
-        onCancel={onCancel}
-        onOk={onOk}
-        confirmLoading={confirmLoading}
-      >
-        <Form {...formItemLayout}>
-          <Form.Item label="Nama Jurusan:">
-            {getFieldDecorator("name", {
-              rules: [
-                { required: true, message: "Silahkan isikan nama jurusan" },
-              ],
-            })(<Input placeholder="Nama Jurusan" />)}
-          </Form.Item>
-          <Form.Item label="Deskripsi Jurusan:">
-            {getFieldDecorator("description", {
-              rules: [
-                {
-                  required: true,
-                  message: "Silahkan isikan deskripsi jurusan",
-                },
-              ],
-            })(<TextArea rows={4} placeholder="Deskripsi Pengguna" />)}
-          </Form.Item>
-        </Form>
-      </Modal>
-    );
-  }
-}
 
-export default Form.create({ name: "AddDepartmentForm" })(AddDepartmentForm);
+const { TextArea } = Input;
+
+const AddDepartmentForm = ({ visible, onCancel, onOk, confirmLoading }) => {
+  const [form] = Form.useForm();
+
+  return (
+    <Modal
+      title="Tambah Jurusan"
+      open={visible}
+      onCancel={onCancel}
+      onOk={() => {
+        form
+          .validateFields()
+          .then((values) => {
+            onOk(values);
+            form.resetFields(); // Reset form setelah submit
+          })
+          .catch((info) => console.log("Validation Failed:", info));
+      }}
+      confirmLoading={confirmLoading}
+    >
+      <Form form={form} layout="vertical">
+        <Form.Item
+          label="Nama Jurusan:"
+          name="name"
+          rules={[{ required: true, message: "Silahkan isikan nama jurusan" }]}
+        >
+          <Input placeholder="Nama Jurusan" />
+        </Form.Item>
+        <Form.Item
+          label="Deskripsi Jurusan:"
+          name="description"
+          rules={[{ required: true, message: "Silahkan isikan deskripsi jurusan" }]}
+        >
+          <TextArea rows={4} placeholder="Deskripsi Jurusan" />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
+
+export default AddDepartmentForm;

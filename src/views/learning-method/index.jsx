@@ -1,5 +1,5 @@
-import React, { Component } from "react";
-import { Card, Button, Table, message, Divider } from "antd";
+import React, { useState, useEffect } from "react";
+import { Card, Button, Table, message, Divider, Form } from "antd";
 import {
   getLearningMethods,
   deleteLearningMethod,
@@ -9,193 +9,127 @@ import {
 import TypingCard from "@/components/TypingCard";
 import EditLearningMethodForm from "./forms/edit-learningMethod-form";
 import AddLearningMethodForm from "./forms/add-learningMethod-form";
+
 const { Column } = Table;
-class LearningMethod extends Component {
-  state = {
-    learningMethods: [],
-    editLearningMethodModalVisible: false,
-    editLearningMethodModalLoading: false,
-    currentRowData: {},
-    addLearningMethodModalVisible: false,
-    addLearningMethodModalLoading: false,
-  };
-  getLearningMethods = async () => {
-    const result = await getLearningMethods();
-    const { content, statusCode } = result.data;
 
-    if (statusCode === 200) {
-      this.setState({
-        learningMethods: content,
-      });
+const LearningMethod = () => {
+  const [learningMethods, setLearningMethods] = useState([]);
+  const [editLearningMethodModalVisible, setEditLearningMethodModalVisible] = useState(false);
+  const [editLearningMethodModalLoading, setEditLearningMethodModalLoading] = useState(false);
+  const [currentRowData, setCurrentRowData] = useState({});
+  const [addLearningMethodModalVisible, setAddLearningMethodModalVisible] = useState(false);
+  const [addLearningMethodModalLoading, setAddLearningMethodModalLoading] = useState(false);
+
+  // Inisialisasi form menggunakan Form.useForm dari Ant Design
+  const [editForm] = Form.useForm();
+  const [addForm] = Form.useForm();
+
+  useEffect(() => {
+    fetchLearningMethods();
+  }, []);
+
+  const fetchLearningMethods = async () => {
+    try {
+      const result = await getLearningMethods();
+      if (result.data.statusCode === 200) {
+        setLearningMethods(result.data.content);
+      }
+    } catch (error) {
+      message.error("Gagal mengambil data");
     }
   };
-  handleEditLearningMethod = (row) => {
-    this.setState({
-      currentRowData: Object.assign({}, row),
-      editLearningMethodModalVisible: true,
-    });
+
+  const handleEditLearningMethod = (row) => {
+    setCurrentRowData(row);
+    setEditLearningMethodModalVisible(true);
+    editForm.setFieldsValue(row); // Isi form dengan data yang dipilih
   };
 
-  handleDeleteLearningMethod = (row) => {
-    const { id } = row;
-    if (id === "admin") {
-      message.error("不能menghapusoleh  Admin！");
-      return;
+  const handleDeleteLearningMethod = async (row) => {
+    try {
+      await deleteLearningMethod({ id: row.id });
+      message.success("Berhasil dihapus");
+      fetchLearningMethods();
+    } catch (error) {
+      message.error("Gagal menghapus");
     }
-    console.log(id);
-    deleteLearningMethod({ id }).then((res) => {
-      message.success("berhasil dihapus");
-      this.getLearningMethods();
-    });
   };
 
-  handleEditLearningMethodOk = (_) => {
-    const { form } = this.editLearningMethodFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ editModalLoading: true });
-      editLearningMethod(values, values.id)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            editLearningMethodModalVisible: false,
-            editLearningMethodModalLoading: false,
-          });
-          message.success("berhasi;!");
-          this.getLearningMethods();
-        })
-        .catch((e) => {
-          message.success("gagal");
-        });
-    });
+  const handleEditLearningMethodOk = async () => {
+    try {
+      const values = await editForm.validateFields();
+      setEditLearningMethodModalLoading(true);
+      await editLearningMethod(values, values.id);
+      message.success("Berhasil diperbarui!");
+      setEditLearningMethodModalVisible(false);
+      fetchLearningMethods();
+    } catch (error) {
+      message.error("Gagal memperbarui");
+    } finally {
+      setEditLearningMethodModalLoading(false);
+    }
   };
 
-  handleCancel = (_) => {
-    this.setState({
-      editLearningMethodModalVisible: false,
-      addLearningMethodModalVisible: false,
-    });
+  const handleAddLearningMethod = () => {
+    setAddLearningMethodModalVisible(true);
+    addForm.resetFields(); // Reset form saat modal dibuka
   };
 
-  handleAddLearningMethod = (row) => {
-    this.setState({
-      addLearningMethodModalVisible: true,
-    });
+  const handleAddLearningMethodOk = async () => {
+    try {
+      const values = await addForm.validateFields();
+      setAddLearningMethodModalLoading(true);
+      await addLearningMethod(values);
+      message.success("Berhasil ditambahkan!");
+      setAddLearningMethodModalVisible(false);
+      fetchLearningMethods();
+    } catch (error) {
+      message.error("Gagal menambahkan");
+    } finally {
+      setAddLearningMethodModalLoading(false);
+    }
   };
 
-  handleAddLearningMethodOk = (_) => {
-    const { form } = this.addLearningMethodFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ addLearningMethodModalLoading: true });
-      addLearningMethod(values)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            addLearningMethodModalVisible: false,
-            addLearningMethodModalLoading: false,
-          });
-          message.success("Berhasil!");
-          this.getLearningMethods();
-        })
-        .catch((e) => {
-          message.success("Gagal menambahkan, coba lagi!");
-        });
-    });
-  };
-  componentDidMount() {
-    this.getLearningMethods();
-  }
-  render() {
-    const { learningMethods } = this.state;
-    const title = (
-      <span>
-        <Button type="primary" onClick={this.handleAddLearningMethod}>
-          Tambahkan metode pembelajaran
-        </Button>
-      </span>
-    );
-    const cardContent = `Di sini, Anda dapat mengelola metode pembelajaran di sistem, seperti menambahkan metode pembelajaran baru, atau mengubah metode pembelajaran yang sudah ada di sistem.`;
-    return (
-      <div className="app-container">
-        <TypingCard
-          title="Manajemen Metode Pembelajaran"
-          source={cardContent}
-        />
-        <br />
-        <Card title={title}>
-          <Table
-            bordered
-            rowKey="id"
-            dataSource={learningMethods}
-            pagination={false}
-          >
-            <Column
-              title="ID Metode Pembelajaran"
-              dataIndex="id"
-              key="id"
-              align="center"
-            />
-            <Column title="Nama" dataIndex="name" key="name" align="center" />
-            <Column
-              title="Deskripsi Metode Pembelajaran"
-              dataIndex="description"
-              key="description"
-              align="center"
-            />
-            <Column
-              title="Operasi"
-              key="action"
-              width={195}
-              align="center"
-              render={(text, row) => (
-                <span>
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="edit"
-                    title="mengedit"
-                    onClick={this.handleEditLearningMethod.bind(null, row)}
-                  />
-                  <Divider type="vertical" />
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="delete"
-                    title="menghapus"
-                    onClick={this.handleDeleteLearningMethod.bind(null, row)}
-                  />
-                </span>
-              )}
-            />
-          </Table>
-        </Card>
-        <EditLearningMethodForm
-          currentRowData={this.state.currentRowData}
-          wrappedComponentRef={(formRef) =>
-            (this.editLearningMethodFormRef = formRef)
-          }
-          visible={this.state.editLearningMethodModalVisible}
-          confirmLoading={this.state.editLearningMethodModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleEditLearningMethodOk}
-        />
-        <AddLearningMethodForm
-          wrappedComponentRef={(formRef) =>
-            (this.addLearningMethodFormRef = formRef)
-          }
-          visible={this.state.addLearningMethodModalVisible}
-          confirmLoading={this.state.addLearningMethodModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleAddLearningMethodOk}
-        />
-      </div>
-    );
-  }
-}
+  return (
+    <div className="app-container">
+      <TypingCard title="Manajemen Metode Pembelajaran" source="Di sini, Anda dapat mengelola metode pembelajaran." />
+      <br />
+      <Card title={<Button type="primary" onClick={handleAddLearningMethod}>Tambahkan metode pembelajaran</Button>}>
+        <Table bordered rowKey="id" dataSource={learningMethods} pagination={false}>
+          <Column title="ID Metode Pembelajaran" dataIndex="id" key="id" align="center" />
+          <Column title="Nama" dataIndex="name" key="name" align="center" />
+          <Column title="Deskripsi" dataIndex="description" key="description" align="center" />
+          <Column
+            title="Operasi"
+            key="action"
+            width={195}
+            align="center"
+            render={(text, row) => (
+              <span>
+                <Button type="primary" shape="circle" icon="edit" title="Edit" onClick={() => handleEditLearningMethod(row)} />
+                <Divider type="vertical" />
+                <Button type="danger" shape="circle" icon="delete" title="Hapus" onClick={() => handleDeleteLearningMethod(row)} />
+              </span>
+            )}
+          />
+        </Table>
+      </Card>
+      <EditLearningMethodForm
+        form={editForm}
+        visible={editLearningMethodModalVisible}
+        confirmLoading={editLearningMethodModalLoading}
+        onCancel={() => setEditLearningMethodModalVisible(false)}
+        onOk={handleEditLearningMethodOk}
+      />
+      <AddLearningMethodForm
+        form={addForm}
+        visible={addLearningMethodModalVisible}
+        confirmLoading={addLearningMethodModalLoading}
+        onCancel={() => setAddLearningMethodModalVisible(false)}
+        onOk={handleAddLearningMethodOk}
+      />
+    </div>
+  );
+};
 
 export default LearningMethod;

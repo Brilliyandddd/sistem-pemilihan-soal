@@ -1,79 +1,61 @@
-import React, { Component } from "react";
+import React from "react";
 import { Form, Input, Select, Modal } from "antd";
+import { useForm } from "antd/es/form/Form";
 
-class AddUserForm extends Component {
-  render() {
-    const { visible, onCancel, onOk, form, confirmLoading } = this.props;
-    const { getFieldDecorator } = form;
-    const formItemLayout = {
-      labelCol: {
-        xs: { span: 24 },
-        sm: { span: 8 },
-      },
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 16 },
-      },
-    };
-    return (
-      <Modal
-        title="Tambah Pengguna"
-        open={visible}
-        onCancel={onCancel}
-        onOk={onOk}
-        confirmLoading={confirmLoading}
+const AddUserForm = ({ visible, onCancel, onOk, confirmLoading }) => {
+  const [form] = useForm();
+
+  return (
+    <Modal
+      title="Tambah Pengguna"
+      open={visible}
+      onCancel={onCancel}
+      onOk={() => form.submit()}
+      confirmLoading={confirmLoading}
+    >
+      <Form 
+        form={form} 
+        layout="vertical"
+        onFinish={onOk}
       >
-        <Form {...formItemLayout}>
-          <Form.Item label="Na  ma:">
-            {getFieldDecorator("name", {
-              rules: [
-                { required: true, message: "Silahkan isi nama pengguna!" },
-              ],
-            })(<Input placeholder="Nama Pengguna" />)}
-          </Form.Item>
-          <Form.Item label="Username:">
-            {getFieldDecorator("username", {
-              rules: [
-                { required: true, message: "Silahkan isi username pengguna!" },
-              ],
-            })(<Input placeholder="Username Pengguna" />)}
-          </Form.Item>
-          <Form.Item label="Email:">
-            {getFieldDecorator("email", {
-              rules: [
-                {
-                  required: true,
-                  type: "email",
-                  message: "Silahkan isi email pengguna!",
-                },
-              ],
-            })(<Input placeholder="Email Pengguna" />)}
-          </Form.Item>
-          <Form.Item label="Kata sandi:">
-            {getFieldDecorator("password", {
-              rules: [
-                {
-                  required: true,
-                  message: "Silahkan isi kata sandi pengguna!",
-                },
-              ],
-            })(<Input type="password" placeholder="Kata sandi" />)}
-          </Form.Item>
-          <Form.Item label="Peran:">
-            {getFieldDecorator("roles", {
-              initialValue: "3",
-            })(
-              <Select style={{ width: 120 }}>
-                <Select.Option value="1">Administrator</Select.Option>
-                <Select.Option value="2">Dosen</Select.Option>
-                <Select.Option value="3">Mahasiswa</Select.Option>
-              </Select>
-            )}
-          </Form.Item>
-        </Form>
-      </Modal>
-    );
-  }
-}
+        <Form.Item
+          label="Nama:"
+          name="name"
+          rules={[{ required: true, message: "Silahkan isi nama pengguna!" }]}
+        >
+          <Input placeholder="Nama Pengguna" />
+        </Form.Item>
+        <Form.Item
+          label="Username:"
+          name="username"
+          rules={[{ required: true, message: "Silahkan isi username pengguna!" }]}
+        >
+          <Input placeholder="Username Pengguna" />
+        </Form.Item>
+        <Form.Item
+          label="Email:"
+          name="email"
+          rules={[{ required: true, type: "email", message: "Silahkan isi email pengguna!" }]}
+        >
+          <Input placeholder="Email Pengguna" />
+        </Form.Item>
+        <Form.Item
+          label="Kata sandi:"
+          name="password"
+          rules={[{ required: true, message: "Silahkan isi kata sandi pengguna!" }]}
+        >
+          <Input type="password" placeholder="Kata sandi" />
+        </Form.Item>
+        <Form.Item label="Peran:" name="roles" initialValue="3">
+          <Select style={{ width: 120 }}>
+            <Select.Option value="1">Administrator</Select.Option>
+            <Select.Option value="2">Dosen</Select.Option>
+            <Select.Option value="3">Mahasiswa</Select.Option>
+          </Select>
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
 
-export default Form.create({ name: "AddUserForm" })(AddUserForm);
+export default AddUserForm;

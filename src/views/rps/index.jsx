@@ -1,338 +1,102 @@
-import React, { Component } from "react";
-import { Card, Button, Table, message, Divider } from "antd";
-import { getRPS, deleteRPS, editRPS, addRPS,importRPS } from "@/api/rps";
-import {importRPSDetail } from "@/api/rpsDetail";
-
+import React, { useState, useEffect, useRef } from "react";
+import { Card, Button, Table, message, Divider, Upload } from "antd";
+import { EditOutlined, DeleteOutlined, DiffOutlined } from "@ant-design/icons";
+import { getRPS, deleteRPS, importRPS } from "@/api/rps";
+import { importRPSDetail } from "@/api/rpsDetail";
 import { getSubjects } from "@/api/subject";
 import { getStudyPrograms } from "@/api/studyProgram";
 import { getLectures } from "@/api/lecture";
+import { getLearningMediasSoftware, getLearningMediasHardware } from "@/api/learningMedia";
 import { Link } from "react-router-dom";
-import {
-  getLearningMediasSoftware,
-  getLearningMediasHardware,
-} from "@/api/learningMedia";
-import * as XLSX from 'xlsx';
-
+import * as XLSX from "xlsx";
 import TypingCard from "@/components/TypingCard";
 import EditRPSForm from "./forms/edit-rps-form";
 import AddRPSForm from "./forms/add-rps-form";
+
 const { Column } = Table;
-class RPS extends Component {
-  state = {
-    rps: [],
-    learningMediaSoftwares: [],
-    learningMediaHardwares: [],
-    subjects: [],
-    studyPrograms: [],
-    lectures: [],
-    editRPSModalVisible: false,
-    editRPSModalLoading: false,
-    currentRowData: {},
-    addRPSModalVisible: false,
-    addRPSModalLoading: false,
-  };
-  getRPS = async () => {
-    const result = await getRPS();
-    const { content, statusCode } = result.data;
-    console.log(result.data);
-    if (statusCode === 200) {
-      this.setState({
-        rps: content,
-      });
+
+const RPS = () => {
+  const [rps, setRPS] = useState([]);
+  const [learningMediaSoftwares, setLearningMediaSoftwares] = useState([]);
+  const [learningMediaHardwares, setLearningMediaHardwares] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [studyPrograms, setStudyPrograms] = useState([]);
+  const [lectures, setLectures] = useState([]);
+  const [editRPSModalVisible, setEditRPSModalVisible] = useState(false);
+  const [editRPSModalLoading, setEditRPSModalLoading] = useState(false);
+  const [currentRowData, setCurrentRowData] = useState({});
+  const [addRPSModalVisible, setAddRPSModalVisible] = useState(false);
+  const [addRPSModalLoading, setAddRPSModalLoading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [rpsData, subjectsData, learningSoftwares, learningHardwares, studyProgramsData, lecturesData] = await Promise.all([
+        getRPS(),
+        getSubjects(),
+        getLearningMediasSoftware(),
+        getLearningMediasHardware(),
+        getStudyPrograms(),
+        getLectures(),
+      ]);
+
+      setRPS(rpsData.data.content);
+      setSubjects(subjectsData.data.content);
+      setLearningMediaSoftwares(learningSoftwares.data.content);
+      setLearningMediaHardwares(learningHardwares.data.content);
+      setStudyPrograms(studyProgramsData.data.content);
+      setLectures(lecturesData.data.content);
+    } catch (error) {
+      message.error("Gagal mengambil data. Silakan coba lagi.");
     }
   };
-  getLearningMediasSoftware = async () => {
-    const result = await getLearningMediasSoftware();
-    const { content, statusCode } = result.data;
 
-    if (statusCode === 200) {
-      this.setState({
-        learningMediaSoftwares: content,
-      });
-    }
-  };
-  getLearningMediasHardware = async () => {
-    const result = await getLearningMediasHardware();
-    const { content, statusCode } = result.data;
+  return (
+    <div className="app-container">
+      <TypingCard title="Manajemen RPS" source="Di sini, Anda dapat mengelola RPS." />
 
-    if (statusCode === 200) {
-      this.setState({
-        learningMediaHardwares: content,
-      });
-    }
-  };
-  getSubjects = async () => {
-    const result = await getSubjects();
-    const { content, statusCode } = result.data;
-
-    if (statusCode === 200) {
-      this.setState({
-        subjects: content,
-      });
-    }
-  };
-  getStudyProgram = async () => {
-    const result = await getStudyPrograms();
-    const { content, statusCode } = result.data;
-
-    if (statusCode === 200) {
-      this.setState({
-        studyPrograms: content,
-      });
-    }
-  };
-  getLectures = async () => {
-    const result = await getLectures();
-    const { content, statusCode } = result.data;
-
-    if (statusCode === 200) {
-      this.setState({
-        lectures: content,
-      });
-    }
-  };
-  handleEditRPS = (row) => {
-    this.setState({
-      currentRowData: Object.assign({}, row),
-      editRPSModalVisible: true,
-    });
-  };
-
-  handleDeleteRPS = (row) => {
-    const { id } = row;
-    if (id === "admin") {
-      message.error("Berhasil Dibuat");
-      return;
-    }
-    deleteRPS({ id }).then((res) => {
-      message.success("berhasil dihapus");
-      this.getRPS();
-    });
-  };
-
-  handleEditRPSOk = (_) => {
-    const { form } = this.editRPSFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ editModalLoading: true });
-      editRPS(values)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            editRPSModalVisible: false,
-            editRPSModalLoading: false,
-          });
-          message.success("berhasi;!");
-          this.getRPS();
-        })
-        .catch((e) => {
-          message.success("gagal");
-        });
-    });
-  };
-
-  handleCancel = (_) => {
-    this.setState({
-      editRPSModalVisible: false,
-      addRPSModalVisible: false,
-    });
-  };
-
-  handleAddRPS = (row) => {
-    this.setState({
-      addRPSModalVisible: true,
-    });
-  };
-
-  handleAddRPSOk = (_) => {
-    const { form } = this.addRPSFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ addRPSModalLoading: true });
-      addRPS(values)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            addRPSModalVisible: false,
-            addRPSModalLoading: false,
-          });
-          message.success("Berhasil!");
-          this.getRPS();
-        })
-        .catch((e) => {
-          message.success("Gagal menambahkan, coba lagi!");
-        });
-    });
-  };
- 
-  handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    console.log('File selected:', file);
-  
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        console.log('File reading started');
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        this.setState({ rps: jsonData });
-        console.log('File reading completed and state updated');
-  
-        // Call both importRPS and importRPSDetail
-        const [responseRPS, responseRPSDetail] = await Promise.all([
-          importRPS(file),
-          importRPSDetail(file)
-        ]);
-  
-        console.log('File import responses:', responseRPS, responseRPSDetail);
-  
-        if (responseRPS.status === 200 && responseRPSDetail.status === 200) {
-          console.log('File imported successfully:', responseRPS.data, responseRPSDetail.data);
-          // Reload the page
-          window.location.reload();
-        } else {
-          console.error('Failed to import file:', responseRPS.data, responseRPSDetail.data);
-        }
-      } catch (error) {
-        console.error('Error during file upload process:', error);
-      }
-    };
-  
-    reader.onerror = (error) => {
-      console.error('Error reading file:', error);
-    };
-  
-    reader.readAsArrayBuffer(file);
-  };
-  componentDidMount() {
-    this.getRPS();
-    this.getSubjects();
-    this.getLearningMediasHardware();
-    this.getLearningMediasSoftware();
-    this.getStudyProgram();
-    this.getLectures();
-  }
-  render() {
-    const {
-      rps,
-      learningMediaHardwares,
-      learningMediaSoftwares,
-      studyPrograms,
-      subjects,
-      lectures,
-    } = this.state;
-    const title = (
-      <span>
-        <Button type="primary" onClick={this.handleAddRPS}>
-          Tambahkan RPS
-        </Button>
-      </span>
-    );
-    const cardContent = `Di sini, Anda dapat mengelola RPS sesuai dengan mata kuliah yang diampu. Di bawah ini dapat menampilkan list RPS yang ada.`;
-    return (
-      <div className="app-container">
-        <TypingCard title="Manajemen RPS" source={cardContent} />
-        <div className="file-upload-container">
-          <label htmlFor="fileUpload" className="file-upload-label">Upload File RPS:</label>
-          <input type="file" id="fileUpload" className="file-upload-input" onChange={this.handleFileUpload} />
-        </div>
-        <br />
-        <Card title={title}>
-          <Table bordered rowKey="id" dataSource={rps} pagination={false}>
-            <Column title="ID RPS" dataIndex="id" key="id" align="center" />
-            <Column title="Nama" dataIndex="name" key="name" align="center" />
-            <Column
-              title="Semester"
-              dataIndex="semester"
-              key="semester"
-              align="center"
-            />
-            <Column title="SKS" dataIndex="sks" key="sks" align="center" />
-            <Column
-              title="Mata Kuliah"
-              dataIndex="subject.name"
-              key="subject.name"
-              align="center"
-            />
-            <Column
-            title="Dosen Pengembang"
-            dataIndex="dev_lecturers"
-            key="dev_lecturers"
+      <Card title={<Button type="primary" onClick={() => setAddRPSModalVisible(true)}>Tambahkan RPS</Button>}>
+        <Table bordered rowKey="id" dataSource={rps} pagination={{ pageSize: 5 }}>
+          <Column title="ID RPS" dataIndex="id" key="id" align="center" />
+          <Column title="Nama" dataIndex="name" key="name" align="center" />
+          <Column title="SKS" dataIndex="sks" key="sks" align="center" />
+          <Column title="Semester" dataIndex="semester" key="semester" align="center" />
+          <Column title="CPL Prodi" dataIndex="cpl_prodi" key="cpl_prodi" align="center" />
+          <Column title="CPL Mata Kuliah" dataIndex="cpl_mk" key="cpl_mk" align="center" />
+          <Column title="Media Pembelajaran Software" dataIndex="learning_media_softwares" key="learning_media_softwares" align="center" render={(data) => data?.join(", ") || "-"} />
+          <Column title="Media Pembelajaran Hardware" dataIndex="learning_media_hardwares" key="learning_media_hardwares" align="center" render={(data) => data?.join(", ") || "-"} />
+          <Column title="Mata Kuliah" dataIndex={["subject", "name"]} key="subject.name" align="center" />
+          <Column title="Program Studi" dataIndex={["study_program", "name"]} key="study_program.name" align="center" />
+          <Column title="Dosen Pengembang" dataIndex="dev_lecturers" key="dev_lecturers" align="center" render={(dev_lecturers) => dev_lecturers?.map((lecturer) => lecturer.name).join(", ") || "-"} />
+          <Column title="Dosen Pengajar" dataIndex="teaching_lecturers" key="teaching_lecturers" align="center" render={(teaching_lecturers) => teaching_lecturers?.map((lecturer) => lecturer.name).join(", ") || "-"} />
+          <Column title="Koordinator Dosen" dataIndex="coordinator_lecturers" key="coordinator_lecturers" align="center" render={(coordinator_lecturers) => coordinator_lecturers?.map((lecturer) => lecturer.name).join(", ") || "-"} />
+          <Column
+            title="Operasi"
+            key="action"
             align="center"
-            render={dev_lecturers => (dev_lecturers ? dev_lecturers.map(lecturer => lecturer.name).join(', ') : '')}
+            render={(text, row) => (
+              <span>
+                <Button type="primary" shape="circle" icon={<EditOutlined />} onClick={() => { setCurrentRowData(row); setEditRPSModalVisible(true); }} />
+                <Divider type="vertical" />
+                <Link to={`/rps/${row.id}`}>
+                  <Button type="primary" shape="circle" icon={<DiffOutlined />} />
+                </Link>
+                <Divider type="vertical" />
+                <Button type="danger" shape="circle" icon={<DeleteOutlined />} onClick={() => handleDeleteRPS(row)} />
+              </span>
+            )}
           />
-            
-            <Column
-              title="Operasi"
-              key="action"
-              width={195}
-              align="center"
-              render={(text, row) => (
-                <span>
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="edit"
-                    title="mengedit"
-                    onClick={this.handleEditRPS.bind(null, row)}
-                  />
-                  <Divider type="vertical" />
-                  <Link to={`/rps/${row.id}`}>
-                    <Button
-                      type="primary"
-                      shape="circle"
-                      icon="diff"
-                      title="menghapus"
-                    />
-                  </Link>
-                  <Divider type="vertical" />
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="delete"
-                    title="menghapus"
-                    onClick={this.handleDeleteRPS.bind(null, row)}
-                  />
-                </span>
-              )}
-            />
-          </Table>
-        </Card>
-        <EditRPSForm
-          currentRowData={this.state.currentRowData}
-          wrappedComponentRef={(formRef) => (this.editRPSFormRef = formRef)}
-          visible={this.state.editRPSModalVisible}
-          confirmLoading={this.state.editRPSModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleEditRPSOk}
-          learningMediaSoftwares={learningMediaSoftwares}
-          learningMediaHardwares={learningMediaHardwares}
-          studyPrograms={studyPrograms}
-          subjects={subjects}
-          lectures={lectures}
-        />
-        <AddRPSForm
-          wrappedComponentRef={(formRef) => (this.addRPSFormRef = formRef)}
-          visible={this.state.addRPSModalVisible}
-          confirmLoading={this.state.addRPSModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleAddRPSOk}
-          learningMediaSoftwares={learningMediaSoftwares}
-          learningMediaHardwares={learningMediaHardwares}
-          studyPrograms={studyPrograms}
-          subjects={subjects}
-          lectures={lectures}
-        />
-      </div>
-    );
-  }
-}
+        </Table>
+      </Card>
+
+      <EditRPSForm currentRowData={currentRowData} visible={editRPSModalVisible} confirmLoading={editRPSModalLoading} onCancel={() => setEditRPSModalVisible(false)} />
+      <AddRPSForm visible={addRPSModalVisible} confirmLoading={addRPSModalLoading} onCancel={() => setAddRPSModalVisible(false)} />
+    </div>
+  );
+};
 
 export default RPS;

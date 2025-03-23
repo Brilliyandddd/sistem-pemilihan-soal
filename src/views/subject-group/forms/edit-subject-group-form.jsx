@@ -1,15 +1,28 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Form, Input, Modal } from "antd";
 const { TextArea } = Input;
 
 const EditSubjectGroupForm = ({ visible, onCancel, onOk, confirmLoading, currentRowData }) => {
-  const [form] = Form.useForm(); // Gunakan useForm untuk mendapatkan instance form
-  const { id, name, description } = currentRowData;
+  const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (visible) {
+      form.setFieldsValue({
+        id: currentRowData?.id,
+        name: currentRowData?.name,
+        description: currentRowData?.description,
+      });
+    }
+  }, [visible, currentRowData, form]);
 
   const handleOk = () => {
-    form.validateFields().then((values) => {
-      onOk(values); // Kirim nilai form saat Ok diklik
-    });
+    form.validateFields()
+      .then((values) => {
+        onOk(values);
+      })
+      .catch((errorInfo) => {
+        console.error("Validation Failed:", errorInfo);
+      });
   };
 
   return (
@@ -20,7 +33,7 @@ const EditSubjectGroupForm = ({ visible, onCancel, onOk, confirmLoading, current
       onOk={handleOk}
       confirmLoading={confirmLoading}
     >
-      <Form form={form} layout="vertical" initialValues={{ id, name, description }}>
+      <Form form={form} layout="vertical">
         <Form.Item label="ID Rumpun Mata Kuliah" name="id">
           <Input disabled />
         </Form.Item>

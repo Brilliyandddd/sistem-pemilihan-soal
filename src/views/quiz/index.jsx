@@ -1,279 +1,162 @@
-import React, { Component } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, Button, Table, message, Divider } from "antd";
 import { getQuiz, deleteQuiz, editQuiz, addQuiz } from "@/api/quiz";
-import { getQuizAnnouncements ,addQuizAnnouncement,deleteQuizAnnouncement} from "@/api/quizAnnouncement";
-import { getQuestions } from "@/api/question";
+import { getQuestionsByRPS, getQuestions } from "@/api/question";
 import { getRPS } from "@/api/rps";
-
 import { Link } from "react-router-dom";
 import TypingCard from "@/components/TypingCard";
 import EditQuizForm from "./forms/edit-quiz-form";
 import AddQuizForm from "./forms/add-quiz-form";
-import { getQuestionsByRPS } from "../../api/question";
 import moment from "moment";
+
 const { Column } = Table;
-class Quiz extends Component {
-  state = {
-    quiz: [],
-    questions: [],
-    rps: [],
-    criteravaluetest: [],
-    editQuizModalVisible: false,
-    editQuizModalLoading: false,
-    currentRowData: {},
-    addQuizModalVisible: false,
-    addQuizModalLoading: false,
-  };
-  getQuiz = async () => {
+
+const Quiz = () => {
+  const [quiz, setQuiz] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [rps, setRps] = useState([]);
+  const [currentRowData, setCurrentRowData] = useState({});
+  const [editQuizModalVisible, setEditQuizModalVisible] = useState(false);
+  const [editQuizModalLoading, setEditQuizModalLoading] = useState(false);
+  const [addQuizModalVisible, setAddQuizModalVisible] = useState(false);
+  const [addQuizModalLoading, setAddQuizModalLoading] = useState(false);
+
+  const editQuizFormRef = useRef(null);
+  const addQuizFormRef = useRef(null);
+
+  useEffect(() => {
+    fetchQuiz();
+    fetchQuestions();
+    fetchRPS();
+  }, []);
+
+  const fetchQuiz = async () => {
     const result = await getQuiz();
-    const { content, statusCode } = result.data;
-    console.log(result.data);
-    if (statusCode === 200) {
-      this.setState({
-        quiz: content,
-      });
+    if (result.data.statusCode === 200) {
+      setQuiz(result.data.content);
     }
   };
- 
-  getQuestions = async () => {
+
+  const fetchQuestions = async () => {
     const result = await getQuestions();
-    const { content, statusCode } = result.data;
-
-    if (statusCode === 200) {
-      
-      this.setState({
-        questions: content,
-      });
+    if (result.data.statusCode === 200) {
+      setQuestions(result.data.content);
     }
   };
-  updateQuestion = async (id) => {
+
+  const updateQuestion = async (id) => {
     const result = await getQuestionsByRPS(id);
-    const { content, statusCode } = result.data;
-
-    if (statusCode === 200) {
-      const filteredQuestions = content.filter(question => question.examType2 === 'QUIZ');
-      this.setState({
-        questions: filteredQuestions,
-      });
+    if (result.data.statusCode === 200) {
+      setQuestions(result.data.content.filter(q => q.examType2 === 'QUIZ'));
     }
   };
-  getRps = async () => {
+
+  const fetchRPS = async () => {
     const result = await getRPS();
-    const { content, statusCode } = result.data;
-
-    if (statusCode === 200) {
-      this.setState({
-        rps: content,
-      });
+    if (result.data.statusCode === 200) {
+      setRps(result.data.content);
     }
   };
-  handleEditQuiz = (row) => {
-    this.setState({
-      currentRowData: Object.assign({}, row),
-      editQuizModalVisible: true,
-    });
+
+  const handleEditQuiz = (row) => {
+    setCurrentRowData({ ...row });
+    setEditQuizModalVisible(true);
   };
 
-  handleDeleteQuiz = (row) => {
-    const { id } = row;
-    if (id === "admin") {
-      message.error("不能menghapusoleh  Admin！");
+  const handleDeleteQuiz = async (row) => {
+    if (row.id === "admin") {
+      message.error("Tidak bisa dihapus oleh Admin!");
       return;
     }
-    deleteQuiz({ id }).then((res) => {
-      message.success("berhasil dihapus");
-      this.getQuiz();
-    });
+    await deleteQuiz({ id: row.id });
+    message.success("Berhasil dihapus");
+    fetchQuiz();
   };
 
-  handleEditQuizOk = (_) => {
-    const { form } = this.editQuizFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
+  const handleEditQuizOk = () => {
+    const { form } = editQuizFormRef.current.props;
+    form.validateFields(async (err, values) => {
+      if (err) return;
+      setEditQuizModalLoading(true);
+      try {
+        await editQuiz(values, values.id);
+        form.resetFields();
+        setEditQuizModalVisible(false);
+        setEditQuizModalLoading(false);
+        message.success("Berhasil!");
+        fetchQuiz();
+      } catch {
+        message.error("Gagal");
       }
-      this.setState({ editModalLoading: true });
-      editQuiz(values, values.id)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            editQuizModalVisible: false,
-            editQuizModalLoading: false,
-          });
-          message.success("berhasi;!");
-          this.getQuiz();
-        })
-        .catch((e) => {
-          message.success("gagal");
-        });
     });
   };
 
-  handleCancel = (_) => {
-    this.setState({
-      editQuizModalVisible: false,
-      addQuizModalVisible: false,
-    });
+  const handleCancel = () => {
+    setEditQuizModalVisible(false);
+    setAddQuizModalVisible(false);
   };
 
-  handleAddQuiz = (row) => {
-    this.setState({
-      addQuizModalVisible: true,
-    });
+  const handleAddQuiz = () => {
+    setAddQuizModalVisible(true);
   };
 
-  handleAddQuizOk = (_) => {
-    const { form } = this.addQuizFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
+  const handleAddQuizOk = () => {
+    const { form } = addQuizFormRef.current.props;
+    form.validateFields(async (err, values) => {
+      if (err) return;
+      setAddQuizModalLoading(true);
+      try {
+        await addQuiz(values);
+        form.resetFields();
+        setAddQuizModalVisible(false);
+        setAddQuizModalLoading(false);
+        message.success("Berhasil!");
+        fetchQuiz();
+      } catch {
+        message.error("Gagal menambahkan, coba lagi!");
       }
-      this.setState({ addQuizModalLoading: true });
-      addQuiz(values)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            addQuizModalVisible: false,
-            addQuizModalLoading: false,
-          });
-          message.success("Berhasil!");
-          this.getQuiz();
-        })
-        .catch((e) => {
-          message.success("Gagal menambahkan, coba lagi!");
-        });
     });
   };
-  componentDidMount() {
-    
-    this.getQuiz();
-    this.getQuestions();
-    this.getRps();
-  }
-  render() {
-    const { quiz, questions, rps } = this.state;
-    const title = (
-      <span>
-        <Button type="primary" onClick={this.handleAddQuiz}>
-          Tambahkan Kuis
-        </Button>
-      </span>
-    );
-    const cardContent = `Di sini, Anda dapat mengelola Quiz sesuai dengan mata kuliah yang diampu. Di bawah ini dapat menampilkan list Quiz yang ada.`;
-    return (
-      <div className="app-container">
-        <TypingCard title="Manajemen Kuis" source={cardContent} />
-        <br />
-        <Card title={title}>
-          <Table bordered rowKey="id" dataSource={quiz} pagination={false}>
-            <Column title="Nama" dataIndex="name" key="name" align="center" />
-            <Column
-              title="RPS"
-              dataIndex="rps.name"
-              key="rps.name"
-              align="center"
-            />
-            <Column
-              title="Nilai Minimal"
-              dataIndex="min_grade"
-              key="min_grade"
-              align="center"
-            />
-            <Column
-              title="Tipe Kuis"
-              dataIndex="type_quiz"
-              key="type_quiz"
-              align="center"
-            />
-            <Column
-              title="Tanggal Mulai"
-              dataIndex="date_start"
-              key="date_start"
-              align="center"
-              render={(text) => moment(text).format("DD MMMM YYYY, HH:mm:ss")}
-            />
-            <Column
-              title="Tanggal Selesai"
-              dataIndex="date_end"
-              key="date_end"
-              align="center"
-              render={(text) => moment(text).format("DD MMMM YYYY, HH:mm:ss")}
-            />
-            <Column
-              title="Durasi"
-              dataIndex="duration"
-              key="duration"
-              align="center"
-            />
-            <Column
-              title="Operasi"
-              key="action"
-              width={195}
-              align="center"
-              render={(text, row) => (
-                <span>
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="edit"
-                    title="Edit Kuis"
-                    onClick={this.handleEditQuiz.bind(null, row)}
-                  />
-                  <Divider type="vertical" />
-                  <Link to={`/setting-quiz/result/${row.id}`}>
-                    <Button
-                      type="primary"
-                      shape="circle"
-                      icon="diff"
-                      title="Detail Hasil"
-                    />
-                  </Link>
-                  <Divider type="vertical" />
-                  <Link to={`/setting-quiz/generate-quiz/${row.id}`}>
-                    <Button
-                      type="primary"
-                      shape="circle"
-                      icon="diff"
-                      title="Detail Generate Quiz"
-                    />
-                  </Link>
-                  <Divider type="vertical" />
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="delete"
-                    title="Hapus Data"
-                    onClick={this.handleDeleteQuiz.bind(null, row)}
-                  />
-                </span>
-              )}
-            />
-          </Table>
-        </Card>
-        <EditQuizForm
-          currentRowData={this.state.currentRowData}
-          wrappedComponentRef={(formRef) => (this.editQuizFormRef = formRef)}
-          visible={this.state.editQuizModalVisible}
-          confirmLoading={this.state.editQuizModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleEditQuizOk}
-          handleUpdateQuestion={this.updateQuestion}
-          questions={questions}
-          rpsAll={rps}
-        />
-        <AddQuizForm
-          wrappedComponentRef={(formRef) => (this.addQuizFormRef = formRef)}
-          visible={this.state.addQuizModalVisible}
-          confirmLoading={this.state.addQuizModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleAddQuizOk}
-          handleUpdateQuestion={this.updateQuestion}
-          questions={questions}
-          rps={rps}
-        />
-      </div>
-    );
-  }
-}
+
+  return (
+    <div className="app-container">
+      <TypingCard title="Manajemen Kuis" source="Di sini, Anda dapat mengelola Quiz sesuai dengan mata kuliah yang diampu." />
+      <br />
+      <Card title={<Button type="primary" onClick={handleAddQuiz}>Tambahkan Kuis</Button>}>
+        <Table bordered rowKey="id" dataSource={quiz} pagination={false}>
+          <Column title="Nama" dataIndex="name" key="name" align="center" />
+          <Column title="RPS" dataIndex="rps.name" key="rps.name" align="center" />
+          <Column title="Nilai Minimal" dataIndex="min_grade" key="min_grade" align="center" />
+          <Column title="Tipe Kuis" dataIndex="type_quiz" key="type_quiz" align="center" />
+          <Column title="Tanggal Mulai" dataIndex="date_start" key="date_start" align="center" render={(text) => moment(text).format("DD MMMM YYYY, HH:mm:ss")} />
+          <Column title="Tanggal Selesai" dataIndex="date_end" key="date_end" align="center" render={(text) => moment(text).format("DD MMMM YYYY, HH:mm:ss")} />
+          <Column title="Durasi" dataIndex="duration" key="duration" align="center" />
+          <Column
+            title="Operasi"
+            key="action"
+            align="center"
+            render={(text, row) => (
+              <span>
+                <Button type="primary" shape="circle" icon="edit" title="Edit Kuis" onClick={() => handleEditQuiz(row)} />
+                <Divider type="vertical" />
+                <Link to={`/setting-quiz/result/${row.id}`}>
+                  <Button type="primary" shape="circle" icon="diff" title="Detail Hasil" />
+                </Link>
+                <Divider type="vertical" />
+                <Link to={`/setting-quiz/generate-quiz/${row.id}`}>
+                  <Button type="primary" shape="circle" icon="diff" title="Detail Generate Quiz" />
+                </Link>
+                <Divider type="vertical" />
+                <Button type="primary" shape="circle" icon="delete" title="Hapus Data" onClick={() => handleDeleteQuiz(row)} />
+              </span>
+            )}
+          />
+        </Table>
+      </Card>
+      <EditQuizForm ref={editQuizFormRef} visible={editQuizModalVisible} confirmLoading={editQuizModalLoading} onCancel={handleCancel} onOk={handleEditQuizOk} questions={questions} rpsAll={rps} />
+      <AddQuizForm ref={addQuizFormRef} visible={addQuizModalVisible} confirmLoading={addQuizModalLoading} onCancel={handleCancel} onOk={handleAddQuizOk} questions={questions} rps={rps} />
+    </div>
+  );
+};
 
 export default Quiz;

@@ -1,5 +1,8 @@
-import React, { Component } from "react";
-import { Card, Button, Table, message, Divider } from "antd";
+import React, { useState, useEffect, useRef } from "react";
+import { Card, Button, Table, message, Divider, Modal, Form, Input } from "antd";
+import { DeleteOutlined , EditOutlined } from '@ant-design/icons';
+import axios from 'axios';
+
 import {
   getAssessmentCriterias,
   deleteAssessmentCriteria,
@@ -7,195 +10,143 @@ import {
   addAssessmentCriteria,
 } from "@/api/assessmentCriteria";
 import TypingCard from "@/components/TypingCard";
-import EditAssessmentCriteriaForm from "./forms/edit-assessmentCriteria-form";
-import AddAssessmentCriteriaForm from "./forms/add-assessmentCriteria-form";
+
 const { Column } = Table;
-class AssessmentCriteria extends Component {
-  state = {
-    assessmentCriterias: [],
-    editAssessmentCriteriaModalVisible: false,
-    editAssessmentCriteriaModalLoading: false,
-    currentRowData: {},
-    addAssessmentCriteriaModalVisible: false,
-    addAssessmentCriteriaModalLoading: false,
-  };
-  getAssessmentCriterias = async () => {
-    const result = await getAssessmentCriterias();
-    const { content, statusCode } = result.data;
+const { TextArea } = Input;
 
-    if (statusCode === 200) {
-      this.setState({
-        assessmentCriterias: content,
-      });
+const AssessmentCriteria = () => {
+  const [assessmentCriterias, setAssessmentCriterias] = useState([]);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [currentRowData, setCurrentRowData] = useState({});
+  const [loading, setLoading] = useState(false);
+  
+  const [editForm] = Form.useForm();
+  const [addForm] = Form.useForm();
+
+  useEffect(() => {
+    fetchAssessmentCriterias();
+  }, []);
+
+  const fetchAssessmentCriterias = async () => {
+    try {
+      const result = await getAssessmentCriterias();
+      const { content, statusCode } = result.data;
+      if (statusCode === 200) {
+        setAssessmentCriterias(content);
+      }
+    } catch (error) {
+      message.error("Gagal mengambil data penilaian");
     }
   };
-  handleEditAssessmentCriteria = (row) => {
-    this.setState({
-      currentRowData: Object.assign({}, row),
-      editAssessmentCriteriaModalVisible: true,
-    });
+
+  const handleEdit = (row) => {
+    setCurrentRowData(row);
+    editForm.setFieldsValue(row);
+    setEditModalVisible(true);
   };
 
-  handleDeleteAssessmentCriteria = (row) => {
-    const { id } = row;
-    if (id === "admin") {
-      message.error("不能menghapusoleh  Admin！");
-      return;
+  const handleDelete = async (row) => {
+    try {
+      await deleteAssessmentCriteria({ id: row.id });
+      message.success("Berhasil dihapus");
+      fetchAssessmentCriterias();
+    } catch (error) {
+      message.error("Gagal menghapus data");
     }
-    console.log(id);
-    deleteAssessmentCriteria({ id }).then((res) => {
-      message.success("berhasil dihapus");
-      this.getAssessmentCriterias();
-    });
+  };
+  
+
+  const handleEditOk = async () => {
+    try {
+      const values = await editForm.validateFields();
+      console.log("Payload yang dikirim:", values);
+      setLoading(true);
+      await editAssessmentCriteria(values, currentRowData.id); // Gunakan currentRowData.id
+      message.success("Berhasil diperbarui!");
+      setEditModalVisible(false);
+      fetchAssessmentCriterias();
+    } catch (error) {
+      message.error("Gagal memperbarui data");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
+  const handleAdd = () => {
+    addForm.resetFields();
+    setAddModalVisible(true);
   };
 
-  handleEditAssessmentCriteriaOk = (_) => {
-    const { form } = this.editAssessmentCriteriaFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ editModalLoading: true });
-      editAssessmentCriteria(values, values.id)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            editAssessmentCriteriaModalVisible: false,
-            editAssessmentCriteriaModalLoading: false,
-          });
-          message.success("berhasi;!");
-          this.getAssessmentCriterias();
-        })
-        .catch((e) => {
-          message.success("gagal");
-        });
-    });
+  const handleAddOk = async () => {
+    try {
+      const values = await addForm.validateFields();
+      setLoading(true);
+      await addAssessmentCriteria(values);
+      message.success("Berhasil ditambahkan!");
+      setAddModalVisible(false);
+      fetchAssessmentCriterias();
+    } catch (error) {
+      message.error("Gagal menambahkan data");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  handleCancel = (_) => {
-    this.setState({
-      editAssessmentCriteriaModalVisible: false,
-      addAssessmentCriteriaModalVisible: false,
-    });
-  };
+  return (
+    <div className="app-container">
+      <TypingCard title="Manajemen Penilaian" source="Di sini, Anda dapat mengelola penilaian." />
+      <br />
+      <Card title={<Button type="primary" onClick={handleAdd}>Tambahkan Penilaian</Button>}>
+        <Table bordered rowKey="id" dataSource={assessmentCriterias} pagination={false}>
+          <Column title="ID Penilaian" dataIndex="id" key="id" align="center" />
+          <Column title="Nama" dataIndex="name" key="name" align="center" />
+          <Column title="Deskripsi Penilaian" dataIndex="description" key="description" align="center" />
+          <Column
+            title="Operasi"
+            key="action"
+            width={195}
+            align="center"
+            render={(text, row) => (
+              <span>
+                <Button type="primary" icon={<EditOutlined />} onClick={() => handleEdit(row)} />
+                <Divider type="vertical" />
+                <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete(row)} />
+              </span>
+            )}
+          />
+        </Table>
+      </Card>
+      
+      {/* Modal Edit */}
+      <Modal title="Edit Penilaian" visible={editModalVisible} onCancel={() => setEditModalVisible(false)} onOk={handleEditOk} confirmLoading={loading}>
+        <Form form={editForm} layout="vertical">
+          <Form.Item name="id" label="ID Penilaian">
+            <Input disabled />
+          </Form.Item>
+          <Form.Item name="name" label="Nama Penilaian" rules={[{ required: true, message: "Silahkan isikan nama penilaian" }]}> 
+            <Input placeholder="Nama Penilaian" />
+          </Form.Item>
+          <Form.Item name="description" label="Deskripsi Penilaian" rules={[{ required: true, message: "Silahkan isikan deskripsi" }]}> 
+            <TextArea rows={4} placeholder="Deskripsi Penilaian" />
+          </Form.Item>
+        </Form>
+      </Modal>
 
-  handleAddAssessmentCriteria = (row) => {
-    this.setState({
-      addAssessmentCriteriaModalVisible: true,
-    });
-  };
-
-  handleAddAssessmentCriteriaOk = (_) => {
-    const { form } = this.addAssessmentCriteriaFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ addAssessmentCriteriaModalLoading: true });
-      addAssessmentCriteria(values)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            addAssessmentCriteriaModalVisible: false,
-            addAssessmentCriteriaModalLoading: false,
-          });
-          message.success("Berhasil!");
-          this.getAssessmentCriterias();
-        })
-        .catch((e) => {
-          message.success("Gagal menambahkan, coba lagi!");
-        });
-    });
-  };
-  componentDidMount() {
-    this.getAssessmentCriterias();
-  }
-  render() {
-    const { assessmentCriterias } = this.state;
-    const title = (
-      <span>
-        <Button type="primary" onClick={this.handleAddAssessmentCriteria}>
-          Tambahkan penilaian
-        </Button>
-      </span>
-    );
-    const cardContent = `Di sini, Anda dapat mengelola penilaian di sistem, seperti menambahkan penilaian baru, atau mengubah penilaian yang sudah ada di sistem.`;
-    return (
-      <div className="app-container">
-        <TypingCard title="Manajemen Penilaian" source={cardContent} />
-        <br />
-        <Card title={title}>
-          <Table
-            bordered
-            rowKey="id"
-            dataSource={assessmentCriterias}
-            pagination={false}
-          >
-            <Column
-              title="ID Penilaian"
-              dataIndex="id"
-              key="id"
-              align="center"
-            />
-            <Column title="Nama" dataIndex="name" key="name" align="center" />
-            <Column
-              title="Deskripsi Penilaian"
-              dataIndex="description"
-              key="description"
-              align="center"
-            />
-            <Column
-              title="Operasi"
-              key="action"
-              width={195}
-              align="center"
-              render={(text, row) => (
-                <span>
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="edit"
-                    title="mengedit"
-                    onClick={this.handleEditAssessmentCriteria.bind(null, row)}
-                  />
-                  <Divider type="vertical" />
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="delete"
-                    title="menghapus"
-                    onClick={this.handleDeleteAssessmentCriteria.bind(
-                      null,
-                      row
-                    )}
-                  />
-                </span>
-              )}
-            />
-          </Table>
-        </Card>
-        <EditAssessmentCriteriaForm
-          currentRowData={this.state.currentRowData}
-          wrappedComponentRef={(formRef) =>
-            (this.editAssessmentCriteriaFormRef = formRef)
-          }
-          visible={this.state.editAssessmentCriteriaModalVisible}
-          confirmLoading={this.state.editAssessmentCriteriaModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleEditAssessmentCriteriaOk}
-        />
-        <AddAssessmentCriteriaForm
-          wrappedComponentRef={(formRef) =>
-            (this.addAssessmentCriteriaFormRef = formRef)
-          }
-          visible={this.state.addAssessmentCriteriaModalVisible}
-          confirmLoading={this.state.addAssessmentCriteriaModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleAddAssessmentCriteriaOk}
-        />
-      </div>
-    );
-  }
-}
+      {/* Modal Tambah */}
+      <Modal title="Tambah Penilaian" visible={addModalVisible} onCancel={() => setAddModalVisible(false)} onOk={handleAddOk} confirmLoading={loading}>
+        <Form form={addForm} layout="vertical">
+          <Form.Item name="name" label="Nama Penilaian" rules={[{ required: true, message: "Silahkan isikan nama penilaian" }]}> 
+            <Input placeholder="Nama Penilaian" />
+          </Form.Item>
+          <Form.Item name="description" label="Deskripsi Penilaian" rules={[{ required: true, message: "Silahkan isikan deskripsi" }]}> 
+            <TextArea rows={4} placeholder="Deskripsi Penilaian" />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+};
 
 export default AssessmentCriteria;

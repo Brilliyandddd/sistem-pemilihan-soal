@@ -1,15 +1,21 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Form, Input, InputNumber, Modal, Select } from "antd";
 
 const { TextArea } = Input;
 const { Option } = Select;
 
 const AddSubjectForm = ({ visible, onCancel, onOk, confirmLoading, subjectGroups, studyPrograms }) => {
-  const [form] = Form.useForm(); // Use the useForm hook to get the form instance
+  const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (visible) {
+      form.resetFields(); // Reset form ketika modal dibuka
+    }
+  }, [visible, form]);
 
   const handleOk = () => {
     form.validateFields().then((values) => {
-      onOk(values); // Pass the form values to the parent component
+      onOk(values);
     });
   };
 
@@ -20,6 +26,7 @@ const AddSubjectForm = ({ visible, onCancel, onOk, confirmLoading, subjectGroups
       onCancel={onCancel}
       onOk={handleOk}
       confirmLoading={confirmLoading}
+      afterClose={() => form.resetFields()} // Reset form setelah modal ditutup
     >
       <Form form={form} layout="vertical">
         <Form.Item label="Nama:" name="name" rules={[{ required: true, message: "Silahkan isikan nama mata kuliah" }]}>
@@ -32,18 +39,17 @@ const AddSubjectForm = ({ visible, onCancel, onOk, confirmLoading, subjectGroups
           <InputNumber style={{ width: 300 }} min={1} placeholder="Point Kredit" />
         </Form.Item>
         <Form.Item label="Tahun Mata Kuliah:" name="year_commenced" rules={[{ required: true, message: "Silahkan isikan tahun mata kuliah" }]}>
-          <Select showSearch style={{ width: 300 }} placeholder="Pilih Tahun Ajaran" optionFilterProp="children" filterOption={(input, option) =>
-            option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }>
+          <Select showSearch style={{ width: 300 }} placeholder="Pilih Tahun Ajaran">
             <Option value="2022">2022</Option>
             <Option value="2023">2023</Option>
             <Option value="2024">2024</Option>
+            <Option value="2025">2025</Option>
           </Select>
         </Form.Item>
         <Form.Item label="Program Study:" name="study_program_id" rules={[{ required: true, message: "Silahkan pilih program studi" }]}>
           <Select style={{ width: 300 }} placeholder="Pilih Program Study">
-            {studyPrograms.map((arr, key) => (
-              <Select.Option value={arr.id} key={key}>
+            {studyPrograms.map((arr) => (
+              <Select.Option value={arr.id} key={arr.id}>
                 {arr.name}
               </Select.Option>
             ))}
@@ -51,8 +57,8 @@ const AddSubjectForm = ({ visible, onCancel, onOk, confirmLoading, subjectGroups
         </Form.Item>
         <Form.Item label="Rumpun Mata Kuliah:" name="subject_group_id" rules={[{ required: true, message: "Silahkan pilih rumpun mata kuliah" }]}>
           <Select style={{ width: 300 }} placeholder="Pilih Rumpun Matakuliah">
-            {subjectGroups.map((arr, key) => (
-              <Select.Option value={arr.id} key={key}>
+            {subjectGroups.map((arr) => (
+              <Select.Option value={arr.id} key={arr.id}>
                 {arr.name}
               </Select.Option>
             ))}

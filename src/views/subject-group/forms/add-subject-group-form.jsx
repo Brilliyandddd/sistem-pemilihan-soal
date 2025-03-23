@@ -1,42 +1,45 @@
-import React from "react";
-import { Form, Input, Modal } from "antd";
+import React, { useEffect } from "react";
+import { Form, Input, InputNumber, Modal, Select } from "antd";
+
 const { TextArea } = Input;
+const { Option } = Select;
 
-const AddSubjectGroupForm = ({ visible, onCancel, onOk, confirmLoading }) => {
-  const [form] = Form.useForm(); // Gunakan useForm untuk mendapatkan instance form
+const AddSubjectForm = ({ visible, onCancel, onOk, confirmLoading, subjectGroups, studyPrograms }) => {
+  const [form] = Form.useForm();
 
-  const handleOk = () => {
-    form.validateFields().then((values) => {
-      onOk(values); // Kirim nilai form saat Ok diklik
-    });
+  useEffect(() => {
+    if (!visible) {
+      form.resetFields(); // Reset form saat modal ditutup
+    }
+  }, [visible]);
+
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      onOk(values);
+    } catch (error) {
+      console.error("Validasi gagal:", error);
+    }
   };
 
   return (
     <Modal
-      title="Tambah Rumpun Mata Kuliah"
+      title="Tambah Mata Kuliah"
       open={visible}
       onCancel={onCancel}
       onOk={handleOk}
       confirmLoading={confirmLoading}
     >
       <Form form={form} layout="vertical">
-        <Form.Item
-          label="Nama"
-          name="name"
-          rules={[{ required: true, message: "Silahkan isikan nama rumpun mata kuliah" }]}
-        >
-          <Input placeholder="Nama Rumpun Mata Kuliah" />
+        <Form.Item label="Nama" name="name" rules={[{ required: true, message: "Silahkan isikan nama mata kuliah" }]}> 
+          <Input placeholder="Nama Mata Kuliah" />
         </Form.Item>
-        <Form.Item
-          label="Deskripsi"
-          name="description"
-          rules={[{ required: true, message: "Silahkan isikan deskripsi rumpun mata kuliah" }]}
-        >
-          <TextArea rows={4} placeholder="Deskripsi Rumpun Mata Kuliah" />
+        <Form.Item label="Deskripsi" name="description" rules={[{ required: true, message: "Silahkan isikan deskripsi mata kuliah" }]}> 
+          <TextArea rows={4} placeholder="Deskripsi Mata Kuliah" />
         </Form.Item>
       </Form>
     </Modal>
   );
 };
 
-export default AddSubjectGroupForm;
+export default AddSubjectForm;

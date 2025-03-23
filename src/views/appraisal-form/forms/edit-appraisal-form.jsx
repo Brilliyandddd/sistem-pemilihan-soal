@@ -1,64 +1,60 @@
-import React, { Component } from "react";
+import React, { useEffect } from "react";
 import { Form, Input, Modal } from "antd";
-const { TextArea } = Input;
-class EditAppraisalForm extends Component {
-  render() {
-    const { visible, onCancel, onOk, form, confirmLoading, currentRowData } =
-      this.props;
-    const { getFieldDecorator } = form;
-    const { id, name, description } = currentRowData;
-    const formItemLayout = {
-      labelCol: {
-        xs: { span: 24 },
-        sm: { span: 8 },
-      },
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 16 },
-      },
-    };
-    return (
-      <Modal
-        title="Edit Formulir Penilaian"
-        open={visible}
-        onCancel={onCancel}
-        onOk={onOk}
-        confirmLoading={confirmLoading}
-      >
-        <Form {...formItemLayout}>
-          <Form.Item label="ID Formulir Penilaian:">
-            {getFieldDecorator("id", {
-              initialValue: id,
-            })(<Input disabled />)}
-          </Form.Item>
-          <Form.Item label="Nama Formulir Penilaian:">
-            {getFieldDecorator("name", {
-              rules: [
-                {
-                  required: true,
-                  message: "Silahkan isikan nama formulir penilaian",
-                },
-              ],
-              initialValue: name,
-            })(<Input placeholder="Nama Formulir Penilaian" />)}
-          </Form.Item>
-          <Form.Item label="Deskripsi Formulir Penilaian:">
-            {getFieldDecorator("description", {
-              rules: [
-                {
-                  required: true,
-                  message: "Silahkan isikan deskripsi formulir penilaian",
-                },
-              ],
-              initialValue: description,
-            })(
-              <TextArea rows={4} placeholder="Deskripsi Formulir Penilaian" />
-            )}
-          </Form.Item>
-        </Form>
-      </Modal>
-    );
-  }
-}
 
-export default Form.create({ name: "EditAppraisalForm" })(EditAppraisalForm);
+const { TextArea } = Input;
+
+const EditAppraisalForm = ({
+  visible,
+  onCancel,
+  onOk,
+  confirmLoading,
+  currentRowData,
+}) => {
+  const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (currentRowData) {
+      form.setFieldsValue({
+        id: currentRowData.id,
+        name: currentRowData.name,
+        description: currentRowData.description,
+      });
+    }
+  }, [currentRowData, form]);
+
+  return (
+    <Modal
+      title="Edit Formulir Penilaian"
+      open={visible}
+      onCancel={onCancel}
+      onOk={() => form.submit()}
+      confirmLoading={confirmLoading}
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={onOk}
+      >
+        <Form.Item label="ID Formulir Penilaian" name="id">
+          <Input disabled />
+        </Form.Item>
+        <Form.Item
+          label="Nama Formulir Penilaian"
+          name="name"
+          rules={[{ required: true, message: "Silahkan isikan nama formulir penilaian" }]}
+        >
+          <Input placeholder="Nama Formulir Penilaian" />
+        </Form.Item>
+        <Form.Item
+          label="Deskripsi Formulir Penilaian"
+          name="description"
+          rules={[{ required: true, message: "Silahkan isikan deskripsi formulir penilaian" }]}
+        >
+          <TextArea rows={4} placeholder="Deskripsi Formulir Penilaian" />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
+
+export default EditAppraisalForm;

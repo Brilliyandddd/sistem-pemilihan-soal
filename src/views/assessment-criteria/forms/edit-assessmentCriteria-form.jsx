@@ -1,61 +1,74 @@
-import React, { Component } from "react";
+import React, { useEffect } from "react";
+import PropTypes from "prop-types"; // Import prop-types untuk validasi props
 import { Form, Input, Modal } from "antd";
-const { TextArea } = Input;
-class EditAssessmentCriteriaForm extends Component {
-  render() {
-    const { visible, onCancel, onOk, form, confirmLoading, currentRowData } =
-      this.props;
-    const { getFieldDecorator } = form;
-    const { id, name, description } = currentRowData;
-    const formItemLayout = {
-      labelCol: {
-        xs: { span: 24 },
-        sm: { span: 8 },
-      },
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 16 },
-      },
-    };
-    return (
-      <Modal
-        title="Edit Penilaian"
-        open={visible}
-        onCancel={onCancel}
-        onOk={onOk}
-        confirmLoading={confirmLoading}
-      >
-        <Form {...formItemLayout}>
-          <Form.Item label="ID Penilaian:">
-            {getFieldDecorator("id", {
-              initialValue: id,
-            })(<Input disabled />)}
-          </Form.Item>
-          <Form.Item label="Nama Penilaian:">
-            {getFieldDecorator("name", {
-              rules: [
-                { required: true, message: "Silahkan isikan nama penilaian" },
-              ],
-              initialValue: name,
-            })(<Input placeholder="Nama Penilaian" />)}
-          </Form.Item>
-          <Form.Item label="Deskripsi Penilaian:">
-            {getFieldDecorator("description", {
-              rules: [
-                {
-                  required: true,
-                  message: "Silahkan isikan deskripsi penilaian",
-                },
-              ],
-              initialValue: description,
-            })(<TextArea rows={4} placeholder="Deskripsi Penilaian" />)}
-          </Form.Item>
-        </Form>
-      </Modal>
-    );
-  }
-}
 
-export default Form.create({ name: "EditAssessmentCriteriaForm" })(
-  EditAssessmentCriteriaForm
-);
+const { TextArea } = Input;
+
+const EditAssessmentCriteriaForm = ({
+  visible,
+  onCancel,
+  onOk,
+  confirmLoading,
+  currentRowData,
+}) => {
+  const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (currentRowData && Object.keys(currentRowData).length > 0) {
+      form.setFieldsValue(currentRowData);
+    } else {
+      form.resetFields();
+    }
+  }, [currentRowData, form]);
+
+  return (
+    <Modal
+      title="Edit Penilaian"
+      open={visible}
+      onCancel={onCancel}
+      onOk={() => form.submit()}
+      confirmLoading={confirmLoading}
+    >
+      <Form form={form} layout="vertical" onFinish={onOk}>
+        <Form.Item label="ID Penilaian:" name="id">
+          <Input disabled />
+        </Form.Item>
+        <Form.Item
+          label="Nama Penilaian:"
+          name="name"
+          rules={[{ required: true, message: "Silahkan isikan nama penilaian" }]}
+        >
+          <Input placeholder="Nama Penilaian" />
+        </Form.Item>
+        <Form.Item
+          label="Deskripsi Penilaian:"
+          name="description"
+          rules={[{ required: true, message: "Silahkan isikan deskripsi penilaian" }]}
+        >
+          <TextArea rows={4} placeholder="Deskripsi Penilaian" />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
+
+// Validasi PropTypes
+EditAssessmentCriteriaForm.propTypes = {
+  visible: PropTypes.bool.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  onOk: PropTypes.func.isRequired,
+  confirmLoading: PropTypes.bool,
+  currentRowData: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    name: PropTypes.string,
+    description: PropTypes.string,
+  }),
+};
+
+// Default Props
+EditAssessmentCriteriaForm.defaultProps = {
+  confirmLoading: false,
+  currentRowData: {},
+};
+
+export default EditAssessmentCriteriaForm;

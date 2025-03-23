@@ -1,189 +1,111 @@
 import React, { Component } from "react";
-import { Form, Input, Select, Modal } from "antd";
-import { InputNumber } from 'antd';
+import { Form, Input, Select, Modal, InputNumber } from "antd";
+
 const { TextArea } = Input;
+
 class EditRPSForm extends Component {
+  constructor(props) {
+    super(props);
+    this.formRef = React.createRef();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.currentRowData !== this.props.currentRowData) {
+      this.formRef.current?.setFieldsValue({
+        id: this.props.currentRowData.id,
+        name: this.props.currentRowData.name,
+        sks: this.props.currentRowData.sks,
+        semester: this.props.currentRowData.semester,
+        cpl_prodi: this.props.currentRowData.cpl_prodi,
+        cpl_mk: this.props.currentRowData.cpl_mk,
+        learningMediaSoftwares: this.props.currentRowData.learning_media_softwares?.map(software => software.id) || [],
+        learningMediaHardwares: this.props.currentRowData.learning_media_hardwares?.map(hardware => hardware.id) || [],
+        subjects: this.props.currentRowData.subject?.id,
+        dev_lecturers: this.props.currentRowData.dev_lecturers?.map(lecturer => lecturer.id) || [],
+        study_program_id: this.props.currentRowData.study_program?.id,
+      });
+    }
+  }
+
   render() {
-    const {
-      visible,
-      onCancel,
-      onOk,
-      form,
-      confirmLoading,
-      currentRowData,
-    } = this.props;
-    const { getFieldDecorator } = form;
-    const { getFieldValue } = this.props.form;
-    const currentSubjectId = getFieldValue('subject_id');
-    const { id, name, sks,semester,cpl_prodi,cpl_mk,learningMediaSoftwares,learningMediaHardwares, subjects,lectures,studyPrograms,   } = currentRowData;
-    const formItemLayout = {
-      labelCol: {
-        xs: { span: 24 },
-        sm: { span: 8 },
-      },
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 16 },
-      },
-    };
+    const { visible, onCancel, onOk, confirmLoading, currentRowData } = this.props;
+
     return (
       <Modal
-        title="mengedit"
+        title="Mengedit"
         open={visible}
         onCancel={onCancel}
-        onOk={onOk}
+        onOk={() => this.formRef.current.submit()}
         confirmLoading={confirmLoading}
       >
-        <Form {...formItemLayout}>
-          <Form.Item label="ID Pengguna:">
-            {getFieldDecorator("id", {
-              initialValue: id,
-            })(<Input disabled />)}
+        <Form ref={this.formRef} layout="vertical" onFinish={onOk}>
+          <Form.Item label="ID Pengguna:" name="id">
+            <Input disabled />
           </Form.Item>
-          <Form.Item label="Nama:">
-            {getFieldDecorator("name", {
-              rules: [{ required: true, message: "Nama wajib diisi" }],
-              initialValue: name,
-            })(<Input placeholder="Nama" />)}
+          <Form.Item label="Nama:" name="name" rules={[{ required: true, message: "Nama wajib diisi" }]}>
+            <Input placeholder="Nama" />
           </Form.Item>
-          <Form.Item label="SKS:">
-            {getFieldDecorator("sks", {
-              rules: [{ required: true, message: "SKS wajib diisi" }],
-              initialValue: sks,
-            })(
-              <InputNumber
-                placeholder="SKS RPS"
-                min={1}
-                style={{ width: 300 }}
-              />
-            )}
+          <Form.Item label="SKS:" name="sks" rules={[{ required: true, message: "SKS wajib diisi" }]}>
+            <InputNumber min={1} style={{ width: "100%" }} placeholder="SKS RPS" />
           </Form.Item>
-          <Form.Item label="Semester:">
-            {getFieldDecorator("semester", {
-              rules: [{ required: true, message: "Semester wajib diisi" }],
-              initialValue: semester,
-            })(
-              <InputNumber
-                placeholder="Semester"
-                min={1}
-                style={{ width: 300 }}
-              />
-            )}
+          <Form.Item label="Semester:" name="semester" rules={[{ required: true, message: "Semester wajib diisi" }]}>
+            <InputNumber min={1} style={{ width: "100%" }} placeholder="Semester" />
           </Form.Item>
-          <Form.Item label="CPL Prodi:">
-            {getFieldDecorator("cpl_prodi", {
-              rules: [{ required: true, message: "CPL Prodi wajib diisi" }],
-              initialValue: cpl_prodi,
-            })(<Input placeholder="CPL Prodi" />)}
+          <Form.Item label="CPL Prodi:" name="cpl_prodi" rules={[{ required: true, message: "CPL Prodi wajib diisi" }]}>
+            <Input placeholder="CPL Prodi" />
           </Form.Item>
-          <Form.Item label="CPL Mata Kuliah:">
-            {getFieldDecorator("cpl_mk", {
-              rules: [{ required: true, message: "CPL Mata Kuliah wajib diisi" }],
-              initialValue: cpl_mk,
-            })(<Input placeholder="CPL Mata Kuliah" />)}
+          <Form.Item label="CPL Mata Kuliah:" name="cpl_mk" rules={[{ required: true, message: "CPL Mata Kuliah wajib diisi" }]}>
+            <Input placeholder="CPL Mata Kuliah" />
           </Form.Item>
-          <Form.Item label="Learning Media Softwares">
-            {getFieldDecorator('learningMediaSoftwares', {
-              initialValue: currentRowData.learning_media_softwares ? currentRowData.learning_media_softwares.map(software => software.id) : [],
-              rules: [{ required: true, message: 'Learning Media Softwares is required' }],
-            })(
-              <Select
-                mode="multiple"
-                style={{ width: 300 }}
-                placeholder="Select Learning Media Softwares"
-              >
-                {learningMediaSoftwares ? learningMediaSoftwares.map((software, key) => {
-                  return (
-                    <Select.Option value={software.id} key={"software-" + key}>
-                      {software.name}
-                    </Select.Option>
-                  );
-                }) : null}
-              </Select>
-            )}
-            
+          <Form.Item label="Learning Media Softwares" name="learningMediaSoftwares">
+            <Select mode="multiple" placeholder="Pilih Learning Media Softwares">
+              {currentRowData?.learning_media_softwares?.map(software => (
+                <Select.Option key={software.id} value={software.id}>
+                  {software.name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
-          <Form.Item label="Hardware Media Pembelajaran:">
-            {getFieldDecorator('learningMediaHardwares', {
-              initialValue: currentRowData.learning_media_hardwares ? currentRowData.learning_media_hardwares.map(hardware => hardware.id) : [],
-              rules: [{ required: true, message: 'Silahkan pilih Hardware Media Pembelajaran' }],
-            })(
-              <Select
-                mode="multiple"
-                style={{ width: 300 }}
-                placeholder="Pilih Hardware Media Pembelajaran"
-              >
-                {learningMediaHardwares ? learningMediaHardwares.map((hardware, key) => {
-                  return (
-                    <Select.Option value={hardware.id} key={"hardware-" + key}>
-                      {hardware.name}
-                    </Select.Option>
-                  );
-                }) : null}
-              </Select>
-            )}
+          <Form.Item label="Hardware Media Pembelajaran:" name="learningMediaHardwares">
+            <Select mode="multiple" placeholder="Pilih Hardware Media Pembelajaran">
+              {currentRowData?.learning_media_hardwares?.map(hardware => (
+                <Select.Option key={hardware.id} value={hardware.id}>
+                  {hardware.name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
-          
-          <Form.Item label="Subject ID">
-            {getFieldDecorator('subjects', {
-              initialValue: currentRowData.subject ? currentRowData.subject.id : undefined,
-              rules: [{ required: true, message: 'Subject ID is required' }],
-            })(
-              <Select
-                style={{ width: 300 }}
-                placeholder="Subject ID"
-              >
-                {subjects ? subjects.map((subject, key) => {
-                  return (
-                    <Select.Option value={subject.id} key={"subject-" + key}>
-                      {subject.name}
-                    </Select.Option>
-                  );
-                }) : null}
-              </Select>
-            )}
+          <Form.Item label="Mata Kuliah" name="subjects">
+            <Select placeholder="Pilih Mata Kuliah">
+              {currentRowData?.availableSubjects?.map(subject => (
+                <Select.Option key={subject.id} value={subject.id}>
+                  {subject.name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
-          
-          <Form.Item label="Dosen Pengembang:">
-            {getFieldDecorator('dev_lecturers', {
-              initialValue: currentRowData && currentRowData.dev_lecturers ? currentRowData.dev_lecturers.map(lecturer => lecturer.name) : [],
-              rules: [{ required: true, message: 'Silahkan pilih dosen pengembang' }],
-            })(
-              <Select
-                mode="multiple"
-                style={{ width: 300 }}
-                placeholder="Pilih Dosen Pengembang"
-              >
-                {lectures && lectures.map((arr, key) => {
-                  return (
-                    <Select.Option value={arr.id} key={"dev-lecture-" + key}>
-                      {arr.name}
-                    </Select.Option>
-                  );
-                })}
-              </Select>
-            )}
+          <Form.Item label="Dosen Pengembang:" name="dev_lecturers">
+            <Select mode="multiple" placeholder="Pilih Dosen Pengembang">
+              {currentRowData?.availableLecturers?.map(lecturer => (
+                <Select.Option key={lecturer.id} value={lecturer.id}>
+                  {lecturer.name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
-          <Form.Item label="Program Study (Prodi):">
-            {getFieldDecorator('study_program_id', {
-              initialValue: currentRowData && currentRowData.study_program_id ? currentRowData.study_program_id : undefined,
-              rules: [{ required: true, message: 'Silahkan pilih prodi' }],
-            })(
-              <Select style={{ width: 300 }} placeholder="Pilih Prodi">
-                {studyPrograms && studyPrograms.map((arr, key) => {
-                  return (
-                    <Select.Option value={arr.id} key={"study-program-" + key}>
-                      {arr.name}
-                    </Select.Option>
-                  );
-                })}
-              </Select>
-            )}
+          <Form.Item label="Program Studi:" name="study_program_id">
+            <Select placeholder="Pilih Program Studi">
+              {currentRowData?.availableStudyPrograms?.map(studyProgram => (
+                <Select.Option key={studyProgram.id} value={studyProgram.id}>
+                  {studyProgram.name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
-          </Form>
+        </Form>
       </Modal>
     );
   }
 }
 
-export default Form.create({ name: "EditRPSForm" })(EditRPSForm);
+export default EditRPSForm;

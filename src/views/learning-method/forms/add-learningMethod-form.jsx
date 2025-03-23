@@ -1,55 +1,33 @@
-import React, { Component } from "react";
+import React from "react";
 import { Form, Input, Modal } from "antd";
-const { TextArea } = Input;
-class AddLearningMethodForm extends Component {
-  render() {
-    const { visible, onCancel, onOk, form, confirmLoading } = this.props;
-    const { getFieldDecorator } = form;
-    const formItemLayout = {
-      labelCol: {
-        xs: { span: 24 },
-        sm: { span: 8 },
-      },
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 16 },
-      },
-    };
-    return (
-      <Modal
-        title="Tambah Metode Pembelajaran"
-        open={visible}
-        onCancel={onCancel}
-        onOk={onOk}
-        confirmLoading={confirmLoading}
-      >
-        <Form {...formItemLayout}>
-          <Form.Item label="Nama Metode Pembelajaran:">
-            {getFieldDecorator("name", {
-              rules: [
-                {
-                  required: true,
-                  message: "Silahkan isikan nama metode pembelajaran",
-                },
-              ],
-            })(<Input placeholder="Nama Metode Pembelajaran" />)}
-          </Form.Item>
-          <Form.Item label="Deskripsi Metode Pembelajaran:">
-            {getFieldDecorator("description", {
-              rules: [
-                {
-                  required: true,
-                  message: "Silahkan isikan deskripsi metode pembelajaran",
-                },
-              ],
-            })(<TextArea rows={4} placeholder="Deskripsi Pengguna" />)}
-          </Form.Item>
-        </Form>
-      </Modal>
-    );
-  }
-}
 
-export default Form.create({ name: "AddLearningMethodForm" })(
-  AddLearningMethodForm
-);
+const AddLearningMethodForm = ({ visible, onCancel, onOk, confirmLoading, form }) => {
+  return (
+    <Modal
+      title="Tambah Metode Pembelajaran"
+      open={visible}
+      onCancel={onCancel}
+      onOk={onOk}
+      confirmLoading={confirmLoading}
+    >
+      <Form form={form} layout="vertical">
+        <Form.Item
+          label="Nama Metode Pembelajaran"
+          name="name"
+          rules={[{ required: true, message: "Silahkan isikan nama metode pembelajaran" }]}
+        >
+          <Input />
+        </Form.Item>
+        <Form.Item
+          label="Deskripsi"
+          name="description"
+          rules={[{ required: true, message: "Silahkan isikan deskripsi metode pembelajaran" }]}
+        >
+          <Input.TextArea rows={4} />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
+
+export default AddLearningMethodForm;

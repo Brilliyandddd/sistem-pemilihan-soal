@@ -1,220 +1,163 @@
-import React, { Component } from "react";
-import { Card, Button, Table, message, Divider } from "antd";
-import {
-  getSubjects,
-  deleteSubject,
-  editSubject,
-  addSubject,
-} from "@/api/subject";
+import React, { useState, useEffect, useRef } from "react";
+import { Card, Button, Table, message, Divider, Modal } from "antd";
+import { EditOutlined, DeleteOutlined, PlusOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
+import { getSubjects, deleteSubject, editSubject, addSubject } from "@/api/subject";
 import { getStudyPrograms } from "@/api/studyProgram";
 import { getSubjectGroups } from "@/api/subjectGroup";
 import TypingCard from "@/components/TypingCard";
 import EditSubjectForm from "./forms/edit-subject-form";
 import AddSubjectForm from "./forms/add-subject-form";
-const { Column } = Table;
-class Subject extends Component {
-  state = {
-    subjects: [],
-    studyPrograms: [],
-    subjectGroups: [],
-    editSubjectModalVisible: false,
-    editSubjectModalLoading: false,
-    currentRowData: {},
-    addSubjectModalVisible: false,
-    addSubjectModalLoading: false,
-  };
-  getSubjects = async () => {
-    const result = await getSubjects();
-    const { content, statusCode } = result.data;
 
-    if (statusCode === 200) {
-      this.setState({
-        subjects: content,
-      });
+const { confirm } = Modal;
+
+const Subject = () => {
+  const [subjects, setSubjects] = useState([]);
+  const [studyPrograms, setStudyPrograms] = useState([]);
+  const [subjectGroups, setSubjectGroups] = useState([]);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editModalLoading, setEditModalLoading] = useState(false);
+  const [currentRowData, setCurrentRowData] = useState({});
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [addModalLoading, setAddModalLoading] = useState(false);
+
+  const editFormRef = useRef(null);
+  const addFormRef = useRef(null);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [subjectsRes, programsRes, groupsRes] = await Promise.all([
+        getSubjects(),
+        getStudyPrograms(),
+        getSubjectGroups()
+      ]);
+      setSubjects(subjectsRes?.data?.content || []);
+      setStudyPrograms(programsRes?.data?.content || []);
+      setSubjectGroups(groupsRes?.data?.content || []);
+    } catch (error) {
+      message.error("Gagal mengambil data");
     }
   };
 
-  getStudyPrograms = async () => {
-    const result = await getStudyPrograms();
-    const { content, statusCode } = result.data;
+  const handleEdit = (row) => {
+    setCurrentRowData({ ...row });
+    setEditModalVisible(true);
+  };
 
-    if (statusCode === 200) {
-      this.setState({
-        studyPrograms: content,
-      });
+  const handleDelete = (row) => {
+    confirm({
+      title: "Apakah Anda yakin ingin menghapus mata kuliah ini?",
+      icon: <ExclamationCircleOutlined />, 
+      onOk: async () => {
+        try {
+          await deleteSubject({ id: row.id });
+          message.success("Berhasil dihapus");
+          fetchData();
+        } catch (error) {
+          message.error("Gagal menghapus, coba lagi");
+        }
+      },
+    });
+  };
+
+  const handleEditOk = async () => {
+    try {
+      const values = await editFormRef.current.validateFields();
+      setEditModalLoading(true);
+      await editSubject(values);
+      message.success("Berhasil diperbarui!");
+      setEditModalVisible(false);
+      fetchData();
+    } catch (error) {
+      message.error("Gagal memperbarui, coba lagi!");
+    } finally {
+      setEditModalLoading(false);
     }
   };
 
-  getSubjectGroups = async () => {
-    const result = await getSubjectGroups();
-    const { content, statusCode } = result.data;
+  const handleAdd = () => {
+    setAddModalVisible(true);
+  };
 
-    if (statusCode === 200) {
-      this.setState({
-        subjectGroups: content,
-      });
+  const handleAddOk = async (values) => {
+    try {
+      setAddModalLoading(true);
+      await addSubject(values);
+      message.success("Berhasil ditambahkan!");
+      setAddModalVisible(false);
+      fetchData();
+    } catch (error) {
+      message.error("Gagal menambahkan, coba lagi!");
+    } finally {
+      setAddModalLoading(false);
     }
   };
 
-  handleEditSubject = (row) => {
-    this.setState({
-      currentRowData: Object.assign({}, row),
-      editSubjectModalVisible: true,
-    });
-  };
+  const renderColumns = () => [
+    { title: "ID Mata Kuliah", dataIndex: "id", key: "id", align: "center" },
+    { title: "Nama", dataIndex: "name", key: "name", align: "center" },
+    { title: "Deskripsi", dataIndex: "description", key: "description", align: "center" },
+    { title: "Point Kredit", dataIndex: "credit_point", key: "credit_point", align: "center" },
+    { title: "Tahun Mata Kuliah", dataIndex: "year_commenced", key: "year_commenced", align: "center" },
+    { 
+      title: "Program Studi", 
+      dataIndex: ["studyProgram", "name"], 
+      key: "name", 
+      align: "center" 
+    },
+    { 
+      title: "Rumpun Mata Kuliah", 
+      dataIndex: ["subjectGroup", "name"], 
+      key: "name", 
+      align: "center" 
+    },
+    {
+      title: "Operasi",
+      key: "action",
+      align: "center",
+      render: (text, row) => (
+        <>
+          <Button type="primary" icon={<EditOutlined />} onClick={() => handleEdit(row)} />
+          <Divider type="vertical" />
+          <Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(row)} />
+        </>
+      ),
+    },
+  ];
 
-  handleDeleteSubject = (row) => {
-    const { id } = row;
-    if (id === "admin") {
-      message.error("不能menghapusoleh  Admin！");
-      return;
-    }
-    console.log(id);
-    deleteSubject({ id }).then((res) => {
-      message.success("berhasil dihapus");
-      this.getSubjects();
-    });
-  };
+  const renderTable = () => (
+    <Table bordered rowKey="id" dataSource={subjects} pagination={{ pageSize: 10 }} columns={renderColumns()} />
+  );
 
-  handleEditSubjectOk = (_) => {
-    const { form } = this.editSubjectFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ editModalLoading: true });
-      editSubject(values, values.id)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            editSubjectModalVisible: false,
-            editSubjectModalLoading: false,
-          });
-          message.success("berhasi;!");
-          this.getSubjects();
-        })
-        .catch((e) => {
-          message.success("gagal");
-        });
-    });
-  };
-
-  handleCancel = (_) => {
-    this.setState({
-      editSubjectModalVisible: false,
-      addSubjectModalVisible: false,
-    });
-  };
-
-  handleAddSubject = (row) => {
-    this.setState({
-      addSubjectModalVisible: true,
-    });
-  };
-
-  handleAddSubjectOk = (_) => {
-    const { form } = this.addSubjectFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ addSubjectModalLoading: true });
-      addSubject(values)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            addSubjectModalVisible: false,
-            addSubjectModalLoading: false,
-          });
-          message.success("Berhasil menambahkan mata kuliah!");
-          this.getSubjects();
-        })
-        .catch((e) => {
-          message.success("Gagal menambahkan, coba lagi!");
-        });
-    });
-  };
-  componentDidMount() {
-    this.getSubjects();
-    this.getStudyPrograms();
-    this.getSubjectGroups();
-  }
-  render() {
-    const { subjects, subjectGroups, studyPrograms } = this.state;
-    const title = (
-      <span>
-        <Button type="primary" onClick={this.handleAddSubject}>
-          Tambahkan mata kuliah
-        </Button>
-      </span>
-    );
-    const cardContent = `Di sini, Anda dapat mengelola mata kuliah di sistem, seperti menambahkan mata kuliah baru, atau mengubah mata kuliah yang sudah ada di sistem.`;
-    return (
-      <div className="app-container">
-        <TypingCard title="Manajemen Mata Kuliah" source={cardContent} />
-        <br />
-        <Card title={title}>
-          <Table bordered rowKey="id" dataSource={subjects} pagination={false}>
-            <Column
-              title="ID Mata Kuliah"
-              dataIndex="id"
-              key="id"
-              align="center"
-            />
-            <Column title="Nama" dataIndex="name" key="name" align="center" />
-            <Column
-              title="Deskripsi Mata Kuliah"
-              dataIndex="description"
-              key="description"
-              align="center"
-            />
-            <Column
-              title="Operasi"
-              key="action"
-              width={195}
-              align="center"
-              render={(text, row) => (
-                <span>
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="edit"
-                    title="mengedit"
-                    onClick={this.handleEditSubject.bind(null, row)}
-                  />
-                  <Divider type="vertical" />
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="delete"
-                    title="menghapus"
-                    onClick={this.handleDeleteSubject.bind(null, row)}
-                  />
-                </span>
-              )}
-            />
-          </Table>
-        </Card>
-        <EditSubjectForm
-          currentRowData={this.state.currentRowData}
-          wrappedComponentRef={(formRef) => (this.editSubjectFormRef = formRef)}
-          visible={this.state.editSubjectModalVisible}
-          confirmLoading={this.state.editSubjectModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleEditSubjectOk}
-        />
-        <AddSubjectForm
-          wrappedComponentRef={(formRef) => (this.addSubjectFormRef = formRef)}
-          visible={this.state.addSubjectModalVisible}
-          confirmLoading={this.state.addSubjectModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleAddSubjectOk}
-          subjectGroups={subjectGroups}
-          studyPrograms={studyPrograms}
-        />
-      </div>
-    );
-  }
-}
+  return (
+    <div className="app-container">
+      <TypingCard title="Manajemen Mata Kuliah" source="Di sini, Anda dapat mengelola mata kuliah." />
+      <br />
+      <Card title={<Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>Tambahkan Mata Kuliah</Button>}>
+        {renderTable()}
+      </Card>
+      <EditSubjectForm
+        ref={editFormRef}
+        currentRowData={currentRowData}
+        visible={editModalVisible}
+        confirmLoading={editModalLoading}
+        onCancel={() => setEditModalVisible(false)}
+        onOk={handleEditOk}
+      />
+      <AddSubjectForm
+        ref={addFormRef}
+        visible={addModalVisible}
+        confirmLoading={addModalLoading}
+        onCancel={() => setAddModalVisible(false)}
+        onOk={handleAddOk}
+        subjectGroups={subjectGroups}
+        studyPrograms={studyPrograms}
+      />
+    </div>
+  );
+};
 
 export default Subject;

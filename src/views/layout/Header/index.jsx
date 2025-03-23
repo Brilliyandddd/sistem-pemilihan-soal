@@ -15,11 +15,12 @@ import assets from "../../../assets";
 const { Header } = Layout;
 
 const LayoutHeader = (props) => {
-  const { sidebarCollapsed } = props;
+  const { sidebarCollapsed, token } = props;
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Fetch user info
+    console.log("Token from props:", token); // Debugging
+
     reqUserInfo()
       .then((response) => {
         setUser(response.data);
@@ -28,63 +29,43 @@ const LayoutHeader = (props) => {
         console.error("Error fetching user data:", error);
       });
 
-    const { token, getUserInfo } = props;
-    if (token) getUserInfo(token);
-  }, [props]);
+    if (token) props.getUserInfo(token);
+  }, [token]);
 
   const handleLogout = (token) => {
+    console.log("Logout clicked, token:", token); // Debugging
     Modal.confirm({
       title: "Logout",
       content: "Are you sure you want to log out?",
       okText: "Yes",
       cancelText: "No",
       onOk: () => {
+        console.log("Logging out..."); // Debugging
         props.logout(token);
+        window.location.href = "/login"; // Redirect manual ke login
       },
     });
   };
 
   const onClick = ({ key }) => {
-    switch (key) {
-      case "logout":
-        handleLogout(props.token);
-        break;
-      default:
-        break;
+    if (key === "logout") {
+      handleLogout(token);
     }
   };
 
-  const computedStyle = () => {
-    // if (fixedHeader) {
-    return {
-      width: sidebarCollapsed ? "calc(100% - 80px)" : "calc(100% - 200px)",
-      marginLeft: sidebarCollapsed ? "80px" : "200px",
-      position: "fixed",
-    };
-    // }
-    // return {
-    //   width: '100%',
-    // }
-  };
+  const computedStyle = () => ({
+    width: sidebarCollapsed ? "calc(100% - 80px)" : "calc(100% - 200px)",
+    marginLeft: sidebarCollapsed ? "80px" : "200px",
+    position: "fixed",
+  });
 
-  const menu = (
+  const menu = (onClick, user) => (
     <Menu onClick={onClick}>
-      {user ? (
-        <div>
-          <p
-            style={{
-              maxWidth: 180,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {user.name}
-          </p>
-        </div>
-      ) : (
-        <p>Loading...</p>
-      )}
+      <Menu.Item key="user" disabled>
+        <span style={{ maxWidth: 180, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {user ? user.name : "Loading..."}
+        </span>
+      </Menu.Item>
       <Menu.Item key="dashboard">
         <Link to="/dashboard">Home</Link>
       </Menu.Item>
@@ -97,31 +78,20 @@ const LayoutHeader = (props) => {
     <>
       {props.fixedHeader ? <Header /> : null}
 
-      <Header
-        style={computedStyle()}
-        className={props.fixedHeader ? "fix-header" : ""}
-      >
+      <Header style={computedStyle()} className={props.fixedHeader ? "fix-header" : ""}>
         <Hamburger />
         {sidebarCollapsed ? <></> : <BreadCrumb />}
         <div className="right-menu">
           <FullScreen />
-          {/* {props.showSettings && <Settings />} */}
           <div className="dropdown-wrap">
-            <Dropdown overlay={menu} destroyPopupOnHide>
-              {/* Wrap children in a single container */}
+            <Dropdown overlay={menu(onClick, user)} destroyPopupOnHide>
               <div style={{ display: "flex", alignItems: "center" }}>
                 {user ? (
-                  <Avatar
-                    shape="square"
-                    size="medium"
-                    src={assets.images.avatar}
-                  />
+                  <Avatar shape="square" size="medium" src={assets.images.avatar} />
                 ) : (
                   <p>Loading...</p>
                 )}
-                <CaretDownOutlined
-                  style={{ color: "rgba(0,0,0,.3)", marginLeft: 8 }}
-                />
+                <CaretDownOutlined style={{ color: "rgba(0,0,0,.3)", marginLeft: 8 }} />
               </div>
             </Dropdown>
           </div>

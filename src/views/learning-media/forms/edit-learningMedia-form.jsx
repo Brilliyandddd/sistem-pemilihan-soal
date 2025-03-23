@@ -1,66 +1,39 @@
-import React, { Component } from "react";
+import React from "react";
 import { Form, Input, Modal } from "antd";
-const { TextArea } = Input;
-class EditLearningMediaForm extends Component {
-  render() {
-    const { visible, onCancel, onOk, form, confirmLoading, currentRowData } =
-      this.props;
-    const { getFieldDecorator } = form;
-    const { id, name, description } = currentRowData;
-    const formItemLayout = {
-      labelCol: {
-        xs: { span: 24 },
-        sm: { span: 8 },
-      },
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 16 },
-      },
-    };
-    return (
-      <Modal
-        title="Edit Media Pembelajaran"
-        open={visible}
-        onCancel={onCancel}
-        onOk={onOk}
-        confirmLoading={confirmLoading}
-      >
-        <Form {...formItemLayout}>
-          <Form.Item label="ID Media Pembelajaran:">
-            {getFieldDecorator("id", {
-              initialValue: id,
-            })(<Input disabled />)}
-          </Form.Item>
-          <Form.Item label="Nama Media Pembelajaran:">
-            {getFieldDecorator("name", {
-              rules: [
-                {
-                  required: true,
-                  message: "Silahkan isikan nama media pembelajaran",
-                },
-              ],
-              initialValue: name,
-            })(<Input placeholder="Nama Media Pembelajaran" />)}
-          </Form.Item>
-          <Form.Item label="Deskripsi Media Pembelajaran:">
-            {getFieldDecorator("description", {
-              rules: [
-                {
-                  required: true,
-                  message: "Silahkan isikan deskripsi media pembelajaran",
-                },
-              ],
-              initialValue: description,
-            })(
-              <TextArea rows={4} placeholder="Deskripsi Media Pembelajaran" />
-            )}
-          </Form.Item>
-        </Form>
-      </Modal>
-    );
-  }
-}
 
-export default Form.create({ name: "EditLearningMediaForm" })(
-  EditLearningMediaForm
-);
+const { TextArea } = Input;
+
+const EditLearningMediaForm = ({ visible, onCancel, onOk, confirmLoading, currentRowData }) => {
+  const [form] = Form.useForm();
+
+  const handleOk = () => {
+    form.validateFields().then((values) => {
+      onOk(values);
+    });
+  };
+
+  return (
+    <Modal
+      title="Edit Media Pembelajaran"
+      open={visible}
+      onCancel={onCancel}
+      onOk={handleOk}
+      confirmLoading={confirmLoading}
+      afterClose={() => form.resetFields()} // Reset form setelah modal ditutup
+    >
+      <Form form={form} layout="vertical" initialValues={currentRowData}>
+        <Form.Item label="ID Media Pembelajaran:" name="id">
+          <Input disabled />
+        </Form.Item>
+        <Form.Item label="Nama Media Pembelajaran:" name="name" rules={[{ required: true, message: "Silahkan isikan nama media pembelajaran" }]}> 
+          <Input placeholder="Nama Media Pembelajaran" />
+        </Form.Item>
+        <Form.Item label="Deskripsi Media Pembelajaran:" name="description" rules={[{ required: true, message: "Silahkan isikan deskripsi media pembelajaran" }]}> 
+          <TextArea rows={4} placeholder="Deskripsi Media Pembelajaran" />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
+
+export default EditLearningMediaForm;

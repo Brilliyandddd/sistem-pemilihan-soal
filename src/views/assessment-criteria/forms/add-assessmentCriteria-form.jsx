@@ -1,52 +1,63 @@
-import React, { Component } from "react";
+import React from "react";
+import PropTypes from "prop-types"; // Import prop-types untuk validasi props
 import { Form, Input, Modal } from "antd";
-const { TextArea } = Input;
-class AddAssessmentCriteriaForm extends Component {
-  render() {
-    const { visible, onCancel, onOk, form, confirmLoading } = this.props;
-    const { getFieldDecorator } = form;
-    const formItemLayout = {
-      labelCol: {
-        xs: { span: 24 },
-        sm: { span: 8 },
-      },
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 16 },
-      },
-    };
-    return (
-      <Modal
-        title="Tambah Penilaian"
-        open={visible}
-        onCancel={onCancel}
-        onOk={onOk}
-        confirmLoading={confirmLoading}
-      >
-        <Form {...formItemLayout}>
-          <Form.Item label="Nama Penilaian:">
-            {getFieldDecorator("name", {
-              rules: [
-                { required: true, message: "Silahkan isikan nama penilaian" },
-              ],
-            })(<Input placeholder="Nama Penilaian" />)}
-          </Form.Item>
-          <Form.Item label="Deskripsi Penilaian:">
-            {getFieldDecorator("description", {
-              rules: [
-                {
-                  required: true,
-                  message: "Silahkan isikan deskripsi penilaian",
-                },
-              ],
-            })(<TextArea rows={4} placeholder="Deskripsi Pengguna" />)}
-          </Form.Item>
-        </Form>
-      </Modal>
-    );
-  }
-}
 
-export default Form.create({ name: "AddAssessmentCriteriaForm" })(
-  AddAssessmentCriteriaForm
-);
+const { TextArea } = Input;
+
+const AddAssessmentCriteriaForm = ({ visible, onCancel, onOk, confirmLoading }) => {
+  const [form] = Form.useForm();
+
+  const handleOk = () => {
+    form
+      .validateFields()
+      .then((values) => {
+        onOk(values);
+        form.resetFields();
+      })
+      .catch((info) => {
+        console.log("Validasi gagal:", info);
+      });
+  };
+
+  return (
+    <Modal
+      title="Tambah Penilaian"
+      open={visible}
+      onCancel={onCancel}
+      onOk={handleOk}
+      confirmLoading={confirmLoading}
+    >
+      <Form form={form} layout="vertical" onFinish={onOk}>
+        <Form.Item
+          label="Nama Penilaian:"
+          name="name"
+          rules={[{ required: true, message: "Silahkan isikan nama penilaian" }]}
+        >
+          <Input placeholder="Nama Penilaian" />
+        </Form.Item>
+        <Form.Item
+          label="Deskripsi Penilaian:"
+          name="description"
+          rules={[{ required: true, message: "Silahkan isikan deskripsi penilaian" }]}
+        >
+          <TextArea rows={4} placeholder="Deskripsi Penilaian" />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
+
+// Validasi PropTypes
+AddAssessmentCriteriaForm.propTypes = {
+  visible: PropTypes.bool.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  onOk: PropTypes.func.isRequired,
+  confirmLoading: PropTypes.bool,
+};
+
+// Default Props
+AddAssessmentCriteriaForm.defaultProps = {
+  confirmLoading: false,
+};
+
+export default AddAssessmentCriteriaForm;

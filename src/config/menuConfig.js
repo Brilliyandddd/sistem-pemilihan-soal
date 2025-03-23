@@ -244,6 +244,12 @@ const menuList = [
         roles: ["ROLE_ADMINISTRATOR"],
       },
       {
+        title: "Sub-Kriteria Penilaian",
+        path: "/sub-assessment-criteria",
+        icon: FileDoneOutlined,
+        roles: ["ROLE_ADMINISTRATOR"],
+      },
+      {
         title: "Formulir Penilaian",
         path: "/appraisal-form",
         icon: FileSyncOutlined,

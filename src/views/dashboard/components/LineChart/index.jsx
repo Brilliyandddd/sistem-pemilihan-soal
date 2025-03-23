@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import echarts from "@/lib/echarts";
+import * as echarts from 'echarts';
 import { debounce } from "@/utils";
 
 const LineChart = () => {
