@@ -22,11 +22,10 @@ export function getUsersNotUsedInLectures() {
   });
 }
 
-export function deleteUser(data) {
+export function deleteUser(id) {
   return request({
-    url: "/user/delete",
-    method: "post",
-    data,
+    url: `/user/delete/${id}`,
+    method: "delete",
   });
 }
 

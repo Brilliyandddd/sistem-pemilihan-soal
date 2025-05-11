@@ -62,20 +62,22 @@ const SubjectGroup = () => {
   };
 
   // Menangani penyimpanan data setelah edit
-  const handleEditOk = async (values) => {
-    setEditModalLoading(true);
+  const handleEditSubjectGroupOk = async (values) => {
     try {
-      await editSubjectGroup(values, values.id);
-      message.success("Berhasil mengedit!");
+      setEditModalLoading(true);
+      const { id, ...updatedValues } = values; // Pisahkan ID dari payload
+  
+      await editSubjectGroup(updatedValues, id); // Kirim id sebagai parameter kedua (URL param)
+      message.success("Berhasil diedit");
       setEditModalVisible(false);
       fetchSubjectGroups();
     } catch (error) {
-      message.error("Gagal mengedit, coba lagi!");
+      message.error("Gagal mengedit kelompok mata kuliah");
     } finally {
       setEditModalLoading(false);
     }
   };
-
+  
   // Menangani pembatalan modal
   const handleCancel = () => {
     setEditModalVisible(false);
@@ -137,7 +139,7 @@ const SubjectGroup = () => {
           visible={editModalVisible}
           confirmLoading={editModalLoading}
           onCancel={handleCancel}
-          onOk={handleEditOk}
+          onOk={handleEditSubjectGroupOk}
         />
       )}
 

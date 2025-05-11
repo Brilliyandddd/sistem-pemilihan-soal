@@ -1,17 +1,17 @@
-import React, { useEffect } from "react";
-import { Form, Input, InputNumber, Modal, Select } from "antd";
+import { useEffect } from "react";
+import { Form, Input, Modal } from "antd";
+import PropTypes from "prop-types";
 
 const { TextArea } = Input;
-const { Option } = Select;
 
-const AddSubjectForm = ({ visible, onCancel, onOk, confirmLoading, subjectGroups, studyPrograms }) => {
+const AddSubjectGroupForm = ({ visible, onCancel, onOk, confirmLoading }) => {
   const [form] = Form.useForm();
 
   useEffect(() => {
     if (!visible) {
       form.resetFields(); // Reset form saat modal ditutup
     }
-  }, [visible]);
+  }, [visible , form]);
 
   const handleOk = async () => {
     try {
@@ -24,22 +24,31 @@ const AddSubjectForm = ({ visible, onCancel, onOk, confirmLoading, subjectGroups
 
   return (
     <Modal
-      title="Tambah Mata Kuliah"
+      title="Tambah Rumpun Mata Kuliah"
       open={visible}
       onCancel={onCancel}
       onOk={handleOk}
       confirmLoading={confirmLoading}
     >
       <Form form={form} layout="vertical">
-        <Form.Item label="Nama" name="name" rules={[{ required: true, message: "Silahkan isikan nama mata kuliah" }]}> 
-          <Input placeholder="Nama Mata Kuliah" />
+        <Form.Item label="Nama" name="name" rules={[{ required: true, message: "Silahkan isikan nama rumpun mata kuliah" }]}> 
+          <Input placeholder="Nama Rumpun Mata Kuliah" />
         </Form.Item>
-        <Form.Item label="Deskripsi" name="description" rules={[{ required: true, message: "Silahkan isikan deskripsi mata kuliah" }]}> 
-          <TextArea rows={4} placeholder="Deskripsi Mata Kuliah" />
+        <Form.Item label="Deskripsi" name="description" rules={[{ required: true, message: "Silahkan isikan deskripsi rumpun mata kuliah" }]}> 
+          <TextArea rows={4} placeholder="Deskripsi Rumpun Mata Kuliah" />
         </Form.Item>
       </Form>
     </Modal>
   );
 };
 
-export default AddSubjectForm;
+AddSubjectGroupForm.propTypes = {
+  visible: PropTypes.bool.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  onOk: PropTypes.func.isRequired,
+  confirmLoading: PropTypes.bool,
+  subjectGroups: PropTypes.array,
+  studyPrograms: PropTypes.array,
+};
+
+export default AddSubjectGroupForm;

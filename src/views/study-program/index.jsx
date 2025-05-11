@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Button, Table, message, Divider } from "antd";
 import {
   getStudyPrograms,
@@ -11,8 +11,6 @@ import TypingCard from "@/components/TypingCard";
 import EditStudyProgramForm from "./forms/edit-study-program-form";
 import AddStudyProgramForm from "./forms/add-study-program-form";
 
-const { Column } = Table;
-
 const StudyProgram = () => {
   const [studyPrograms, setStudyPrograms] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -21,9 +19,6 @@ const StudyProgram = () => {
   const [currentRowData, setCurrentRowData] = useState({});
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [addModalLoading, setAddModalLoading] = useState(false);
-
-  const editFormRef = useRef(null);
-  const addFormRef = useRef(null);
 
   useEffect(() => {
     fetchStudyPrograms();
@@ -53,15 +48,11 @@ const StudyProgram = () => {
   };
 
   const handleEditStudyProgram = (row) => {
-    setCurrentRowData({ ...row });
+    setCurrentRowData(row);
     setEditModalVisible(true);
   };
 
   const handleDeleteStudyProgram = async (row) => {
-    if (row.id === "admin") {
-      message.error("Tidak bisa menghapus admin");
-      return;
-    }
     try {
       await deleteStudyProgram({ id: row.id });
       message.success("Berhasil dihapus");
@@ -71,25 +62,22 @@ const StudyProgram = () => {
     }
   };
 
-  const handleEditStudyProgramOk = async () => {
+  const handleEditStudyProgramOk = async (values) => {
     try {
-      const values = await editFormRef.current.validateFields();
       setEditModalLoading(true);
-      await editStudyProgram(values);
+      const { id, ...updatedValues } = values;
+  
+      await editStudyProgram(updatedValues, id); // Kirim ID sebagai argumen kedua
       message.success("Berhasil diedit");
       setEditModalVisible(false);
       fetchStudyPrograms();
     } catch (error) {
-      message.error("Gagal mengedit");
+      message.error("Gagal mengedit program studi");
     } finally {
       setEditModalLoading(false);
     }
   };
-
-  const handleAddStudyProgram = () => {
-    setAddModalVisible(true);
-  };
-
+  
   const handleAddStudyProgramOk = async (values) => {
     try {
       setAddModalLoading(true);
@@ -113,7 +101,7 @@ const StudyProgram = () => {
     },
     {
       title: "Jurusan",
-      dataIndex: ["department", "name"],
+      dataIndex: ["department", "name"], // 🛠 FIX: Ambil dari department_id, bukan department.name
       key: "name",
       align: "center",
     },
@@ -133,37 +121,40 @@ const StudyProgram = () => {
       title: "Operasi",
       key: "action",
       align: "center",
-      render: (text, row) => (
-        <span>
-          <Button type="primary" shape="circle" icon="edit" title="Edit" onClick={() => handleEditStudyProgram(row)} />
+      render: (_, row) => (
+        <>
+          <Button type="primary" title="Edit" onClick={() => handleEditStudyProgram(row)}>
+            Edit
+          </Button>
           <Divider type="vertical" />
-          <Button type="danger" shape="circle" icon="delete" title="Hapus" onClick={() => handleDeleteStudyProgram(row)} />
-        </span>
+          <Button type="danger" title="Hapus" onClick={() => handleDeleteStudyProgram(row)}>
+            Hapus
+          </Button>
+        </>
       ),
     },
   ];
-  
-  const renderTable = () => (
-    <Table bordered rowKey="id" dataSource={studyPrograms} pagination={false} columns={renderColumns()} />
-  );
 
   return (
     <div className="app-container">
       <TypingCard title="Manajemen Program Studi" source="Di sini, Anda dapat mengelola program studi di sistem." />
       <br />
-      <Card title={<Button type="primary" onClick={handleAddStudyProgram}>Tambahkan program studi</Button>}>
-        {renderTable()}
+      <Card title={<Button type="primary" onClick={() => setAddModalVisible(true)}>Tambahkan program studi</Button>}>
+        <Table bordered rowKey="id" dataSource={studyPrograms} pagination={false} columns={renderColumns()} />
       </Card>
+
+      {/* 🛠 Edit Study Program Form - Pastikan departments dikirim */}
       <EditStudyProgramForm
-        ref={editFormRef}
         currentRowData={currentRowData}
         visible={editModalVisible}
         confirmLoading={editModalLoading}
         onCancel={() => setEditModalVisible(false)}
         onOk={handleEditStudyProgramOk}
+        departments={departments} // 🛠 FIX: Kirim departments ke form edit
       />
+
+      {/* 🛠 Add Study Program Form */}
       <AddStudyProgramForm
-        ref={addFormRef}
         visible={addModalVisible}
         confirmLoading={addModalLoading}
         onCancel={() => setAddModalVisible(false)}

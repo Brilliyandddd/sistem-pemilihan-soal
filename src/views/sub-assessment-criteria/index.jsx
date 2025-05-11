@@ -58,21 +58,25 @@ const SubAssessmentCriteria = () => {
   };
 
   const handleDelete = (row) => {
-    confirm({
+    Modal.confirm({
       title: "Apakah Anda yakin ingin menghapus sub kriteria ini?",
       icon: <ExclamationCircleOutlined />,
-      onOk: async () => {
-        try {
-          await deleteSubAssessmentCriteria({ idSubAssessment: row.idSubAssessment });
-          message.success("Berhasil dihapus");
-          fetchSubAssessmentCriteria();
-        } catch (error) {
-          message.error("Gagal menghapus, coba lagi");
-        }
+      onOk() {
+        // Tidak pakai async/await langsung di sini, karena akan throw error
+        return deleteSubAssessmentCriteria({ id: row.subAssessmentCriteriaId })
+          .then(() => {
+            message.success("Berhasil dihapus");
+            fetchSubAssessmentCriteria();
+          })
+          .catch((error) => {
+            console.error("Error saat menghapus:", error);
+            message.error("Gagal menghapus sub kriteria");
+            // Tidak lempar error agar Modal tidak munculkan [object Object]
+          });
       },
     });
   };
-
+  
   const handleEditOk = async (values) => {
     setEditModalLoading(true);
     try {

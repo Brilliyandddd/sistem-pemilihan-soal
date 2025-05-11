@@ -58,8 +58,9 @@ const LearningMethod = () => {
   const handleEditLearningMethodOk = async () => {
     try {
       const values = await editForm.validateFields();
+      const { id, ...payload } = values; // Pisahkan id dari payload
       setEditLearningMethodModalLoading(true);
-      await editLearningMethod(values, values.id);
+      await editLearningMethod(payload, id); // Kirim payload tanpa id
       message.success("Berhasil diperbarui!");
       setEditLearningMethodModalVisible(false);
       fetchLearningMethods();
@@ -69,6 +70,7 @@ const LearningMethod = () => {
       setEditLearningMethodModalLoading(false);
     }
   };
+  
 
   const handleAddLearningMethod = () => {
     setAddLearningMethodModalVisible(true);

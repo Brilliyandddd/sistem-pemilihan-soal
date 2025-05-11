@@ -29,7 +29,7 @@ export function getLearningMediasHardware() {
   });
 }
 
-export function editLearningMedia(data, id) {
+export function editLearningMedia(id, data) {
   return request({
     url: `/learning-media/${id}`,
     method: "put",
@@ -37,10 +37,10 @@ export function editLearningMedia(data, id) {
   });
 }
 
-export function deleteLearningMedia(data) {
+
+export function deleteLearningMedia(id) {
   return request({
-    url: `/learning-media/${data.id}`,
+    url: `/learning-media/${id}`,
     method: "delete",
-    data,
   });
 }

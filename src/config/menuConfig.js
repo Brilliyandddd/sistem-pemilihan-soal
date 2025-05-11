@@ -185,7 +185,7 @@ const menuList = [
   // Admin
   {
     title: "Master Data",
-    path: "/master",
+    // path: "/master",
     icon: DatabaseOutlined,
     roles: ["ROLE_ADMINISTRATOR"],
     children: [

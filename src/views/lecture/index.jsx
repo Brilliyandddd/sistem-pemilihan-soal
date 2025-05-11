@@ -13,191 +13,211 @@ import { getStudyPrograms } from "@/api/studyProgram";
 import TypingCard from "@/components/TypingCard";
 import EditLectureForm from "./forms/edit-lecture-form";
 import AddLectureForm from "./forms/add-lecture-form";
+
 const { Column } = Table;
+
 class Lecture extends Component {
-  state = {
-    lectures: [],
-    religions: [],
-    users: [],
-    studyPrograms: [],
-    editLectureModalVisible: false,
-    editLectureModalLoading: false,
-    currentRowData: {},
-    addLectureModalVisible: false,
-    addLectureModalLoading: false,
+  constructor(props) {
+    super(props);
+
+    // ✅ Tambahkan ref di constructor
+    this.addLectureFormRef = React.createRef();
+    this.editLectureFormRef = React.createRef();
+
+    this.state = {
+      lectures: [],
+      religions: [],
+      users: [],
+      studyPrograms: [],
+      editLectureModalVisible: false,
+      editLectureModalLoading: false,
+      currentRowData: {},
+      addLectureModalVisible: false,
+      addLectureModalLoading: false,
+    };
+  }
+
+  componentDidMount() {
+    this.fetchInitialData();
+  }
+
+  fetchInitialData = async () => {
+    await Promise.all([
+      this.getLectures(),
+      this.getReligions(),
+      this.getUsers(),
+      this.getStudyPrograms(),
+    ]);
   };
+
   getLectures = async () => {
     const result = await getLectures();
     const { content, statusCode } = result.data;
     if (statusCode === 200) {
-      this.setState({
-        lectures: content,
-      });
+      this.setState({ lectures: content });
     }
   };
 
   getReligions = async () => {
     const result = await getReligions();
     const { content, statusCode } = result.data;
-
     if (statusCode === 200) {
-      this.setState({
-        religions: content,
-      });
+      this.setState({ religions: content });
     }
   };
 
   getUsers = async () => {
     const result = await getUsersNotUsedInLectures();
     const { content, statusCode } = result.data;
-
     if (statusCode === 200) {
-      this.setState({
-        users: content,
-      });
+      this.setState({ users: content });
     }
   };
 
   getStudyPrograms = async () => {
     const result = await getStudyPrograms();
     const { content, statusCode } = result.data;
-
     if (statusCode === 200) {
-      this.setState({
-        studyPrograms: content,
-      });
+      this.setState({ studyPrograms: content });
     }
   };
 
   handleEditLecture = (row) => {
     this.setState({
-      currentRowData: Object.assign({}, row),
+      currentRowData: { ...row },
       editLectureModalVisible: true,
     });
   };
 
-  handleDeleteLecture = (row) => {
+  handleDeleteLecture = async (row) => {
     const { id } = row;
     if (id === "admin") {
-      message.error("不能menghapusoleh  Admin！");
+      message.error("Tidak dapat menghapus Admin!");
       return;
     }
-    deleteLecture({ id }).then((res) => {
-      message.success("berhasil dihapus");
+    try {
+      await deleteLecture({ id });
+      message.success("Dosen berhasil dihapus");
       this.getLectures();
       this.getUsers();
-    });
+    } catch (error) {
+      message.error("Gagal menghapus dosen");
+    }
   };
 
-  handleEditLectureOk = (_) => {
-    const { form } = this.editLectureFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ editModalLoading: true });
-      editLecture(values)
-        .then((response) => {
+  handleEditLectureOk = () => {
+    const form = this.editLectureFormRef.current;
+    if (!form) {
+      console.error("Form edit belum siap.");
+      return;
+    }
+
+    form
+      .validateFields()
+      .then(async (values) => {
+        this.setState({ editLectureModalLoading: true });
+        try {
+          const response = await editLecture(values, values.id);
+          console.log("RESPON EDIT:", response); // cek struktur datanya
           form.resetFields();
           this.setState({
             editLectureModalVisible: false,
             editLectureModalLoading: false,
           });
-          message.success("berhasi;!");
+          message.success("Dosen berhasil diubah!");
           this.getLectures();
           this.getUsers();
-        })
-        .catch((e) => {
-          message.success("gagal");
-        });
-    });
+        } catch (error) {
+          console.error("ERROR SAAT EDIT:", error.response || error);
+          message.error("Gagal mengubah dosen");
+          this.setState({ editLectureModalLoading: false });
+        }
+        
+      })
+      .catch((err) => {
+        console.warn("Validasi gagal:", err);
+      });
   };
 
-  handleCancel = (_) => {
+  handleAddLecture = async() => {
+    await this.getUsers();
+    this.setState({ addLectureModalVisible: true });
+  };
+
+  handleAddLectureOk = () => {
+    const form = this.addLectureFormRef.current;
+    if (!form) {
+      console.error("Form belum siap.");
+      return;
+    }
+
+    form
+      .validateFields()
+      .then(async (values) => {
+        this.setState({ addLectureModalLoading: true });
+        try {
+          console.log("Data yang dikirim:", values);
+          await addLecture(values);
+          form.resetFields();
+          this.setState({
+            addLectureModalVisible: false,
+            addLectureModalLoading: false,
+          });
+          message.success("Dosen berhasil ditambahkan!");
+          this.getLectures();
+          this.getUsers();
+        } catch (error) {
+          console.error(error.response?.data);
+          message.error("Gagal menambahkan dosen, coba lagi!");
+          this.setState({ addLectureModalLoading: false });
+        }
+      })
+      .catch((err) => {
+        console.warn("Validasi gagal:", err);
+      });
+      
+  };
+
+  handleCancel = () => {
     this.setState({
       editLectureModalVisible: false,
       addLectureModalVisible: false,
     });
   };
 
-  handleAddLecture = (row) => {
-    this.setState({
-      addLectureModalVisible: true,
-    });
-  };
-
-  handleAddLectureOk = (_) => {
-    const { form } = this.addLectureFormRef.props;
-    form.validateFields((err, values) => {
-        if (err) {
-            return;
-        }
-        this.setState({ addLectureModalLoading: true });
-        addLecture(values)
-            .then((response) => {
-                form.resetFields();
-                this.setState({
-                    addLectureModalVisible: false,
-                    addLectureModalLoading: false,
-                });
-                message.success("Berhasil!");
-                this.getLectures();
-                this.getUsers();
-            })
-            .catch((e) => {
-                console.error(e.response.data); // Log the error message from the server
-                this.setState({ addLectureModalLoading: false });
-                message.error("Gagal menambahkan, coba lagi!");
-            });
-    });
-};
-  componentDidMount() {
-    this.getLectures();
-    this.getReligions();
-    this.getUsers();
-    this.getStudyPrograms();
-  }
   render() {
-    const { lectures, religions, users, studyPrograms } = this.state;
-    const title = (
-      <span>
-        <Button type="primary" onClick={this.handleAddLecture}>
-          Tambahkan dosen
-        </Button>
-      </span>
-    );
+    const {
+      lectures,
+      religions,
+      users,
+      studyPrograms,
+      editLectureModalVisible,
+      editLectureModalLoading,
+      currentRowData,
+      addLectureModalVisible,
+      addLectureModalLoading,
+    } = this.state;
+
     const cardContent = `Di sini, Anda dapat mengelola dosen di sistem, seperti menambahkan dosen baru, atau mengubah dosen yang sudah ada di sistem.`;
+
     return (
       <div className="app-container">
         <TypingCard title="Manajemen Dosen" source={cardContent} />
         <br />
-        <Card title={title}>
+        <Card
+          title={
+            <Button type="primary" onClick={this.handleAddLecture}>
+              Tambahkan Dosen
+            </Button>
+          }
+        >
           <Table bordered rowKey="id" dataSource={lectures} pagination={false}>
             <Column title="NIDN" dataIndex="nidn" key="nidn" align="center" />
-            <Column
-              title="Nama Depan"
-              dataIndex="name"
-              key="name"
-              align="center"
-            />
-            <Column
-              title="Tempat Lahir"
-              dataIndex="place_born"
-              key="place_born"
-              align="center"
-            />
-            <Column
-              title="Agama"
-              dataIndex="religion.name"
-              key="religion.name"
-              align="center"
-            />
-            <Column
-              title="Telepon"
-              dataIndex="phone"
-              key="phone"
-              align="center"
-            />
+            <Column title="Nama Depan" dataIndex="name" key="name" align="center" />
+            <Column title="Peran" dataIndex={["user", "id"]} key="user" align="center" />
+            <Column title="Tempat Lahir" dataIndex="place_born" key="place_born" align="center" />
+            <Column title="Agama" dataIndex={["religion", "name"]} key="religion" align="center" />
+            <Column title="Telepon" dataIndex="phone" key="phone" align="center" />
             <Column
               title="Operasi"
               key="action"
@@ -209,34 +229,39 @@ class Lecture extends Component {
                     type="primary"
                     shape="circle"
                     icon="edit"
-                    title="mengedit"
-                    onClick={this.handleEditLecture.bind(null, row)}
+                    title="Edit"
+                    onClick={() => this.handleEditLecture(row)}
                   />
                   <Divider type="vertical" />
                   <Button
-                    type="primary"
+                    type="danger"
                     shape="circle"
                     icon="delete"
-                    title="menghapus"
-                    onClick={this.handleDeleteLecture.bind(null, row)}
+                    title="Hapus"
+                    onClick={() => this.handleDeleteLecture(row)}
                   />
                 </span>
               )}
             />
           </Table>
         </Card>
+
         <EditLectureForm
-          currentRowData={this.state.currentRowData}
-          wrappedComponentRef={(formRef) => (this.editLectureFormRef = formRef)}
-          visible={this.state.editLectureModalVisible}
-          confirmLoading={this.state.editLectureModalLoading}
+          currentRowData={currentRowData}
+          formRef={this.editLectureFormRef}
+          visible={editLectureModalVisible}
+          confirmLoading={editLectureModalLoading}
           onCancel={this.handleCancel}
           onOk={this.handleEditLectureOk}
+          religion={religions}
+          user={users}
+          studyProgram={studyPrograms}
         />
+
         <AddLectureForm
-          wrappedComponentRef={(formRef) => (this.addLectureFormRef = formRef)}
-          visible={this.state.addLectureModalVisible}
-          confirmLoading={this.state.addLectureModalLoading}
+          formRef={this.addLectureFormRef}
+          visible={addLectureModalVisible}
+          confirmLoading={addLectureModalLoading}
           onCancel={this.handleCancel}
           onOk={this.handleAddLectureOk}
           religion={religions}

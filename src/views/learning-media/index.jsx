@@ -42,14 +42,16 @@ const LearningMedia = () => {
     setEditVisible(true);
   };
 
-  const handleEditLearningMediaOk = async (form) => {
+  const handleEditLearningMediaOk = async (values) => {
     try {
-      const values = await form.validateFields();
       setEditLoading(true);
-      await editLearningMedia(currentRowData.id, values);
+      console.log("values yang dikirim:", values);
+      await editLearningMedia(values.id, {
+        name: values.name,
+        description: values.description
+      });      
       message.success("Berhasil mengedit media pembelajaran!");
       setEditVisible(false);
-      form.resetFields();
       fetchLearningMedias();
     } catch (error) {
       console.error("Error saat mengedit:", error);
@@ -57,11 +59,12 @@ const LearningMedia = () => {
     } finally {
       setEditLoading(false);
     }
-  };
+  };  
 
   const handleAddLearningMediaOk = async (form) => {
     try {
       const values = await form.validateFields();
+      console.log("values", values)
       setAddLoading(true);
       await addLearningMedia(values);
       message.success("Berhasil menambahkan media pembelajaran!");
@@ -101,6 +104,7 @@ const LearningMedia = () => {
           <Column title="ID" dataIndex="id" key="id" align="center" />
           <Column title="Nama" dataIndex="name" key="name" align="center" />
           <Column title="Deskripsi" dataIndex="description" key="description" align="center" />
+          <Column title="Type" dataIndex="type" key="type" align="center" />
           <Column
             title="Operasi"
             key="action"

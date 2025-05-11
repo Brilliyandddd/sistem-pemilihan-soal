@@ -1,35 +1,28 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
-import React from "react";
+import React, { useEffect } from "react";
 import { Form, Input, Modal } from "antd";
 
 const { TextArea } = Input;
 
-const EditDepartmentForm = ({
-  visible,
-  onCancel,
-  onOk,
-  confirmLoading,
-  currentRowData,
-}) => {
+const EditDepartmentForm = ({ visible, onCancel, onOk, confirmLoading, currentRowData }) => {
   const [form] = Form.useForm();
-  const { id, name, description } = currentRowData;
 
-  const formItemLayout = {
-    labelCol: {
-      xs: { span: 24 },
-      sm: { span: 8 },
-    },
-    wrapperCol: {
-      xs: { span: 24 },
-      sm: { span: 16 },
-    },
-  };
+  useEffect(() => {
+    if (currentRowData) {
+      form.setFieldsValue({
+        id: currentRowData.id, // Tambahkan ID ke dalam form
+        name: currentRowData.name,
+        description: currentRowData.description,
+      });
+    }
+  }, [currentRowData, form]);
 
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
-      onOk(values);
+      onOk({ ...values, id: currentRowData.id }); // Kirim ID ke `onOk`
+      form.resetFields();
     } catch (error) {
       console.log("Validation failed:", error);
     }
@@ -38,23 +31,17 @@ const EditDepartmentForm = ({
   return (
     <Modal
       title="Edit Jurusan"
-      visible={visible}
+      open={visible}
       onCancel={onCancel}
       onOk={handleOk}
       confirmLoading={confirmLoading}
+      afterClose={() => form.resetFields()}
     >
-      <Form
-        form={form}
-        {...formItemLayout}
-        initialValues={{
-          id,
-          name,
-          description,
-        }}
-      >
-        <Form.Item label="ID Jurusan:" name="id">
-          <Input disabled />
-        </Form.Item>
+      <Form form={form} layout="vertical">
+        {/* Field ID (hidden, tetapi tetap dikirim) */}
+        <Form.Item label="ID" name="id">
+                  <Input disabled />
+                </Form.Item>
         <Form.Item
           label="Nama Jurusan:"
           name="name"
@@ -65,9 +52,7 @@ const EditDepartmentForm = ({
         <Form.Item
           label="Deskripsi Jurusan:"
           name="description"
-          rules={[
-            { required: true, message: "Silahkan isikan deskripsi jurusan" },
-          ]}
+          rules={[{ required: true, message: "Silahkan isikan deskripsi jurusan" }]}
         >
           <TextArea rows={4} placeholder="Deskripsi Jurusan" />
         </Form.Item>

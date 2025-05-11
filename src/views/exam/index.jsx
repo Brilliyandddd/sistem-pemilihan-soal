@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Button, Table, message, Divider } from "antd";
 import { getExam, deleteExam, editExam, addExam } from "@/api/exam";
 import { getQuestionsByRPS } from "@/api/question";
@@ -19,12 +19,9 @@ const Exam = () => {
   const [rpsDetail, setRpsDetail] = useState([]);
   const [editExamModalVisible, setEditExamModalVisible] = useState(false);
   const [editExamModalLoading, setEditExamModalLoading] = useState(false);
-  const [currentRowData, setCurrentRowData] = useState({});
   const [addExamModalVisible, setAddExamModalVisible] = useState(false);
   const [addExamModalLoading, setAddExamModalLoading] = useState(false);
-  
-  const editExamFormRef = useRef(null);
-  const addExamFormRef = useRef(null);
+  const [currentRowData, setCurrentRowData] = useState({});
 
   useEffect(() => {
     fetchExam();
@@ -52,38 +49,22 @@ const Exam = () => {
     }
   };
 
+  const fetchRPSDetail = async (id) => {
+    const result = await getRPSDetail(id);
+    if (result.data.statusCode === 200) {
+      setRpsDetail(result.data.content);
+    }
+  };
+
   const handleEditExam = (row) => {
     setCurrentRowData(row);
     setEditExamModalVisible(true);
   };
 
   const handleDeleteExam = async (row) => {
-    if (row.id === "admin") {
-      message.error("Tidak dapat menghapus Admin!");
-      return;
-    }
     await deleteExam({ id: row.id });
     message.success("Berhasil dihapus");
     fetchExam();
-  };
-
-  const handleEditExamOk = () => {
-    const { form } = editExamFormRef.current.props;
-    form.validateFields(async (err, values) => {
-      if (err) return;
-      setEditExamModalLoading(true);
-      try {
-        await editExam(values, values.id);
-        form.resetFields();
-        setEditExamModalVisible(false);
-        message.success("Berhasil!");
-        fetchExam();
-      } catch {
-        message.error("Gagal mengedit");
-      } finally {
-        setEditExamModalLoading(false);
-      }
-    });
   };
 
   const handleCancel = () => {
@@ -95,23 +76,35 @@ const Exam = () => {
     setAddExamModalVisible(true);
   };
 
-  const handleAddExamOk = () => {
-    const { form } = addExamFormRef.current.props;
-    form.validateFields(async (err, values) => {
-      if (err) return;
-      setAddExamModalLoading(true);
-      try {
-        await addExam(values);
-        form.resetFields();
-        setAddExamModalVisible(false);
-        message.success("Berhasil!");
-        fetchExam();
-      } catch {
-        message.error("Gagal menambahkan");
-      } finally {
-        setAddExamModalLoading(false);
-      }
-    });
+  const handleAddExamOk = async (values) => {
+    values.date_start = values.date_start.toISOString();
+    values.date_end = values.date_end.toISOString();
+    setAddExamModalLoading(true);
+    try {
+      console.log(values);
+      await addExam(values);
+      message.success("Berhasil menambahkan");
+      fetchExam();
+      setAddExamModalVisible(false);
+    } catch {
+      message.error("Gagal menambahkan");
+    } finally {
+      setAddExamModalLoading(false);
+    }
+  };
+
+  const handleEditExamOk = async (values) => {
+    setEditExamModalLoading(true);
+    try {
+      await editExam(values, values.id);
+      message.success("Berhasil mengedit");
+      fetchExam();
+      setEditExamModalVisible(false);
+    } catch {
+      message.error("Gagal mengedit");
+    } finally {
+      setEditExamModalLoading(false);
+    }
   };
 
   return (
@@ -120,40 +113,58 @@ const Exam = () => {
       <br />
       <Card title={<Button type="primary" onClick={handleAddExam}>Tambahkan Ujian</Button>}>
         <Table bordered rowKey="id" dataSource={exam} pagination={false}>
-          <Column title="Nama" dataIndex="name" key="name" align="center" />
-          <Column title="RPS" dataIndex="rps.name" key="rps.name" align="center" />
-          <Column title="Nilai Minimal" dataIndex="min_grade" key="min_grade" align="center" />
+          <Column title="Nama" dataIndex="name" align="center" />
+          <Column title="RPS" dataIndex={["rps", "name"]} align="center" />
+          <Column title="Nilai Minimal" dataIndex="min_grade" align="center" />
           <Column
             title="Pilihan Ujian"
             dataIndex="type_exercise"
-            key="type_exercise"
             align="center"
             render={text => text === "1-8" ? "UTS" : text === "1-18" ? "UAS" : text}
           />
-          <Column title="Tanggal Mulai" dataIndex="date_start" key="date_start" align="center" render={text => moment(text).format("DD MMMM YYYY, HH:mm:ss")} />
-          <Column title="Tanggal Selesai" dataIndex="date_end" key="date_end" align="center" render={text => moment(text).format("DD MMMM YYYY, HH:mm:ss")} />
-          <Column title="Durasi" dataIndex="duration" key="duration" align="center" />
+          <Column title="Tanggal Mulai" dataIndex="date_start" align="center" render={text => moment(text).format("DD MMMM YYYY, HH:mm:ss")} />
+          <Column title="Tanggal Selesai" dataIndex="date_end" align="center" render={text => moment(text).format("DD MMMM YYYY, HH:mm:ss")} />
+          <Column title="Durasi" dataIndex="duration" align="center" />
           <Column
             title="Operasi"
             key="action"
-            width={195}
             align="center"
             render={(text, row) => (
               <span>
-                <Button type="primary" shape="circle" icon="edit" title="Edit Ujian" onClick={() => handleEditExam(row)} />
+                <Button type="primary" shape="circle" icon="edit" onClick={() => handleEditExam(row)} />
                 <Divider type="vertical" />
                 <Link to={`/setting-exam/result/${row.id}`}>
-                  <Button type="primary" shape="circle" icon="diff" title="Detail Hasil" />
+                  <Button type="primary" shape="circle" icon="diff" />
                 </Link>
                 <Divider type="vertical" />
-                <Button type="primary" shape="circle" icon="delete" title="Hapus Data" onClick={() => handleDeleteExam(row)} />
+                <Button type="danger" shape="circle" icon="delete" onClick={() => handleDeleteExam(row)} />
               </span>
             )}
           />
         </Table>
       </Card>
-      <EditExamForm ref={editExamFormRef} visible={editExamModalVisible} confirmLoading={editExamModalLoading} onCancel={handleCancel} onOk={handleEditExamOk} questions={questions} rpsAll={rps} />
-      <AddExamForm ref={addExamFormRef} visible={addExamModalVisible} confirmLoading={addExamModalLoading} onCancel={handleCancel} onOk={handleAddExamOk} rpsDetail={rpsDetail} questions={questions} rps={rps} />
+
+      <AddExamForm
+        visible={addExamModalVisible}
+        confirmLoading={addExamModalLoading}
+        onCancel={handleCancel}
+        onOk={handleAddExamOk}
+        rps={rps}
+        rpsDetail={rpsDetail}
+        questions={questions}
+        handleGetRPSDetail={fetchRPSDetail}
+        handleUpdateQuestion={fetchQuestionsByRPS}
+      />
+
+      <EditExamForm
+        visible={editExamModalVisible}
+        confirmLoading={editExamModalLoading}
+        onCancel={handleCancel}
+        onOk={handleEditExamOk}
+        rpsAll={rps}
+        questions={questions}
+        data={currentRowData}
+      />
     </div>
   );
 };

@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Button, Table, message, Divider } from "antd";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import {
   getDepartments,
   deleteDepartment,
@@ -19,11 +20,10 @@ const Department = () => {
   const [currentRowData, setCurrentRowData] = useState({});
   const [addDepartmentModalVisible, setAddDepartmentModalVisible] = useState(false);
   const [addDepartmentModalLoading, setAddDepartmentModalLoading] = useState(false);
-
-  const editDepartmentFormRef = useRef(null);
-  const addDepartmentFormRef = useRef(null);
+  const [loading, setLoading] = useState(false);
 
   const fetchDepartments = async () => {
+    setLoading(true);
     try {
       const result = await getDepartments();
       const { content, statusCode } = result.data;
@@ -32,6 +32,8 @@ const Department = () => {
       }
     } catch (error) {
       message.error("Gagal mengambil data jurusan.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -51,31 +53,31 @@ const Department = () => {
       return;
     }
     try {
+      setLoading(true);
       await deleteDepartment({ id });
       message.success("Berhasil dihapus");
       fetchDepartments();
     } catch (error) {
       message.error("Gagal menghapus, coba lagi.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEditDepartmentOk = async () => {
-    const form = editDepartmentFormRef.current;
+  const handleEditDepartmentOk = async ({ id, name, description }) => {
     try {
-      const values = await form.validateFields();
       setEditDepartmentModalLoading(true);
-      await editDepartment(values, values.id);
-      form.resetFields();
+      await editDepartment({ name, description }, id);  // ✅ Kirim hanya "name" & "description"
       setEditDepartmentModalVisible(false);
-      setEditDepartmentModalLoading(false);
       message.success("Berhasil mengedit!");
       fetchDepartments();
     } catch (error) {
       message.error("Gagal mengedit, coba lagi.");
+    } finally {
       setEditDepartmentModalLoading(false);
     }
   };
-
+  
   const handleCancel = () => {
     setEditDepartmentModalVisible(false);
     setAddDepartmentModalVisible(false);
@@ -88,14 +90,13 @@ const Department = () => {
   const handleAddDepartmentOk = async (values) => {
     try {
       setAddDepartmentModalLoading(true);
-      console.log(values);
       await addDepartment(values);
       setAddDepartmentModalVisible(false);
-      setAddDepartmentModalLoading(false);
       message.success("Berhasil menambahkan jurusan!");
       fetchDepartments();
     } catch (error) {
       message.error("Gagal menambahkan, coba lagi.");
+    } finally {
       setAddDepartmentModalLoading(false);
     }
   };
@@ -108,7 +109,13 @@ const Department = () => {
       />
       <br />
       <Card title={<Button type="primary" onClick={handleAddDepartment}>Tambahkan jurusan</Button>}>
-        <Table bordered rowKey="id" dataSource={departments} pagination={false}>
+        <Table
+          bordered
+          rowKey="id"
+          dataSource={departments}
+          pagination={false}
+          loading={loading}
+        >
           <Column title="ID Jurusan" dataIndex="id" key="id" align="center" />
           <Column title="Nama" dataIndex="name" key="name" align="center" />
           <Column title="Deskripsi Jurusan" dataIndex="description" key="description" align="center" />
@@ -122,17 +129,20 @@ const Department = () => {
                 <Button
                   type="primary"
                   shape="circle"
-                  icon="edit"
+                  icon={<EditOutlined />}
                   title="Edit"
                   onClick={() => handleEditDepartment(row)}
+                  disabled={loading}
                 />
                 <Divider type="vertical" />
                 <Button
                   type="primary"
+                  danger
                   shape="circle"
-                  icon="delete"
+                  icon={<DeleteOutlined />}
                   title="Hapus"
                   onClick={() => handleDeleteDepartment(row)}
+                  disabled={loading}
                 />
               </span>
             )}
@@ -141,7 +151,6 @@ const Department = () => {
       </Card>
 
       <EditDepartmentForm
-        ref={editDepartmentFormRef}
         currentRowData={currentRowData}
         visible={editDepartmentModalVisible}
         confirmLoading={editDepartmentModalLoading}
@@ -150,7 +159,6 @@ const Department = () => {
       />
 
       <AddDepartmentForm
-        ref={addDepartmentFormRef}
         visible={addDepartmentModalVisible}
         confirmLoading={addDepartmentModalLoading}
         onCancel={handleCancel}

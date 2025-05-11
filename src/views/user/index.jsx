@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Card, Button, Table, message } from "antd";
+import { Card, Button, Table, message, Popconfirm } from "antd";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { getUsers, deleteUser, editUser, addUser } from "@/api/user";
 import TypingCard from "@/components/TypingCard";
 import EditUserForm from "./forms/edit-user-form";
@@ -46,13 +47,14 @@ const User = () => {
       return;
     }
     try {
-      await deleteUser({ id });
+      await deleteUser(id); // 
       message.success("Berhasil dihapus");
       fetchUsers();
     } catch (error) {
       message.error("Gagal menghapus pengguna");
     }
   };
+  
 
   const handleEditUserOk = async () => {
     const form = editUserFormRef.current;
@@ -62,32 +64,32 @@ const User = () => {
       await editUser(values);
       form.resetFields();
       setEditUserModalVisible(false);
-      setEditUserModalLoading(false);
       message.success("Berhasil memperbarui pengguna!");
       fetchUsers();
     } catch (error) {
       message.error("Gagal memperbarui pengguna");
+    } finally {
       setEditUserModalLoading(false);
     }
   };
 
-  const handleAddUserOk = async () => {
-    const form = addUserFormRef.current;
+  const handleAddUserOk = async (payload) => {
     try {
-      const values = await form.validateFields();
+      console.log("Payload ke API:", payload);
       setAddUserModalLoading(true);
-      await addUser(values);
-      form.resetFields();
+      await addUser(payload);
       setAddUserModalVisible(false);
-      setAddUserModalLoading(false);
       message.success("User berhasil ditambahkan!");
       fetchUsers();
     } catch (error) {
+      console.error(error);
       message.error("Gagal menambahkan pengguna");
+      console.error("Full error object:", JSON.stringify(error.response, null, 2));
+    } finally {
       setAddUserModalLoading(false);
     }
   };
-
+  
   const handleCancel = () => {
     setEditUserModalVisible(false);
     setAddUserModalVisible(false);
@@ -95,13 +97,22 @@ const User = () => {
 
   return (
     <div className="app-container">
-      <TypingCard title="Manajemen Pengguna" source="Di sini, Anda dapat mengelola pengguna di sistem, seperti menambahkan pengguna baru, atau mengubah pengguna yang sudah ada di sistem." />
+      <TypingCard
+        title="Manajemen Pengguna"
+        source="Di sini, Anda dapat mengelola pengguna di sistem, seperti menambahkan pengguna baru, atau mengubah pengguna yang sudah ada di sistem."
+      />
       <br />
-      <Card title={<Button type="primary" onClick={() => setAddUserModalVisible(true)}>Tambahkan pengguna</Button>}>
+      <Card
+        title={
+          <Button type="primary" onClick={() => setAddUserModalVisible(true)}>
+            Tambahkan pengguna
+          </Button>
+        }
+      >
         <Table bordered rowKey="id" dataSource={users} pagination={false}>
           <Column title="ID Pengguna" dataIndex="id" key="id" align="center" />
-          <Column title="Nama" dataIndex="name" key="name" align="center" />
           <Column title="Username" dataIndex="username" key="username" align="center" />
+          <Column title="Nama" dataIndex="name" key="name" align="center" />
           <Column title="Email" dataIndex="email" key="email" align="center" />
           <Column title="Peran" dataIndex="roles" key="roles" align="center" />
           <Column
@@ -109,15 +120,36 @@ const User = () => {
             key="action"
             width={195}
             align="center"
-            render={(text, row) => (
-              <span>
-                <Button type="primary" shape="circle" icon="edit" title="Edit" onClick={() => handleEditUser(row)} />
-                <Button type="danger" shape="circle" icon="delete" title="Hapus" onClick={() => handleDeleteUser(row)} />
+            render={(_, row) => (
+              <span className="action-buttons">
+                <Button
+                  type="primary"
+                  shape="circle"
+                  icon={<EditOutlined />}
+                  title="Edit"
+                  onClick={() => handleEditUser(row)}
+                  style={{ marginRight: 8 }}
+                />
+                <Popconfirm
+                  title="Yakin ingin menghapus pengguna ini?"
+                  onConfirm={() => handleDeleteUser(row)}
+                  okText="Ya"
+                  cancelText="Batal"
+                >
+                  <Button
+                    type="primary"
+                    danger
+                    shape="circle"
+                    icon={<DeleteOutlined />}
+                    title="Hapus"
+                  />
+                </Popconfirm>
               </span>
             )}
           />
         </Table>
       </Card>
+
       <EditUserForm
         ref={editUserFormRef}
         currentRowData={currentRowData}
@@ -126,6 +158,7 @@ const User = () => {
         onCancel={handleCancel}
         onOk={handleEditUserOk}
       />
+
       <AddUserForm
         ref={addUserFormRef}
         visible={addUserModalVisible}

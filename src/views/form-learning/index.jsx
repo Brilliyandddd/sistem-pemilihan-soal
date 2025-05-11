@@ -53,8 +53,10 @@ const FormLearning = () => {
 
   const handleEditFormLearningOk = async (values) => {
     setEditLoading(true);
+    const { id, ...payload } = values; // pisahkan id dari payload
+    console.log("Payload dikirim (tanpa id):", payload);
     try {
-      await editFormLearning(values, values.id);
+      await editFormLearning(payload, id); // id hanya di URL
       message.success("Berhasil mengedit!");
       setEditVisible(false);
       fetchFormLearnings();
@@ -64,6 +66,7 @@ const FormLearning = () => {
       setEditLoading(false);
     }
   };
+  
 
   const handleAddFormLearning = () => {
     setAddVisible(true);
@@ -96,18 +99,27 @@ const FormLearning = () => {
           <Column title="Nama" dataIndex="name" key="name" align="center" />
           <Column title="Deskripsi" dataIndex="description" key="description" align="center" />
           <Column
-            title="Operasi"
-            key="action"
-            width={195}
-            align="center"
-            render={(text, row) => (
-              <>
-                <Button type="primary" icon={<EditOutlined />} onClick={() => handleEdit(row)} />
-                <Divider type="vertical" />
-                <Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(row)} />
-              </>
-            )}
-          />
+  title="Operasi"
+  key="action"
+  width={195}
+  align="center"
+  render={(text, row) => (
+    <>
+      <Button
+        type="primary"
+        icon={<EditOutlined />}
+        onClick={() => handleEditFormLearning(row)} // ✅ gunakan nama fungsi yang benar
+      />
+      <Divider type="vertical" />
+      <Button
+        type="danger"
+        icon={<DeleteOutlined />}
+        onClick={() => handleDeleteFormLearning(row)} // ✅ gunakan nama fungsi yang benar
+      />
+    </>
+  )}
+/>
+
         </Table>
       </Card>
       <EditFormLearningForm visible={editVisible} confirmLoading={editLoading} onCancel={() => setEditVisible(false)} onOk={handleEditFormLearningOk} currentRowData={currentRowData} />

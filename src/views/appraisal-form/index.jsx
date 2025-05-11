@@ -60,7 +60,10 @@ const AppraisalForm = () => {
   const handleEditAppraisalFormOk = async (values) => {
     try {
       setEditModalLoading(true);
-      await editAppraisalForm(values, values.id);
+  
+      const { id, ...data } = values; // pisahkan ID dari data
+      await editAppraisalForm(data, id); // ID hanya di URL, tidak di body
+  
       message.success("Berhasil disimpan!");
       setEditModalVisible(false);
       fetchAppraisalForms();
@@ -70,7 +73,7 @@ const AppraisalForm = () => {
       setEditModalLoading(false);
     }
   };
-
+  
   const handleAddAppraisalForm = () => {
     setAddModalVisible(true);
   };

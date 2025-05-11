@@ -1,5 +1,6 @@
 import request from "@/utils/request";
 
+// Fungsi untuk menambahkan RPS
 export function addRPS(data) {
   return request({
     url: "/rps",
@@ -8,6 +9,7 @@ export function addRPS(data) {
   });
 }
 
+// Fungsi untuk mengimpor RPS dari file
 export function importRPS(file) {
   const formData = new FormData();
   formData.append('file', file);
@@ -22,6 +24,7 @@ export function importRPS(file) {
   });
 }
 
+// Fungsi untuk mendapatkan RPS
 export function getRPS() {
   return request({
     url: "/rps",
@@ -29,14 +32,25 @@ export function getRPS() {
   });
 }
 
+// Fungsi untuk mengedit RPS
 export function editRPS(data, id) {
+  console.log("Mengirim permintaan edit RPS:", id, data);
+
+  // Buat objek baru tanpa properti id
+  const filteredData = Object.assign({}, data);
+  delete filteredData.id;
+
   return request({
     url: `/rps/${id}`,
     method: "put",
-    data,
+    data: filteredData,
+  }).catch((error) => {
+    console.error("Error dari server:", error.response?.data || error.message);
+    throw error;
   });
 }
 
+// Fungsi untuk mendapatkan RPS berdasarkan ID
 export function getRPSById(rpsId) {
   return request({
     url: `/rps/${rpsId}`,
@@ -44,11 +58,37 @@ export function getRPSById(rpsId) {
   });
 }
 
-export function deleteRPS(data) {
+// Fungsi untuk menghapus RPS berdasarkan ID
+export function deleteRPS(id) {
+  if (!id) {
+    console.error("ID RPS tidak ditemukan, permintaan DELETE dibatalkan.");
+    return Promise.reject(new Error("ID RPS tidak valid."));
+  }
+
   return request({
-    url: `/rps/${data.id}`,
+    url: `/rps/${id}`, // Gunakan ID langsung di URL
     method: "delete",
-    data,
   });
-  
+}
+
+// Menambahkan fungsi baru untuk mendapatkan mata kuliah (subjects)
+export function getSubject() {
+  return request({
+    url: "/subject", // Ganti sesuai dengan endpoint yang sesuai untuk mata kuliah
+    method: "get",
+  });
+}
+
+export function getLecture() {
+  return request({
+    url: "/lecture",
+    method: "get",
+  });
+}
+
+export function getStudyProgram() {
+  return request({
+    url: "/study-program",  // Replace with the correct endpoint
+    method: "get",
+  });
 }

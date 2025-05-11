@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, Button, Table, message, Divider } from "antd";
 import {
   getStudents,
@@ -9,230 +9,263 @@ import {
 import { getReligions } from "@/api/religion";
 import { getUsersNotUsedInLectures } from "@/api/user";
 import { getStudyPrograms } from "@/api/studyProgram";
-
 import TypingCard from "@/components/TypingCard";
 import EditStudentForm from "./forms/edit-student-form";
 import AddStudentForm from "./forms/add-student-form";
-const { Column } = Table;
-class Student extends Component {
-  state = {
-    students: [],
-    religions: [],
-    users: [],
-    studyPrograms: [],
-    editStudentModalVisible: false,
-    editStudentModalLoading: false,
-    currentRowData: {},
-    addStudentModalVisible: false,
-    addStudentModalLoading: false,
-  };
-  getStudents = async () => {
-    const result = await getStudents();
-    const { content, statusCode } = result.data;
-    if (statusCode === 200) {
-      this.setState({
-        students: content,
-      });
+
+const Student = () => {
+  const [students, setStudents] = useState([]);
+  const [religions, setReligions] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [studyPrograms, setStudyPrograms] = useState([]);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editModalLoading, setEditModalLoading] = useState(false);
+  const [currentRowData, setCurrentRowData] = useState({});
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [addModalLoading, setAddModalLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [studentsRes, religionsRes, usersRes, studyProgramsRes] = await Promise.all([
+          getStudents(),
+          getReligions(),
+          getUsersNotUsedInLectures(),
+          getStudyPrograms(),
+        ]);
+  
+        if (studentsRes.data.statusCode === 200) setStudents(studentsRes.data.content);
+        if (religionsRes.data.statusCode === 200) setReligions(religionsRes.data.content);
+        if (usersRes.data.statusCode === 200) setUsers(usersRes.data.content);
+        if (studyProgramsRes.data.statusCode === 200) setStudyPrograms(studyProgramsRes.data.content);
+      } catch (error) {
+        message.error("Gagal memuat data awal");
+      }
+    };
+  
+    fetchInitialData();
+  }, []);  
+
+  const fetchStudents = async () => {
+    try {
+      const result = await getStudents();
+      if (result.data.statusCode === 200) {
+        setStudents(result.data.content);
+      }
+    } catch {
+      message.error("Gagal mengambil data mahasiswa");
     }
   };
 
-  getReligions = async () => {
-    const result = await getReligions();
-    const { content, statusCode } = result.data;
-
-    if (statusCode === 200) {
-      this.setState({
-        religions: content,
-      });
+  const fetchReligions = async () => {
+    try {
+      const result = await getReligions();
+      if (result.data.statusCode === 200) {
+        setReligions(result.data.content);
+      }
+    } catch {
+      message.error("Gagal mengambil data agama");
     }
   };
 
-  getUsers = async () => {
-    const result = await getUsersNotUsedInLectures();
-    const { content, statusCode } = result.data;
-
-    if (statusCode === 200) {
-      this.setState({
-        users: content,
-      });
+  const fetchUsers = async () => {
+    try {
+      const result = await getUsersNotUsedInLectures();
+      if (result.data.statusCode === 200) {
+        setUsers(result.data.content);
+      }
+    } catch {
+      message.error("Gagal mengambil data pengguna");
     }
   };
 
-  getStudyPrograms = async () => {
-    const result = await getStudyPrograms();
-    const { content, statusCode } = result.data;
-
-    if (statusCode === 200) {
-      this.setState({
-        studyPrograms: content,
-      });
+  const fetchStudyPrograms = async () => {
+    try {
+      const result = await getStudyPrograms();
+      if (result.data.statusCode === 200) {
+        setStudyPrograms(result.data.content);
+      }
+    } catch {
+      message.error("Gagal mengambil data program studi");
     }
   };
 
-  handleEditStudent = (row) => {
-    this.setState({
-      currentRowData: Object.assign({}, row),
-      editStudentModalVisible: true,
-    });
+  const handleEditStudent = (row) => {
+    setCurrentRowData(row);
+    setEditModalVisible(true);
   };
 
-  handleDeleteStudent = (row) => {
-    const { id } = row;
-    if (id === "admin") {
-      message.error("不能menghapusoleh  Admin！");
+  const handleDeleteStudent = async (row) => {
+    if (row.id === "admin") {
+      message.error("Tidak dapat menghapus Admin");
       return;
     }
-    deleteStudent({ id }).then((res) => {
-      message.success("berhasil dihapus");
-      this.getStudents();
-      this.getUsers();
-    });
+    try {
+      await deleteStudent({ id: row.id });
+      message.success("Berhasil dihapus");
+      fetchStudents();
+      fetchUsers();
+    } catch {
+      message.error("Gagal menghapus mahasiswa");
+    }
   };
 
-  handleEditStudentOk = (_) => {
-    const { form } = this.editStudentFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ editModalLoading: true });
-      editStudent(values)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            editStudentModalVisible: false,
-            editStudentModalLoading: false,
-          });
-          message.success("berhasi;!");
-          this.getStudents();
-          this.getUsers();
-        })
-        .catch((e) => {
-          message.success("gagal");
-        });
-    });
+  const handleEditStudentOk = async (values) => {
+    try {
+      setEditModalLoading(true);
+      console.log("Edit Values:", values);
+      console.log("Students:", students);
+
+  
+      const { id, ...payload } = values; // pisahkan id dari data lain
+      await editStudent(payload, id); // kirim data dan id dengan benar
+  
+      message.success("Berhasil diedit");
+      setEditModalVisible(false);
+      fetchStudents();
+      fetchUsers();
+    } catch {
+      message.error("Gagal mengedit mahasiswa");
+    } finally {
+      setEditModalLoading(false);
+    }
+  };
+  
+  const handleAddStudentOk = async (values) => {
+    try {
+      setAddModalLoading(true);
+      await addStudent(values);
+      message.success("Berhasil menambahkan mahasiswa");
+      setAddModalVisible(false);
+      fetchStudents();
+      fetchUsers();
+    } catch {
+      message.error("Gagal menambahkan mahasiswa");
+    } finally {
+      setAddModalLoading(false);
+    }
   };
 
-  handleCancel = (_) => {
-    this.setState({
-      editStudentModalVisible: false,
-      addStudentModalVisible: false,
-    });
-  };
-
-  handleAddStudent = (row) => {
-    this.setState({
-      addStudentModalVisible: true,
-    });
-  };
-
-  handleAddStudentOk = (_) => {
-    const { form } = this.addStudentFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ addStudentModalLoading: true });
-      addStudent(values)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            addStudentModalVisible: false,
-            addStudentModalLoading: false,
-          });
-          message.success("Berhasil!");
-          this.getStudents();
-          this.getUsers();
-        })
-        .catch((e) => {
-          message.success("Gagal menambahkan, coba lagi!");
-        });
-    });
-  };
-  componentDidMount() {
-    this.getStudents();
-    this.getReligions();
-    this.getUsers();
-    this.getStudyPrograms();
-  }
-  render() {
-    const { students, religions, users, studyPrograms } = this.state;
-    const title = (
-      <span>
-        <Button type="primary" onClick={this.handleAddStudent}>
-          Tambahkan mahasiswa
-        </Button>
-      </span>
-    );
-    const cardContent = `Di sini, Anda dapat mengelola mahasiswa di sistem, seperti menambahkan mahasiswa baru, atau mengubah mahasiswa yang sudah ada di sistem.`;
-    return (
-      <div className="app-container">
-        <TypingCard title="Manajemen Mahasiswa" source={cardContent} />
-        <br />
-        <Card title={title}>
-          <Table bordered rowKey="id" dataSource={students} pagination={false}>
-            <Column title="NIM" dataIndex="nim" key="nim" align="center" />
-            <Column title="Nama" dataIndex="name" key="name" align="center" />
-            <Column
-              title="Program Studi"
-              dataIndex="studyProgram.name"
-              key="studyProgram.name"
-              align="center"
-            />
-            <Column
-              title="Telepon"
-              dataIndex="phone"
-              key="phone"
-              align="center"
-            />
-            <Column
-              title="Operasi"
-              key="action"
-              width={195}
-              align="center"
-              render={(text, row) => (
-                <span>
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="edit"
-                    title="mengedit"
-                    onClick={this.handleEditStudent.bind(null, row)}
-                  />
-                  <Divider type="vertical" />
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="delete"
-                    title="menghapus"
-                    onClick={this.handleDeleteStudent.bind(null, row)}
-                  />
-                </span>
-              )}
-            />
-          </Table>
-        </Card>
-        <EditStudentForm
-          currentRowData={this.state.currentRowData}
-          wrappedComponentRef={(formRef) => (this.editStudentFormRef = formRef)}
-          visible={this.state.editStudentModalVisible}
-          confirmLoading={this.state.editStudentModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleEditStudentOk}
+  const renderColumns = () => [
+    {
+      title: "NIM",
+      dataIndex: "nim",
+      key: "nim",
+      align: "center",
+    },
+    {
+      title: "Nama Lengkap",
+      dataIndex: "name",
+      key: "name",
+      align: "center",
+    },
+    {
+      title: "Tempat Lahir",
+      dataIndex: "place_born",
+      key: "place_born",
+      align: "center",
+    },
+    {
+      title: "Tanggal Lahir",
+      dataIndex: "birth_date",
+      key: "birth_date",
+      align: "center",
+      render: (date) => new Date(date).toLocaleDateString("id-ID"),
+    },
+    {
+      title: "Gender",
+      dataIndex: "gender",
+      key: "gender",
+      align: "center",
+      render: (gender) => (gender === "L" ? "Laki-laki" : "Perempuan"),
+    },
+    {
+      title: "Nomor Telepon",
+      dataIndex: "phone",
+      key: "phone",
+      align: "center",
+    },
+    {
+      title: "Alamat",
+      dataIndex: "address",
+      key: "address",
+      align: "center",
+    },
+    {
+      title: "Agama",
+      dataIndex: ["religion", "name"],
+      key: "religion",
+      align: "center",
+    },
+    {
+      title: "Program Studi",
+      dataIndex: ["studyProgram", "name"],
+      key: "studyProgram",
+      align: "center",
+    },
+    {
+      title: "Akun Login",
+      dataIndex: ["user", "username"],
+      key: "user",
+      align: "center",
+    },
+    {
+      title: "Operasi",
+      key: "action",
+      align: "center",
+      render: (_, row) => (
+        <>
+          <Button type="primary" onClick={() => handleEditStudent(row)}>
+            Edit
+          </Button>
+          <Divider type="vertical" />
+          <Button type="danger" onClick={() => handleDeleteStudent(row)}>
+            Hapus
+          </Button>
+        </>
+      ),
+    },
+  ];
+  
+  return (
+    <div className="app-container">
+      <TypingCard
+        title="Manajemen Mahasiswa"
+        source="Di sini, Anda dapat mengelola mahasiswa di sistem, seperti menambahkan mahasiswa baru, atau mengubah mahasiswa yang sudah ada di sistem."
+      />
+      <br />
+      <Card title={<Button type="primary" onClick={() => setAddModalVisible(true)}>Tambahkan Mahasiswa</Button>}>
+        <Table
+          bordered
+          rowKey="id"
+          dataSource={students}
+          pagination={false}
+          columns={renderColumns()}
         />
-        <AddStudentForm
-          wrappedComponentRef={(formRef) => (this.addStudentFormRef = formRef)}
-          visible={this.state.addStudentModalVisible}
-          confirmLoading={this.state.addStudentModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleAddStudentOk}
-          religion={religions}
-          user={users}
-          studyProgram={studyPrograms}
-        />
-      </div>
-    );
-  }
-}
+      </Card>
+
+      <EditStudentForm
+        currentRowData={currentRowData}
+        visible={editModalVisible}
+        confirmLoading={editModalLoading}
+        onCancel={() => setEditModalVisible(false)}
+        onOk={handleEditStudentOk}
+        religion={religions}
+        user={users}
+        studyProgram={studyPrograms}
+      />
+
+      <AddStudentForm
+        visible={addModalVisible}
+        confirmLoading={addModalLoading}
+        onCancel={() => setAddModalVisible(false)}
+        onOk={handleAddStudentOk}
+        religion={religions}
+        user={users}
+        studyProgram={studyPrograms}
+      />
+    </div>
+  );
+};
 
 export default Student;

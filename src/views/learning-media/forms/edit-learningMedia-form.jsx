@@ -1,7 +1,8 @@
 import React from "react";
-import { Form, Input, Modal } from "antd";
+import { Form, Input, Modal, Select } from "antd";
 
 const { TextArea } = Input;
+const {Option} = Select;
 
 const EditLearningMediaForm = ({ visible, onCancel, onOk, confirmLoading, currentRowData }) => {
   const [form] = Form.useForm();
@@ -30,6 +31,12 @@ const EditLearningMediaForm = ({ visible, onCancel, onOk, confirmLoading, curren
         </Form.Item>
         <Form.Item label="Deskripsi Media Pembelajaran:" name="description" rules={[{ required: true, message: "Silahkan isikan deskripsi media pembelajaran" }]}> 
           <TextArea rows={4} placeholder="Deskripsi Media Pembelajaran" />
+        </Form.Item>
+        <Form.Item label="Type" name="type" rules={[{ required: true, message: "Silahkan isikan deskripsi media pembelajaran" }]}> 
+        <Select showSearch style={{ width: 300 }} placeholder="Pilih Tahun Ajaran">
+                      <Option value="1">Software</Option>
+                      <Option value="2">Hardware</Option>
+                    </Select>
         </Form.Item>
       </Form>
     </Modal>

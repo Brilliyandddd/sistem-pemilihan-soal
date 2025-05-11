@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { Table, Tag } from "antd";
-import { transactionList } from "@/api/remoteSearch";
+// import { transactionList } from "@/api/remoteSearch";
 
 const columns = [
   {
@@ -36,19 +36,19 @@ const TransactionTable = () => {
   useEffect(() => {
     let mounted = true;
 
-    const fetchData = async () => {
-      try {
-        const response = await transactionList();
-        if (mounted) {
-          const data = response.data.data.items.slice(0, 13);
-          setList(data);
-        }
-      } catch (error) {
-        console.error("Error fetching transaction list:", error);
-      }
-    };
+    // const fetchData = async () => {
+    //   try {
+    //     // const response = await transactionList();
+    //     if (mounted) {
+    //       const data = response.data.data.items.slice(0, 13);
+    //       setList(data);
+    //     }
+    //   } catch (error) {
+    //     console.error("Error fetching transaction list:", error);
+    //   }
+    // };
 
-    fetchData();
+    // fetchData();
 
     return () => {
       mounted = false;

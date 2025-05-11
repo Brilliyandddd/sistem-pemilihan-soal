@@ -1,7 +1,17 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Button, Table, message, Divider, Modal } from "antd";
-import { EditOutlined, DeleteOutlined, PlusOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
-import { getSubjects, deleteSubject, editSubject, addSubject } from "@/api/subject";
+import {
+  EditOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  ExclamationCircleOutlined,
+} from "@ant-design/icons";
+import {
+  getSubjects,
+  deleteSubject,
+  editSubject,
+  addSubject,
+} from "@/api/subject";
 import { getStudyPrograms } from "@/api/studyProgram";
 import { getSubjectGroups } from "@/api/subjectGroup";
 import TypingCard from "@/components/TypingCard";
@@ -20,9 +30,6 @@ const Subject = () => {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [addModalLoading, setAddModalLoading] = useState(false);
 
-  const editFormRef = useRef(null);
-  const addFormRef = useRef(null);
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -32,7 +39,7 @@ const Subject = () => {
       const [subjectsRes, programsRes, groupsRes] = await Promise.all([
         getSubjects(),
         getStudyPrograms(),
-        getSubjectGroups()
+        getSubjectGroups(),
       ]);
       setSubjects(subjectsRes?.data?.content || []);
       setStudyPrograms(programsRes?.data?.content || []);
@@ -43,14 +50,17 @@ const Subject = () => {
   };
 
   const handleEdit = (row) => {
-    setCurrentRowData({ ...row });
+    setCurrentRowData({
+      ...row,
+      year_commenced: String(row.year_commenced),
+    });
     setEditModalVisible(true);
   };
 
   const handleDelete = (row) => {
     confirm({
       title: "Apakah Anda yakin ingin menghapus mata kuliah ini?",
-      icon: <ExclamationCircleOutlined />, 
+      icon: <ExclamationCircleOutlined />,
       onOk: async () => {
         try {
           await deleteSubject({ id: row.id });
@@ -63,15 +73,15 @@ const Subject = () => {
     });
   };
 
-  const handleEditOk = async () => {
+  const handleEditOk = async (values) => {
     try {
-      const values = await editFormRef.current.validateFields();
       setEditModalLoading(true);
-      await editSubject(values);
-      message.success("Berhasil diperbarui!");
+      await editSubject(values, currentRowData.id);
+      message.success("Mata kuliah berhasil diperbarui!");
       setEditModalVisible(false);
       fetchData();
     } catch (error) {
+      console.error("Gagal edit:", error);
       message.error("Gagal memperbarui, coba lagi!");
     } finally {
       setEditModalLoading(false);
@@ -90,6 +100,7 @@ const Subject = () => {
       setAddModalVisible(false);
       fetchData();
     } catch (error) {
+      console.error("Gagal tambah:", error);
       message.error("Gagal menambahkan, coba lagi!");
     } finally {
       setAddModalLoading(false);
@@ -97,62 +108,98 @@ const Subject = () => {
   };
 
   const renderColumns = () => [
-    { title: "ID Mata Kuliah", dataIndex: "id", key: "id", align: "center" },
+    { title: "ID", dataIndex: "id", key: "id", align: "center" },
     { title: "Nama", dataIndex: "name", key: "name", align: "center" },
-    { title: "Deskripsi", dataIndex: "description", key: "description", align: "center" },
-    { title: "Point Kredit", dataIndex: "credit_point", key: "credit_point", align: "center" },
-    { title: "Tahun Mata Kuliah", dataIndex: "year_commenced", key: "year_commenced", align: "center" },
-    { 
-      title: "Program Studi", 
-      dataIndex: ["studyProgram", "name"], 
-      key: "name", 
-      align: "center" 
-    },
-    { 
-      title: "Rumpun Mata Kuliah", 
-      dataIndex: ["subjectGroup", "name"], 
-      key: "name", 
-      align: "center" 
+    {
+      title: "Deskripsi",
+      dataIndex: "description",
+      key: "description",
+      align: "center",
     },
     {
-      title: "Operasi",
+      title: "Kredit",
+      dataIndex: "credit_point",
+      key: "credit_point",
+      align: "center",
+    },
+    {
+      title: "Tahun",
+      dataIndex: "year_commenced",
+      key: "year_commenced",
+      align: "center",
+    },
+    {
+      title: "Prodi",
+      dataIndex: ["studyProgram", "name"],
+      key: "studyProgram",
+      align: "center",
+    },
+    {
+      title: "Rumpun",
+      dataIndex: ["subject_group", "name"],
+      key: "subject_group",
+      align: "center",
+    },
+    {
+      title: "Aksi",
       key: "action",
       align: "center",
       render: (text, row) => (
         <>
-          <Button type="primary" icon={<EditOutlined />} onClick={() => handleEdit(row)} />
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(row)}
+          />
           <Divider type="vertical" />
-          <Button type="danger" icon={<DeleteOutlined />} onClick={() => handleDelete(row)} />
+          <Button
+            type="danger"
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(row)}
+          />
         </>
       ),
     },
   ];
 
-  const renderTable = () => (
-    <Table bordered rowKey="id" dataSource={subjects} pagination={{ pageSize: 10 }} columns={renderColumns()} />
-  );
-
   return (
     <div className="app-container">
-      <TypingCard title="Manajemen Mata Kuliah" source="Di sini, Anda dapat mengelola mata kuliah." />
+      <TypingCard
+        title="Manajemen Mata Kuliah"
+        source="Kelola data mata kuliah di sini."
+      />
       <br />
-      <Card title={<Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>Tambahkan Mata Kuliah</Button>}>
-        {renderTable()}
+      <Card
+        title={
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+            Tambah Mata Kuliah
+          </Button>
+        }
+      >
+        <Table
+          bordered
+          rowKey="id"
+          dataSource={subjects}
+          pagination={{ pageSize: 10 }}
+          columns={renderColumns()}
+        />
       </Card>
+
       <EditSubjectForm
-        ref={editFormRef}
         currentRowData={currentRowData}
         visible={editModalVisible}
         confirmLoading={editModalLoading}
         onCancel={() => setEditModalVisible(false)}
         onOk={handleEditOk}
+        subjectGroups={subjectGroups}
+        studyPrograms={studyPrograms}
       />
+
       <AddSubjectForm
-        ref={addFormRef}
         visible={addModalVisible}
         confirmLoading={addModalLoading}
         onCancel={() => setAddModalVisible(false)}
-        onOk={handleAddOk}
+        onOk={handleAddOk} // ubah dari onOk jadi onSubmit
         subjectGroups={subjectGroups}
         studyPrograms={studyPrograms}
       />

@@ -12,12 +12,20 @@ const AddLectureForm = ({
   religion,
   user,
   studyProgram,
+  formRef,
 }) => {
   const [form] = Form.useForm();
 
+  // Berikan akses ke parent via ref
+  useEffect(() => {
+    if (formRef) {
+      formRef.current = form;
+    }
+  }, [form, formRef]);
+
   return (
     <Modal
-      title="Mengedit"
+      title="Tambah Dosen"
       open={visible}
       onCancel={onCancel}
       onOk={() => form.submit()}
@@ -123,7 +131,7 @@ const AddLectureForm = ({
           <Select placeholder="Pilih akun untuk login">
             {user.map((arr, key) => (
               <Select.Option value={arr.id} key={`user-${key}`}>
-                {arr.name}
+                {arr.id}
               </Select.Option>
             ))}
           </Select>
@@ -138,24 +146,10 @@ AddLectureForm.propTypes = {
   onCancel: PropTypes.func.isRequired,
   onOk: PropTypes.func.isRequired,
   confirmLoading: PropTypes.bool,
-  religion: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-    })
-  ).isRequired,
-  user: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-    })
-  ).isRequired,
-  studyProgram: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-    })
-  ).isRequired,
+  religion: PropTypes.array.isRequired,
+  user: PropTypes.array.isRequired,
+  studyProgram: PropTypes.array.isRequired,
+  formRef: PropTypes.object,
 };
 
 export default AddLectureForm;

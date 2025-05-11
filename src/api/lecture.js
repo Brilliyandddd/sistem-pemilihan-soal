@@ -15,11 +15,12 @@ export function getLectures() {
   });
 }
 
-export function editLecture(data, id) {
+export function editLecture(data) {
+  const { id, ...payload } = data;
   return request({
     url: `/lecture/${id}`,
     method: "put",
-    data,
+    data: payload,
   });
 }
 

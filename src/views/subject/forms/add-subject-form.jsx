@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Form, Input, InputNumber, Modal, Select } from "antd";
+import PropTypes from "prop-types";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -13,10 +14,13 @@ const AddSubjectForm = ({ visible, onCancel, onOk, confirmLoading, subjectGroups
     }
   }, [visible, form]);
 
-  const handleOk = () => {
-    form.validateFields().then((values) => {
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
       onOk(values);
-    });
+    } catch (error) {
+      console.error("Validasi gagal:", error);
+    }
   };
 
   return (
@@ -67,6 +71,15 @@ const AddSubjectForm = ({ visible, onCancel, onOk, confirmLoading, subjectGroups
       </Form>
     </Modal>
   );
+};
+
+AddSubjectForm.propTypes = {
+  visible: PropTypes.bool.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  onOk: PropTypes.func.isRequired,
+  confirmLoading: PropTypes.bool,
+  subjectGroups: PropTypes.array,
+  studyPrograms: PropTypes.array,
 };
 
 export default AddSubjectForm;

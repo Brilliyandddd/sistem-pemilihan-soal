@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Form, Input, Modal, Select, Checkbox } from "antd";
 
 const { TextArea } = Input;
+const { Option } = Select;
 
 const EditQuestionForm = ({ visible, onCancel, onOk, confirmLoading, currentRowData }) => {
   const [form] = Form.useForm();
@@ -21,64 +22,71 @@ const EditQuestionForm = ({ visible, onCancel, onOk, confirmLoading, currentRowD
 
   return (
     <Modal
-      title="Edit Jurusan"
+      title="Edit Pertanyaan"
       open={visible}
       onCancel={onCancel}
       onOk={() => form.submit()}
       confirmLoading={confirmLoading}
     >
       <Form form={form} layout="vertical" onFinish={onOk}>
-        <Form.Item label="ID Pertanyaan:" name="id">
+        <Form.Item label="ID Pertanyaan" name="id">
           <Input disabled />
         </Form.Item>
-        <Form.Item 
-          label="Pertanyaan:" 
-          name="title" 
-          rules={[{ required: true, message: "Silahkan isikan nama jurusan" }]}
+
+        <Form.Item
+          label="Pertanyaan"
+          name="title"
+          rules={[{ required: true, message: "Silakan isikan pertanyaan" }]}
         >
-          <Input placeholder="Pertanyaan" />
+          <Input placeholder="Contoh: Apa itu React?" />
         </Form.Item>
-        <Form.Item 
-          label="Deskripsi Jurusan:" 
-          name="description" 
-          rules={[{ required: true, message: "Silahkan isikan deskripsi jurusan" }]}
+
+        <Form.Item
+          label="Deskripsi Pertanyaan"
+          name="description"
+          rules={[{ required: true, message: "Silakan isikan deskripsi" }]}
         >
-          <TextArea rows={4} placeholder="Deskripsi Pertanyaan" />
+          <TextArea rows={4} placeholder="Deskripsi tambahan tentang pertanyaan" />
         </Form.Item>
-        <Form.Item 
-          label="Tipe Pertanyaan:" 
-          name="questionType" 
-          rules={[{ required: true, message: "Silahkan pilih tipe pertanyaan" }]}
+
+        <Form.Item
+          label="Tipe Pertanyaan"
+          name="questionType"
+          rules={[{ required: true, message: "Silakan pilih tipe pertanyaan" }]}
         >
           <Select placeholder="Pilih tipe pertanyaan">
-            <Select.Option value="IMAGE">Gambar</Select.Option>
-            <Select.Option value="AUDIO">Musik / Audio</Select.Option>
-            <Select.Option value="VIDEO">Video</Select.Option>
-            <Select.Option value="NORMAL">Normal</Select.Option>
+            <Option value="IMAGE">Gambar</Option>
+            <Option value="AUDIO">Audio</Option>
+            <Option value="VIDEO">Video</Option>
+            <Option value="NORMAL">Normal</Option>
           </Select>
         </Form.Item>
-        <Form.Item 
-          label="Tipe Jawaban:" 
-          name="answerType" 
-          rules={[{ required: true, message: "Silahkan pilih tipe jawaban" }]}
+
+        <Form.Item
+          label="Tipe Jawaban"
+          name="answerType"
+          rules={[{ required: true, message: "Silakan pilih tipe jawaban" }]}
         >
           <Select placeholder="Pilih tipe jawaban">
-            <Select.Option value="MULTIPLE_CHOICE">Pilihan Ganda</Select.Option>
-            <Select.Option value="BOOLEAN">Benar / Salah</Select.Option>
-            <Select.Option value="COMPLETION">Menyelesaikan kalimat rumpang</Select.Option>
+            <Option value="MULTIPLE_CHOICE">Pilihan Ganda</Option>
+            <Option value="BOOLEAN">Benar / Salah</Option>
+            <Option value="COMPLETION">Mengisi Kalimat</Option>
           </Select>
         </Form.Item>
-        <Form.Item label="Pilih jenis soal:" name="examType" valuePropName="checked">
+
+        <Form.Item label="Untuk Latihan Soal" name="examType" initialValue={[]}>
           <Checkbox.Group>
             <Checkbox value="EXERCISE">Exercise</Checkbox>
           </Checkbox.Group>
         </Form.Item>
-        <Form.Item label="Pilih jenis soal:" name="examType2" valuePropName="checked">
+
+        <Form.Item label="Untuk Quiz 1 / Quiz 2" name="examType2" initialValue={[]}>
           <Checkbox.Group>
             <Checkbox value="QUIZ">Quiz</Checkbox>
           </Checkbox.Group>
         </Form.Item>
-        <Form.Item label="Pilih jenis soal:" name="examType3" valuePropName="checked">
+
+        <Form.Item label="Untuk UTS / UAS" name="examType3" initialValue={[]}>
           <Checkbox.Group>
             <Checkbox value="EXAM">Exam</Checkbox>
           </Checkbox.Group>
