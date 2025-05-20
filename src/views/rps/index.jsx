@@ -41,10 +41,10 @@ const RPS = () => {
 
   const fetchAllData = async () => {
     try {
-      const [rpsRes, prodiRes, subjectRes, lectureRes] = await Promise.all([  // Ubah dari courseRes menjadi subjectRes
+      const [rpsRes, prodiRes, subjectRes, lectureRes] = await Promise.all([  
         getRPS(),
         getStudyProgram(),
-        getSubject(),  // Ubah dari getCourses menjadi getSubjects
+        getSubject(),  
         getLecture(),
       ]);
 
@@ -52,7 +52,7 @@ const RPS = () => {
 
       setRPS(rpsRes.data.content);
       setStudyProgram(prodiRes.data);
-      setSubject(subjectRes.data);  // Ubah dari courses menjadi subjects
+      setSubject(subjectRes.data);  
       setLecture(lectureRes.data.content);
     } catch (error) {
       message.error("Gagal mengambil data. Silakan coba lagi.");
@@ -81,31 +81,41 @@ const RPS = () => {
     }
   };
   
-
-  const handleDeleteRPS = useCallback((row) => {
-    confirm({
-      title: "Apakah Anda yakin ingin menghapus RPS ini?",
-      icon: <ExclamationCircleOutlined />,
-      content: `ID: ${row.id} - Nama: ${row.name}`,
-      okText: "Ya",
-      okType: "danger",
-      cancelText: "Batal",
-      async onOk() {
-        try {
-          await deleteRPS(row.id);
-          message.success("RPS berhasil dihapus!");
-          fetchAllData();
-        } catch (error) {
-          message.error("Gagal menghapus RPS. Silakan coba lagi.");
-        }
-      },
-    });
-  }, []);
+const handleDeleteRPS = useCallback((row) => {
+  confirm({
+    title: "Apakah Anda yakin ingin menghapus RPS ini?",
+    icon: <ExclamationCircleOutlined />,
+    content: `ID: ${row.idRps} - Nama: ${row.nameRps}`,
+    okText: "Ya",
+    okType: "danger",
+    cancelText: "Batal",
+    async onOk() {
+      try {
+        await deleteRPS(row.idRps); // Ubah dari row.id menjadi row.idRps
+        message.success("RPS berhasil dihapus!");
+        fetchAllData();
+      } catch (error) {
+        message.error("Gagal menghapus RPS. Silakan coba lagi.");
+      }
+    },
+  });
+}, []);
 
   const handleEditRPS = (row) => {
-    setCurrentRowData(row);
-    setEditRPSModalVisible(true);
-  };
+  if (!row?.idRps) {
+    message.error("Data RPS tidak memiliki ID!");
+    return;
+  }
+  setCurrentRowData(row);
+  setEditRPSModalVisible(true);
+};
+
+
+  const getLecturerByIndex = (lectureArray, index) => {
+  if (!lectureArray || !Array.isArray(lectureArray)) return "-";
+  if (index >= lectureArray.length) return "-";
+  return lectureArray[index] || "-";
+};
 
   return (
     <div className="app-container">
@@ -126,8 +136,8 @@ const RPS = () => {
           dataSource={rps}
           pagination={{ pageSize: 5 }}
         >
-          <Column title="ID RPS" dataIndex="id" align="center" />
-          <Column title="Nama" dataIndex="name" align="center" />
+          <Column title="ID RPS" dataIndex="idRps" align="center" />
+          <Column title="Nama" dataIndex="nameRps" align="center" />
           <Column title="SKS" dataIndex="sks" align="center" />
           <Column title="Semester" dataIndex="semester" align="center" />
           <Column
@@ -137,24 +147,35 @@ const RPS = () => {
             render={(subject) => subject?.name || "-"} 
           />
           <Column
-            title="Dosen Pengembang"
-            dataIndex="developer_lecturer"
-            align="center"
-            render={(lecture) => lecture?.name || "-"}
-          />
-          <Column
-            title="Dosen Pengampu"
-            dataIndex="developer_lecturer"
-            align="center"
-            render={(lecture) => lecture?.name || "-"}
-          />
-          <Column
-            title="Dosen Koordinator"
-            dataIndex="developer_lecturer"
-            align="center"
-            render={(lecture) => lecture?.name || "-"}
-          />
-
+  title="Dosen Pengembang"
+  dataIndex={["developerLecturer", "name"]}
+  align="center"
+  render={(name, record) => (
+    name || 
+    record?.developer_lecturer_id || 
+    "-"
+  )}
+/>
+<Column
+  title="Dosen Koordinator"
+  dataIndex={["coordinatorLecturer", "name"]}
+  align="center"
+  render={(name, record) => (
+    name || 
+    record?.coordinator_lecturer_id || 
+    "-"
+  )}
+/>
+<Column
+  title="Dosen Pengampu"
+  dataIndex={["instructorLecturer", "name"]}
+  align="center"
+  render={(name, record) => (
+    name || 
+    record?.instructor_lecturer_id || 
+    "-"
+  )}
+/>
           <Column
             title="Operasi"
             key="action"
@@ -186,22 +207,43 @@ const RPS = () => {
         confirmLoading={editRPSModalLoading}
         studyProgram={studyProgram.content}
         subject={subject.content}  
-        lecture={lecture.content}
+        lecture={lecture}
         onCancel={() => setEditRPSModalVisible(false)}
         onOk={async (values) => {
-          setEditRPSModalLoading(true);
-          try {
-            values.mandatory = values.mandatory.trim().toLowerCase(); // Normalize the field
-            await editRPS(values);
-            message.success("RPS berhasil diperbarui!");
-            setEditRPSModalVisible(false);
-            fetchAllData();
-          } catch (error) {
-            message.error("Gagal memperbarui RPS. Silakan coba lagi.");
-          } finally {
-            setEditRPSModalLoading(false);
-          }
-        }}
+  setEditRPSModalLoading(true);
+  try {
+    if (!values.idRps) {
+      throw new Error("ID RPS tidak valid");
+    }
+    const editedValues = {
+      idRps: values.idRps,
+      cplMk: values.cplMk,
+      cplProdi: values.cplProdi,
+      idProgramStudi: values.idProgramStudi,
+      idSubject: values.idSubject,
+      sks: values.sks,
+      semester: values.semester,
+      nameRps: values.nameRps,
+      idLearningMediaSoftware: values.idLearningMediaSoftware,
+      idLearningMediaHardware: values.idLearningMediaHardware,
+      developer_lecturer_id: values.developer_lecturer_id,
+      coordinator_lecturer_id: values.coordinator_lecturer_id,
+      instructor_lecturer_id: values.instructor_lecturer_id,
+    };
+    console.log("values update", editedValues);
+    // Panggil API dengan memisahkan ID dan data
+    await editRPS(editedValues.idRps, editedValues); // Kirim semua values
+    
+    message.success("RPS berhasil diubah!");
+    setEditRPSModalVisible(false);
+    fetchAllData();
+  } catch (error) {
+    console.error("Error saat mengedit RPS:", error);
+    message.error(`Gagal mengubah RPS: ${error.message}`);
+  } finally {
+    setEditRPSModalLoading(false);
+  }
+}}
         
       />
 
@@ -213,27 +255,27 @@ const RPS = () => {
         lecture={lecture}
         onCancel={() => setAddRPSModalVisible(false)}
         onOk={async (values) => {
-          setEditRPSModalLoading(true);
+          setAddRPSModalLoading(false);
           try {
             // values.mandatory = values.mandatory.trim().toLowerCase(); // Normalize the field
             const updatedValues = {
-
+              idRps: null,
               cplMk: values.cplMk,
               cplProdi: values.cplProdi,
               idProgramStudi: values.idProgramStudi,
-              idSubject: values.idSubject,  // Ubah dari course_id menjadi subject_id
+              idSubject: values.idSubject, 
               sks: values.sks,
               semester: values.semester,
-              name: values.name,
-              idLearningMediaSoftware: values.software,
-              idLearningMediaHardware: values.hardware,
+              nameRps: values.nameRps,
+              idLearningMediaSoftware: values.idLearningMediaSoftware,
+              idLearningMediaHardware: values.idLearningMediaHardware,
               developer_lecturer_id: values.developer_lecturer_id,
               coordinator_lecturer_id: values.coordinator_lecturer_id,
               instructor_lecturer_id: values.instructor_lecturer_id,
               // idLecturer: [values.developer_lecturer_id, values.coordinator_lecturer_id, values.instructor_lecturer_id],
             };
-            console.log("Learning media software", values.software);
-            console.log("Learning media hardware", values.hardware);
+            console.log("Learning media software", values.idLearningMediaSoftware);
+            console.log("Learning media hardware", values.idLearningMediaHardware);
             console.log ("values", updatedValues);
             await addRPS(updatedValues);
             

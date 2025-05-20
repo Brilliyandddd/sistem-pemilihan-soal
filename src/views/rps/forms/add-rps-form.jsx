@@ -82,7 +82,7 @@ const fetchLecture = async () => {
     >
       <Form form={form} layout="vertical">
         <Form.Item
-          name="name"
+          name="nameRps"
           label="Nama RPS"
           rules={[{ required: true, message: "Nama RPS wajib diisi!" }]}
         >
@@ -128,11 +128,11 @@ const fetchLecture = async () => {
         </Form.Item>
 
         <Form.Item
-          name="software"
+          name="idLearningMediaSoftware"
           label="Software Media Pembelajaran"
           rules={[{ required: true, message: "Software wajib diisi!" }]}
         >
-          <Select placeholder="Pilih Kelas">
+          <Select placeholder="Pilih Software Media Pembelajaran">
                 {learningMedias.software.map(({ id, name }) => (
                   <Option key={id} value={id}>
                     {name}
@@ -143,11 +143,11 @@ const fetchLecture = async () => {
         </Form.Item>
 
         <Form.Item
-          name="hardware"
+          name="idLearningMediaHardware"
           label="Hardware Media Pembelajaran"
           rules={[{ required: true, message: "Hardware wajib diisi!" }]}
         >
-          <Select placeholder="Pilih Kelas">
+          <Select placeholder="Pilih Hardware Media Pembelajaran">
                 {learningMedias.hardware.map(({ id, name }) => (
                   <Option key={id} value={id}>
                     {name}
@@ -183,17 +183,6 @@ const fetchLecture = async () => {
             ))}
           </Select>
         </Form.Item>
-        
-        {/* <Form.Item
-          name="mandatory"
-          label="Mata Kuliah Wajib?"
-          rules={[{ required: true, message: "Silakan pilih status wajib." }]}
-        >
-          <Select placeholder="Pilih status">
-            <Option value={true}>Wajib</Option>
-            <Option value={false}>Tidak Wajib</Option>
-          </Select>
-        </Form.Item> */}
 
         <Form.Item
   name="developer_lecturer_id"
@@ -250,6 +239,7 @@ AddRPSForm.propTypes = {
   studyProgram: PropTypes.array,  // Ensure it's an array
   subject: PropTypes.array,      // Ensure it's an array
   lecture: PropTypes.array,
+  learningMedias : PropTypes.array,
 };
 
 AddRPSForm.defaultProps = {

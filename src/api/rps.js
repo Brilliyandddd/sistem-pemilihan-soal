@@ -33,17 +33,13 @@ export function getRPS() {
 }
 
 // Fungsi untuk mengedit RPS
-export function editRPS(data, id) {
-  console.log("Mengirim permintaan edit RPS:", id, data);
-
-  // Buat objek baru tanpa properti id
-  const filteredData = Object.assign({}, data);
-  delete filteredData.id;
+export function editRPS(idRps, data) {
+  console.log("Mengirim permintaan edit RPS:", idRps, data);
 
   return request({
-    url: `/rps/${id}`,
+    url: `/rps/${idRps}`, // Pastikan endpoint ini sesuai dengan backend
     method: "put",
-    data: filteredData,
+    data: data, // Kirim semua data termasuk idRps jika diperlukan
   }).catch((error) => {
     console.error("Error dari server:", error.response?.data || error.message);
     throw error;
@@ -59,14 +55,14 @@ export function getRPSById(rpsId) {
 }
 
 // Fungsi untuk menghapus RPS berdasarkan ID
-export function deleteRPS(id) {
-  if (!id) {
+export function deleteRPS(idRps) {
+  if (!idRps) {
     console.error("ID RPS tidak ditemukan, permintaan DELETE dibatalkan.");
     return Promise.reject(new Error("ID RPS tidak valid."));
   }
 
   return request({
-    url: `/rps/${id}`, // Gunakan ID langsung di URL
+    url: `/rps/${idRps}`, // Gunakan ID langsung di URL
     method: "delete",
   });
 }

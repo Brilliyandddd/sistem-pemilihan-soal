@@ -1,6 +1,9 @@
-import React, { useEffect } from "react";
+/* eslint-disable react/prop-types */
+import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { Form, Input, InputNumber, Modal, Select } from "antd";
+import { Form, Input, InputNumber, Modal, Select, message } from "antd";
+import { getLearningMedias } from "@/api/learningMedia";
+import { getLectures } from "@/api/lecture";
 
 const { Option } = Select;
 
@@ -12,28 +15,68 @@ const EditRPSForm = ({
   currentRowData,
   studyProgram,
   subject,
-  lecture,
 }) => {
   const [form] = Form.useForm();
+  const [learningMedias, setLearningMedias] = useState({ software: [], hardware: [] });
+  const [lectures, setLectures] = useState([]);
+
+  const fetchLearningMedias = async () => {
+    try {
+      const result = await getLearningMedias();
+      if (result.data.statusCode === 200) {
+        const softwareMedias = result.data.content.filter(media => media.type === 1);
+        const hardwareMedias = result.data.content.filter(media => media.type === 2);
+        setLearningMedias({ software: softwareMedias, hardware: hardwareMedias });
+      } else {
+        message.error("Gagal mengambil data learning media");
+      }
+    } catch (error) {
+      message.error("Terjadi kesalahan: " + error.message);
+    }
+  };
+
+  const fetchLectures = async () => {
+    try {
+      const result = await getLectures();
+      if (result.data.statusCode === 200) {
+        setLectures(result.data.content);
+      } else {
+        message.error("Gagal mengambil data dosen");
+      }
+    } catch (error) {
+      message.error("Terjadi kesalahan: " + error.message);
+    }
+  };
 
   useEffect(() => {
-    if (visible && currentRowData) {
-      form.setFieldsValue({
-        id: currentRowData.id || "",
-        name: currentRowData.name || "",
-        sks: currentRowData.sks || 1,
-        semester: currentRowData.semester || 1,
-        cpl_prodi: currentRowData.cpl_prodi || "",
-        cpl_mk: currentRowData.cpl_mk || "",
-        software_media: currentRowData.software_media || "",
-        hardware_media: currentRowData.hardware_media || "",
-        study_program_id: currentRowData?.studyProgram?.id || "",
-        subject_id: currentRowData?.subject?.id || "",
-        mandatory: currentRowData.mandatory ?? true,
-        developer_lecturer_id: currentRowData?.developer_lecturer_id || "",
-        instructor_lecturer_id: currentRowData?.instructor_lecturer_id || "",
-        coordinator_lecturer_id: currentRowData?.coordinator_lecturer_id || "",
-      });
+    if (visible) {
+      fetchLearningMedias();
+      fetchLectures();
+
+    if (currentRowData) {
+      // const learningMedia = currentRowData.learningMedia || [];
+      const lecturer = currentRowData.lecture || [];
+        form.setFieldsValue({
+          idRps: currentRowData.idRps || "",
+          nameRps: currentRowData.nameRps || "",
+          sks: currentRowData.sks || 1,
+          semester: currentRowData.semester || 1,
+          cplProdi: currentRowData.cplProdi || "",
+          cplMk: currentRowData.cplMk || "",
+          // idLearningMediaSoftware: currentRowData.learningMedia?.id || "",
+          // idLearningMediaHardware: currentRowData.learningMedia?.id || "",
+          idLearningMediaSoftware: currentRowData.learningMediaSoftware.id || "",
+          idLearningMediaHardware: currentRowData.learningMediaHardware.id || "",
+          idProgramStudi: currentRowData.studyProgram?.id || "",
+          idSubject: currentRowData.subject?.id || "",
+          // developer_lecturer_id: currentRowData.lecture?.developer_lecturer_id || "",
+          // instructor_lecturer_id: currentRowData.lecture?.instructor_lecturer_id || "",
+          // coordinator_lecturer_id: currentRowData.lecture?.coordinator_lecturer_id || "",
+          developer_lecturer_id: lecturer[4] || "",
+          instructor_lecturer_id: lecturer[8] || "",
+          coordinator_lecturer_id: lecturer[0] || "",
+        });
+      }
     }
   }, [visible, currentRowData, form]);
 
@@ -49,13 +92,13 @@ const EditRPSForm = ({
       confirmLoading={confirmLoading}
     >
       <Form form={form} layout="vertical" onFinish={onOk}>
-        <Form.Item label="ID" name="id">
+        <Form.Item label="ID" name="idRps">
           <Input disabled />
         </Form.Item>
 
         <Form.Item
           label="Nama RPS"
-          name="name"
+          name="nameRps"
           rules={[{ required: true, message: "Nama wajib diisi!" }]}
         >
           <Input />
@@ -79,7 +122,7 @@ const EditRPSForm = ({
 
         <Form.Item
           label="CPL Prodi"
-          name="cpl_prodi"
+          name="cplProdi"
           rules={[{ required: true, message: "CPL Prodi wajib diisi!" }]}
         >
           <Input />
@@ -87,23 +130,43 @@ const EditRPSForm = ({
 
         <Form.Item
           label="CPL Mata Kuliah"
-          name="cpl_mk"
+          name="cplMk"
           rules={[{ required: true, message: "CPL Mata Kuliah wajib diisi!" }]}
         >
           <Input />
         </Form.Item>
 
-        <Form.Item label="Software Media Pembelajaran" name="software_media">
-          <Input />
+        <Form.Item
+          name="idLearningMediaSoftware"
+          label="Software Media Pembelajaran"
+          rules={[{ required: true, message: "Software wajib diisi!" }]}
+        >
+          <Select placeholder="Pilih Software Media Pembelajaran">
+            {learningMedias.software.map(({ id, name }) => (
+              <Option key={id} value={id}>
+                {name}
+              </Option>
+            ))}
+          </Select>
         </Form.Item>
 
-        <Form.Item label="Hardware Media Pembelajaran" name="hardware_media">
-          <Input />
+        <Form.Item
+          name="idLearningMediaHardware"
+          label="Hardware Media Pembelajaran"
+          rules={[{ required: true, message: "Hardware wajib diisi!" }]}
+        >
+          <Select placeholder="Pilih Hardware Media Pembelajaran">
+            {learningMedias.hardware.map(({ id, name }) => (
+              <Option key={id} value={id}>
+                {name}
+              </Option>
+            ))}
+          </Select>
         </Form.Item>
 
         <Form.Item
           label="Program Studi"
-          name="study_program_id"
+          name="idProgramStudi"
           rules={[{ required: true, message: "Program Studi wajib dipilih!" }]}
         >
           <Select placeholder="Pilih Program Studi">
@@ -118,7 +181,7 @@ const EditRPSForm = ({
 
         <Form.Item
           label="Mata Kuliah"
-          name="subject_id"
+          name="idSubject"
           rules={[{ required: true, message: "Mata Kuliah wajib dipilih!" }]}
         >
           <Select placeholder="Pilih Mata Kuliah">
@@ -131,57 +194,69 @@ const EditRPSForm = ({
         </Form.Item>
 
         <Form.Item
-          label="Mata Kuliah Wajib"
-          name="mandatory"
-          rules={[{ required: true, message: "Status wajib/tidak wajib harus diisi!" }]}
+          name="developer_lecturer_id"
+          label="Dosen Pengembang"
+          rules={[{ required: true, message: "Dosen Pengembang wajib dipilih!" }]}
         >
-          <Select placeholder="Pilih status">
-            <Option value={true}>Wajib</Option>
-            <Option value={false}>Tidak Wajib</Option>
+          <Select
+            placeholder="Pilih Dosen Pengembang"
+            showSearch
+            optionFilterProp="children"
+            filterOption={(input, option) =>
+              option.children.toLowerCase().includes(input.toLowerCase())
+            }
+          >
+            {lectures.map(lecturer => (
+              <Option key={lecturer.id} value={lecturer.id}>
+                {lecturer.name}
+              </Option>
+            ))}
           </Select>
         </Form.Item>
 
+        {/* Dosen Pengampu */}
         <Form.Item
-  label="Dosen Pengembang"
-  name="developer_lecturer_id"
-  rules={[{ required: true, message: "Nama Dosen Pengembang wajib dipilih!" }]}
->
-  <Select placeholder="Pilih Dosen Pengembang">
-    {Array.isArray(lecture) && lecture.map((dosen) => (
-      <Option key={dosen.id} value={dosen.id}>
-        {dosen.name}
-      </Option>
-    ))}
-  </Select>
-</Form.Item>
+          name="instructor_lecturer_id"
+          label="Dosen Pengampu"
+          rules={[{ required: true, message: "Dosen Pengampu wajib dipilih!" }]}
+        >
+          <Select
+            placeholder="Pilih Dosen Pengampu"
+            showSearch
+            optionFilterProp="children"
+            filterOption={(input, option) =>
+              option.children.toLowerCase().includes(input.toLowerCase())
+            }
+          >
+            {lectures.map(lecturer => (
+              <Option key={lecturer.id} value={lecturer.id}>
+                {lecturer.name}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
 
-<Form.Item
-  label="Dosen Pengampu"
-  name="instructor_lecturer_id"
-  rules={[{ required: true, message: "Nama Dosen Pengampu wajib dipilih!" }]}
->
-  <Select placeholder="Pilih Dosen Pengampu">
-    {Array.isArray(lecture) && lecture.map((dosen) => (
-      <Option key={dosen.id} value={dosen.id}>
-        {dosen.name}
-      </Option>
-    ))}
-  </Select>
-</Form.Item>
-
-<Form.Item
-  label="Dosen Koordinator"
-  name="coordinator_lecturer_id"
-  rules={[{ required: true, message: "Nama Dosen Koordinator wajib dipilih!" }]}
->
-  <Select placeholder="Pilih Dosen Koordinator">
-    {Array.isArray(lecture) && lecture.map((dosen) => (
-      <Option key={dosen.id} value={dosen.id}>
-        {dosen.name}
-      </Option>
-    ))}
-  </Select>
-</Form.Item>
+        {/* Dosen Koordinator */}
+        <Form.Item
+          name="coordinator_lecturer_id"
+          label="Dosen Koordinator"
+          rules={[{ required: true, message: "Dosen Koordinator wajib dipilih!" }]}
+        >
+          <Select
+            placeholder="Pilih Dosen Koordinator"
+            showSearch
+            optionFilterProp="children"
+            filterOption={(input, option) =>
+              option.children.toLowerCase().includes(input.toLowerCase())
+            }
+          >
+            {lectures.map(lecturer => (
+              <Option key={lecturer.id} value={lecturer.id}>
+                {lecturer.name}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
 
       </Form>
     </Modal>
@@ -194,14 +269,14 @@ EditRPSForm.propTypes = {
   onOk: PropTypes.func.isRequired,
   confirmLoading: PropTypes.bool,
   currentRowData: PropTypes.shape({
-    id: PropTypes.number,
-    name: PropTypes.string,
+    idRps: PropTypes.number,
+    nameRps: PropTypes.string,
     sks: PropTypes.number,
     semester: PropTypes.number,
-    cpl_prodi: PropTypes.string,
-    cpl_mk: PropTypes.string,
-    software_media: PropTypes.string,
-    hardware_media: PropTypes.string,
+    cplProdi: PropTypes.string,
+    cplMk: PropTypes.string,
+    idLearningMediaSoftware: PropTypes.string,
+    idLearningMediaHardware: PropTypes.string,
     studyProgram: PropTypes.shape({
       id: PropTypes.number,
       name: PropTypes.string,
@@ -215,24 +290,18 @@ EditRPSForm.propTypes = {
     instructor_lecturer_id: PropTypes.number,
     coordinator_lecturer_id: PropTypes.number,
   }).isRequired,
-  studyProgram: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number,
-      name: PropTypes.string,
-    })
-  ).isRequired,
-  subject: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number,
-      name: PropTypes.string,
-    })
-  ).isRequired,
-  lecture: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number,
-      name: PropTypes.string,
-    })
-  ).isRequired,
+  // studyProgram: PropTypes.arrayOf(
+  //   PropTypes.shape({
+  //     id: PropTypes.number,
+  //     name: PropTypes.string,
+  //   })
+  // ).isRequired,
+  // subject: PropTypes.arrayOf(
+  //   PropTypes.shape({
+  //     id: PropTypes.number,
+  //     name: PropTypes.string,
+  //   })
+  // ).isRequired,
 };
 
 export default EditRPSForm;
