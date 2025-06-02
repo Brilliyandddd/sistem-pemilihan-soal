@@ -1,59 +1,102 @@
-import React, { Component } from "react";
-import { Form, Input, Modal } from "antd";
-const { TextArea } = Input;
-class EditAnswerForm extends Component {
-  render() {
-    const { visible, onCancel, onOk, form, confirmLoading, currentRowData } =
-      this.props;
-    const { getFieldDecorator } = form;
-    const { id, name, description } = currentRowData;
-    const formItemLayout = {
-      labelCol: {
-        xs: { span: 24 },
-        sm: { span: 8 },
-      },
-      wrapperCol: {
-        xs: { span: 24 },
-        sm: { span: 16 },
-      },
-    };
-    return (
-      <Modal
-        title="Edit Jurusan"
-        open={visible}
-        onCancel={onCancel}
-        onOk={onOk}
-        confirmLoading={confirmLoading}
-      >
-        <Form {...formItemLayout}>
-          <Form.Item label="ID Jurusan:">
-            {getFieldDecorator("id", {
-              initialValue: id,
-            })(<Input disabled />)}
-          </Form.Item>
-          <Form.Item label="Nama Jurusan:">
-            {getFieldDecorator("name", {
-              rules: [
-                { required: true, message: "Silahkan isikan nama jurusan" },
-              ],
-              initialValue: name,
-            })(<Input placeholder="Nama Jurusan" />)}
-          </Form.Item>
-          <Form.Item label="Deskripsi Jurusan:">
-            {getFieldDecorator("description", {
-              rules: [
-                {
-                  required: true,
-                  message: "Silahkan isikan deskripsi jurusan",
-                },
-              ],
-              initialValue: description,
-            })(<TextArea rows={4} placeholder="Deskripsi Jurusan" />)}
-          </Form.Item>
-        </Form>
-      </Modal>
-    );
-  }
-}
+/* eslint-disable react/prop-types */
+import React, { useEffect, forwardRef, useImperativeHandle } from "react";
+import { Form, Input, Modal, Select, Switch } from "antd";
 
-export default Form.create({ name: "EditAnswerForm" })(EditAnswerForm);
+const { TextArea } = Input;
+
+const EditAnswerForm = forwardRef(({
+  visible,
+  onCancel,
+  onOk,
+  confirmLoading,
+  currentRowData,
+}, ref) => {
+  const [form] = Form.useForm();
+
+  useImperativeHandle(ref, () => ({
+    getForm: () => form,
+  }));
+
+  useEffect(() => {
+    if (visible && currentRowData) {
+      form.setFieldsValue({
+        idAnswer: currentRowData.idAnswer,
+        title: currentRowData.title,
+        description: currentRowData.description,
+        is_right: currentRowData.is_right || false,
+        type: currentRowData.type || 'NORMAL',
+      });
+    }
+  }, [visible, currentRowData, form]);
+
+  const handleOk = () => {
+    form
+      .validateFields()
+      .then((values) => {
+        onOk(values);
+      })
+      .catch((info) => {
+        console.log("Validation Failed:", info);
+      });
+  };
+
+  return (
+    <Modal
+      title="Edit Jawaban"
+      open={visible}
+      onCancel={onCancel}
+      onOk={handleOk}
+      confirmLoading={confirmLoading}
+      width={600}
+    >
+      <Form form={form} layout="vertical">
+        <Form.Item label="ID Jawaban:" name="idAnswer">
+          <Input disabled />
+        </Form.Item>
+        
+        <Form.Item
+          label="Jawaban:"
+          name="title"
+          rules={[{ required: true, message: "Silahkan isikan jawaban" }]}
+        >
+          <Input placeholder="Jawaban" />
+        </Form.Item>
+        
+        <Form.Item
+          label="Deskripsi Jawaban:"
+          name="description"
+          rules={[
+            { required: true, message: "Silahkan isikan deskripsi jawaban" },
+          ]}
+        >
+          <TextArea rows={4} placeholder="Deskripsi Jawaban" />
+        </Form.Item>
+
+        <Form.Item
+          label="Jawaban Benar / Salah:"
+          name="is_right"
+          valuePropName="checked"
+        >
+          <Switch checkedChildren="Benar" unCheckedChildren="Salah" />
+        </Form.Item>
+
+        <Form.Item
+          label="Tipe Jawaban:"
+          name="type"
+          rules={[{ required: true, message: "Silahkan pilih tipe jawaban" }]}
+        >
+          <Select placeholder="Pilih tipe jawaban">
+            <Select.Option value="IMAGE">Gambar</Select.Option>
+            <Select.Option value="AUDIO">Musik / Audio</Select.Option>
+            <Select.Option value="VIDEO">Video</Select.Option>
+            <Select.Option value="NORMAL">Normal</Select.Option>
+          </Select>
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+});
+
+EditAnswerForm.displayName = 'EditAnswerForm';
+
+export default EditAnswerForm;

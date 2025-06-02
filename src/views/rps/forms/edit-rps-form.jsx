@@ -1,9 +1,10 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
-import PropTypes from "prop-types";
 import { Form, Input, InputNumber, Modal, Select, message } from "antd";
+import PropTypes from "prop-types";
 import { getLearningMedias } from "@/api/learningMedia";
 import { getLectures } from "@/api/lecture";
+
 
 const { Option } = Select;
 
@@ -15,11 +16,13 @@ const EditRPSForm = ({
   currentRowData,
   studyProgram,
   subject,
+  // lecture prop is passed, but it's better to fetch it directly in the component if it's dynamic
 }) => {
   const [form] = Form.useForm();
   const [learningMedias, setLearningMedias] = useState({ software: [], hardware: [] });
-  const [lectures, setLectures] = useState([]);
+  const [lectures, setLectures] = useState([]); // State to hold lectures fetched inside this component
 
+  // Fetch Learning Medias
   const fetchLearningMedias = async () => {
     try {
       const result = await getLearningMedias();
@@ -28,13 +31,15 @@ const EditRPSForm = ({
         const hardwareMedias = result.data.content.filter(media => media.type === 2);
         setLearningMedias({ software: softwareMedias, hardware: hardwareMedias });
       } else {
-        message.error("Gagal mengambil data learning media");
+        message.error("Gagal mengambil data media pembelajaran");
       }
     } catch (error) {
-      message.error("Terjadi kesalahan: " + error.message);
+      console.error("Error fetching learning medias:", error);
+      message.error("Terjadi kesalahan saat mengambil media pembelajaran: " + error.message);
     }
   };
 
+  // Fetch Lectures
   const fetchLectures = async () => {
     try {
       const result = await getLectures();
@@ -44,18 +49,20 @@ const EditRPSForm = ({
         message.error("Gagal mengambil data dosen");
       }
     } catch (error) {
-      message.error("Terjadi kesalahan: " + error.message);
+      console.error("Error fetching lectures:", error);
+      message.error("Terjadi kesalahan saat mengambil data dosen: " + error.message);
     }
   };
 
+  // Effect to load data when modal becomes visible or currentRowData changes
   useEffect(() => {
     if (visible) {
+      form.resetFields(); // Reset fields when modal opens
       fetchLearningMedias();
       fetchLectures();
 
-    if (currentRowData) {
-      // const learningMedia = currentRowData.learningMedia || [];
-      const lecturer = currentRowData.lecture || [];
+      if (currentRowData) {
+        // Set form fields with currentRowData
         form.setFieldsValue({
           idRps: currentRowData.idRps || "",
           nameRps: currentRowData.nameRps || "",
@@ -63,35 +70,52 @@ const EditRPSForm = ({
           semester: currentRowData.semester || 1,
           cplProdi: currentRowData.cplProdi || "",
           cplMk: currentRowData.cplMk || "",
-          // idLearningMediaSoftware: currentRowData.learningMedia?.id || "",
-          // idLearningMediaHardware: currentRowData.learningMedia?.id || "",
-          idLearningMediaSoftware: currentRowData.learningMediaSoftware.id || "",
-          idLearningMediaHardware: currentRowData.learningMediaHardware.id || "",
+          // Ensure these paths match your API response structure for nested objects
+          idLearningMediaSoftware: currentRowData.learningMediaSoftware?.id || "",
+          idLearningMediaHardware: currentRowData.learningMediaHardware?.id || "",
           idProgramStudi: currentRowData.studyProgram?.id || "",
           idSubject: currentRowData.subject?.id || "",
-          // developer_lecturer_id: currentRowData.lecture?.developer_lecturer_id || "",
-          // instructor_lecturer_id: currentRowData.lecture?.instructor_lecturer_id || "",
-          // coordinator_lecturer_id: currentRowData.lecture?.coordinator_lecturer_id || "",
-          developer_lecturer_id: lecturer[4] || "",
-          instructor_lecturer_id: lecturer[8] || "",
-          coordinator_lecturer_id: lecturer[0] || "",
+          // For lecturers, assume the backend sends specific IDs directly
+          // If lecture is an array of objects, access 'id' property
+          developer_lecturer_id: currentRowData.developerLecturer?.id || "",
+          instructor_lecturer_id: currentRowData.instructorLecturer?.id || "",
+          coordinator_lecturer_id: currentRowData.coordinatorLecturer?.id || "",
         });
       }
     }
-  }, [visible, currentRowData, form]);
+  }, [visible, currentRowData, form]); // Added `form` to dependency array
+
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      console.log("Data yang dikirim dari EditRPSForm:", values);
+      await onOk(values); // Pass the validated values to the onOk prop
+      form.resetFields(); // Reset fields after successful submission
+    } catch (error) {
+      console.error("Validasi Gagal di EditRPSForm:", error);
+      // Ant Design form validation errors are usually caught by validateFields()
+      // If other errors occur, message them
+      if (error.errorFields) {
+        message.error("Harap lengkapi semua bidang yang diperlukan.");
+      } else {
+        message.error("Gagal mengedit RPS: " + error.message);
+      }
+    }
+  };
 
   return (
     <Modal
+      width={800} // Set width for better layout
       title="Edit RPS"
       open={visible}
       onCancel={() => {
-        form.resetFields();
+        form.resetFields(); // Reset fields on cancel
         onCancel();
       }}
-      onOk={() => form.submit()}
+      onOk={handleOk} // Call handleOk for validation and submission
       confirmLoading={confirmLoading}
     >
-      <Form form={form} layout="vertical" onFinish={onOk}>
+      <Form form={form} layout="vertical">
         <Form.Item label="ID" name="idRps">
           <Input disabled />
         </Form.Item>
@@ -99,25 +123,31 @@ const EditRPSForm = ({
         <Form.Item
           label="Nama RPS"
           name="nameRps"
-          rules={[{ required: true, message: "Nama wajib diisi!" }]}
+          rules={[{ required: true, message: "Nama RPS wajib diisi!" }]}
         >
-          <Input />
+          <Input placeholder="Masukkan Nama RPS" />
         </Form.Item>
 
         <Form.Item
           label="Jumlah SKS"
           name="sks"
-          rules={[{ required: true, type: "number", min: 1 }]}
+          rules={[
+            { required: true, message: "Jumlah SKS wajib diisi!" },
+            { type: "number", min: 1, message: "SKS harus lebih dari 0!" },
+          ]}
         >
-          <InputNumber style={{ width: "100%" }} />
+          <InputNumber min={1} style={{ width: "100%" }} placeholder="Masukkan jumlah SKS" />
         </Form.Item>
 
         <Form.Item
           label="Semester"
           name="semester"
-          rules={[{ required: true, type: "number", min: 1 }]}
+          rules={[
+            { required: true, message: "Semester wajib diisi!" },
+            { type: "number", min: 1, message: "Semester harus lebih dari 0!" },
+          ]}
         >
-          <InputNumber style={{ width: "100%" }} />
+          <InputNumber min={1} style={{ width: "100%" }} placeholder="Masukkan semester" />
         </Form.Item>
 
         <Form.Item
@@ -125,7 +155,7 @@ const EditRPSForm = ({
           name="cplProdi"
           rules={[{ required: true, message: "CPL Prodi wajib diisi!" }]}
         >
-          <Input />
+          <Input placeholder="Masukkan CPL Prodi" />
         </Form.Item>
 
         <Form.Item
@@ -133,7 +163,7 @@ const EditRPSForm = ({
           name="cplMk"
           rules={[{ required: true, message: "CPL Mata Kuliah wajib diisi!" }]}
         >
-          <Input />
+          <Input placeholder="Masukkan CPL Mata Kuliah" />
         </Form.Item>
 
         <Form.Item
@@ -170,13 +200,12 @@ const EditRPSForm = ({
           rules={[{ required: true, message: "Program Studi wajib dipilih!" }]}
         >
           <Select placeholder="Pilih Program Studi">
-  {Array.isArray(studyProgram) && studyProgram.map((arr) => (
-    <Select.Option value={arr.id} key={`study-program-${arr.id}`}>
-      {arr.name}
-    </Select.Option>
-  ))}
-</Select>
-
+            {Array.isArray(studyProgram) && studyProgram.map((arr) => (
+              <Option value={arr.id} key={`study-program-${arr.id}`}>
+                {arr.name}
+              </Option>
+            ))}
+          </Select>
         </Form.Item>
 
         <Form.Item
@@ -185,12 +214,12 @@ const EditRPSForm = ({
           rules={[{ required: true, message: "Mata Kuliah wajib dipilih!" }]}
         >
           <Select placeholder="Pilih Mata Kuliah">
-    {Array.isArray(subject) && subject.map((subjectItem) => (
-      <Option key={subjectItem.id} value={subjectItem.id}>
-        {subjectItem.name}
-      </Option>
-    ))}
-  </Select>
+            {Array.isArray(subject) && subject.map((subjectItem) => (
+              <Option key={subjectItem.id} value={subjectItem.id}>
+                {subjectItem.name}
+              </Option>
+            ))}
+          </Select>
         </Form.Item>
 
         <Form.Item
@@ -214,7 +243,6 @@ const EditRPSForm = ({
           </Select>
         </Form.Item>
 
-        {/* Dosen Pengampu */}
         <Form.Item
           name="instructor_lecturer_id"
           label="Dosen Pengampu"
@@ -236,7 +264,6 @@ const EditRPSForm = ({
           </Select>
         </Form.Item>
 
-        {/* Dosen Koordinator */}
         <Form.Item
           name="coordinator_lecturer_id"
           label="Dosen Koordinator"
@@ -257,51 +284,46 @@ const EditRPSForm = ({
             ))}
           </Select>
         </Form.Item>
-
       </Form>
     </Modal>
   );
 };
 
+// PropTypes for validation
 EditRPSForm.propTypes = {
   visible: PropTypes.bool.isRequired,
   onCancel: PropTypes.func.isRequired,
   onOk: PropTypes.func.isRequired,
   confirmLoading: PropTypes.bool,
   currentRowData: PropTypes.shape({
-    idRps: PropTypes.number,
+    idRps: PropTypes.string, // Assuming ID is string from backend
     nameRps: PropTypes.string,
     sks: PropTypes.number,
     semester: PropTypes.number,
     cplProdi: PropTypes.string,
     cplMk: PropTypes.string,
-    idLearningMediaSoftware: PropTypes.string,
-    idLearningMediaHardware: PropTypes.string,
+    learningMediaSoftware: PropTypes.shape({ id: PropTypes.string }), // Check nested ID
+    learningMediaHardware: PropTypes.shape({ id: PropTypes.string }), // Check nested ID
     studyProgram: PropTypes.shape({
-      id: PropTypes.number,
+      id: PropTypes.string, // Assuming ID is string from backend
       name: PropTypes.string,
     }),
     subject: PropTypes.shape({
-      id: PropTypes.number,
+      id: PropTypes.string, // Assuming ID is string from backend
       name: PropTypes.string,
     }),
-    mandatory: PropTypes.bool,
-    developer_lecturer_id: PropTypes.number,
-    instructor_lecturer_id: PropTypes.number,
-    coordinator_lecturer_id: PropTypes.number,
+    developerLecturer: PropTypes.shape({ id: PropTypes.string }), // Check nested ID
+    instructorLecturer: PropTypes.shape({ id: PropTypes.string }), // Check nested ID
+    coordinatorLecturer: PropTypes.shape({ id: PropTypes.string }), // Check nested ID
   }).isRequired,
-  // studyProgram: PropTypes.arrayOf(
-  //   PropTypes.shape({
-  //     id: PropTypes.number,
-  //     name: PropTypes.string,
-  //   })
-  // ).isRequired,
-  // subject: PropTypes.arrayOf(
-  //   PropTypes.shape({
-  //     id: PropTypes.number,
-  //     name: PropTypes.string,
-  //   })
-  // ).isRequired,
+  studyProgram: PropTypes.array,
+  subject: PropTypes.array,
+};
+
+EditRPSForm.defaultProps = {
+  confirmLoading: false,
+  studyProgram: [],
+  subject: [],
 };
 
 export default EditRPSForm;

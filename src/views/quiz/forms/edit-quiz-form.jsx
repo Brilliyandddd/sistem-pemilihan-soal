@@ -20,7 +20,7 @@ const EditQuizForm = ({
   useEffect(() => {
     if (currentRowData) {
       form.setFieldsValue({
-        id: currentRowData.id,
+        idQuiz: currentRowData.idQuiz,
         name: currentRowData.name,
         description: currentRowData.description,
         min_grade: currentRowData.min_grade,
@@ -51,7 +51,7 @@ const EditQuizForm = ({
         layout="vertical"
         onFinish={handleSubmit}
       >
-        <Form.Item label="ID Kuis:" name="id">
+        <Form.Item label="ID Kuis:" name="idQuiz">
           <Input disabled />
         </Form.Item>
         
@@ -89,7 +89,7 @@ const EditQuizForm = ({
         
         <Form.Item
           label="RPS:"
-          name="rps_id"
+          name="idRps"
           rules={[{ required: true, message: "Silahkan pilih RPS" }]}
         >
           <Select
@@ -98,8 +98,8 @@ const EditQuizForm = ({
             onChange={handleUpdateQuestion}
           >
             {rpsAll.map((arr) => (
-              <Select.Option key={arr.id} value={arr.id}>
-                {arr.name}
+              <Select.Option key={arr.idRps} value={arr.idRps}>
+                {arr.nameRps}
               </Select.Option>
             ))}
           </Select>
@@ -146,7 +146,7 @@ EditQuizForm.propTypes = {
   onOk: PropTypes.func.isRequired,
   confirmLoading: PropTypes.bool,
   currentRowData: PropTypes.shape({
-    id: PropTypes.number,
+    idQuiz: PropTypes.number,
     name: PropTypes.string,
     description: PropTypes.string,
     min_grade: PropTypes.number,
@@ -158,8 +158,8 @@ EditQuizForm.propTypes = {
   }),
   rpsAll: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      name: PropTypes.string.isRequired,
+      idRps: PropTypes.number.isRequired,
+      nameRps: PropTypes.string.isRequired,
     })
   ).isRequired,
   questions: PropTypes.arrayOf(

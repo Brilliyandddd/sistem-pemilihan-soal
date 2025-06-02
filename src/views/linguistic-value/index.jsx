@@ -9,6 +9,7 @@ import {
 import TypingCard from "@/components/TypingCard";
 import EditLinguisticValueForm from "./forms/edit-linguistic-value-form";
 import AddLinguisticValueForm from "./forms/add-linguistic-value-form";
+import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 const { Column } = Table;
 
 const LinguisticValue = () => {
@@ -130,9 +131,9 @@ const LinguisticValue = () => {
             align="center"
             render={(text, row) => (
               <span>
-                <Button type="primary" shape="circle" icon="edit" title="Edit" onClick={() => handleEdit(row)} />
+                <Button type="primary" shape="circle" icon={<EditOutlined/>} title="Edit" onClick={() => handleEdit(row)} />
                 <Divider type="vertical" />
-                <Button type="primary" shape="circle" icon="delete" title="Hapus" onClick={() => handleDelete(row)} />
+                <Button danger type="primary" shape="circle" icon={<DeleteOutlined/>} title="Hapus" onClick={() => handleDelete(row)} />
               </span>
             )}
           />

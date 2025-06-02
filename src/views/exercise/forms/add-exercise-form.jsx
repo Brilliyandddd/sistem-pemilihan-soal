@@ -8,7 +8,7 @@ const AddExerciseForm = ({
   visible,
   onCancel,
   onOk,
-  confirmLoading,
+  confirmLoading, // Pastikan prop ini diterima
   questions,
   rps,
   handleRPSChange,
@@ -18,23 +18,45 @@ const AddExerciseForm = ({
   const [selectedOption, setSelectedOption] = useState(null);
   const [randomQuestions, setRandomQuestions] = useState([]);
 
+  // Debug: Log untuk melihat data questions
+  useEffect(() => {
+    console.log("Questions data received by AddExerciseForm:", questions);
+    console.log("Questions length in AddExerciseForm:", questions?.length || 0);
+  }, [questions]);
+
   // Fungsi untuk mengacak pertanyaan
   const generateRandomQuestions = useCallback(() => {
-    if (!selectedOption) return;
+    if (!selectedOption || !questions || questions.length === 0) {
+      setRandomQuestions([]);
+      // Reset selected questions in form if no questions or option selected
+      form.setFieldsValue({ questions: [] });
+      return;
+    }
 
     const shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
-    setRandomQuestions(shuffledQuestions.slice(0, selectedOption));
+    const selectedQuestions = shuffledQuestions.slice(0, selectedOption);
+    setRandomQuestions(selectedQuestions);
 
     // Set nilai default untuk pertanyaan di form
     form.setFieldsValue({
-      questions: shuffledQuestions.slice(0, selectedOption).map((q) => q.id),
+      questions: selectedQuestions.map((q) => q.idQuestion),
     });
   }, [selectedOption, questions, form]);
 
-  // Gunakan useEffect untuk memanggil generateRandomQuestions saat selectedOption berubah
+  // Gunakan useEffect untuk memanggil generateRandomQuestions saat selectedOption atau questions berubah
+  // Jangan hanya bergantung pada generateRandomQuestions, karena questions juga bisa berubah
   useEffect(() => {
     generateRandomQuestions();
-  }, [generateRandomQuestions]);
+  }, [generateRandomQuestions, questions]); // Tambahkan questions sebagai dependency
+
+  // Reset form ketika modal ditutup
+  useEffect(() => {
+    if (!visible) {
+      form.resetFields();
+      setSelectedOption(null);
+      setRandomQuestions([]);
+    }
+  }, [visible, form]);
 
   return (
     <Modal
@@ -42,10 +64,11 @@ const AddExerciseForm = ({
       title="Tambah Exercise"
       visible={visible}
       onCancel={onCancel}
-      onOk={() => form.submit()}
+      onOk={() => form.submit()} // Panggil form.submit() langsung
       confirmLoading={confirmLoading}
+      destroyOnClose={true} // Penting untuk mereset form saat modal ditutup
     >
-      <Form form={form} layout="vertical" onFinish={onOk}>
+      <Form form={form} layout="vertical" onFinish={onOk}> {/* onFinish akan memanggil onOk dengan nilai form */}
         <Form.Item
           label="Nama Latihan"
           name="name"
@@ -85,8 +108,8 @@ const AddExerciseForm = ({
         >
           <Select style={{ width: 300 }} placeholder="Pilih RPS" onChange={handleRPSChange}>
             {rps.map((item) => (
-              <Select.Option key={item.id} value={item.id}>
-                {item.name}
+              <Select.Option key={item.idRps} value={item.idRps}>
+                {item.nameRps || item.namaRps || "Tanpa Nama"}
               </Select.Option>
             ))}
           </Select>
@@ -106,24 +129,43 @@ const AddExerciseForm = ({
         </Form.Item>
 
         <Form.Item
-          label="Pilih Pertanyaan"
-          name="questions"
-          rules={[{ required: true, message: "Silahkan pilih pertanyaan" }]}
+          label="Pilih jumlah soal"
+          rules={[{ required: true, message: "Jumlah soal wajib dipilih" }]}
         >
-          <Select mode="multiple" style={{ width: 300 }} placeholder="Pilih Pertanyaan">
-            {randomQuestions.map((item) => (
-              <Select.Option key={item.id} value={item.id}>
-                {item.title}
+          <Select
+            style={{ width: 300 }}
+            placeholder="Pilih jumlah soal yang akan diuji"
+            onChange={setSelectedOption}
+            value={selectedOption}
+          >
+            {[10, 20, 30, 40, 50].map((value) => (
+              <Select.Option key={value} value={value}>
+                {value}
               </Select.Option>
             ))}
           </Select>
         </Form.Item>
 
-        <Form.Item label="Pilih jumlah soal">
-          <Select style={{ width: 300 }} placeholder="Pilih jumlah soal yang akan diuji" onChange={setSelectedOption}>
-            {[10, 20, 30, 40, 50].map((value) => (
-              <Select.Option key={value} value={value}>
-                {value}
+        <Form.Item
+          label="Pilih Pertanyaan"
+          name="questions"
+          rules={[{ required: true, message: "Silahkan pilih pertanyaan" }]}
+        >
+          <Select
+            mode="multiple"
+            style={{ width: 300 }}
+            placeholder={
+              !selectedOption
+                ? "Pilih jumlah soal terlebih dahulu"
+                : randomQuestions.length === 0
+                  ? "Tidak ada pertanyaan tersedia"
+                  : "Pilih Pertanyaan"
+            }
+            disabled={!selectedOption || randomQuestions.length === 0}
+          >
+            {randomQuestions.map((item) => (
+              <Select.Option key={item.idQuestion} value={item.idQuestion}>
+                {item.title || item.question || `Pertanyaan ID: ${item.idQuestion}`}
               </Select.Option>
             ))}
           </Select>
@@ -149,7 +191,7 @@ const AddExerciseForm = ({
   );
 };
 
-// ✅ Tambahkan PropTypes untuk validasi props
+// ✅ Update PropTypes untuk validasi props - menerima string dan number
 AddExerciseForm.propTypes = {
   visible: PropTypes.bool.isRequired,
   onCancel: PropTypes.func.isRequired,
@@ -157,14 +199,16 @@ AddExerciseForm.propTypes = {
   confirmLoading: PropTypes.bool.isRequired,
   questions: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      title: PropTypes.string.isRequired,
+      idQuestion: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      title: PropTypes.string,
+      question: PropTypes.string,
     })
   ).isRequired,
   rps: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      name: PropTypes.string.isRequired,
+      idRps: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+      nameRps: PropTypes.string,
+      namaRps: PropTypes.string,
     })
   ).isRequired,
   handleRPSChange: PropTypes.func.isRequired,

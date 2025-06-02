@@ -20,7 +20,7 @@ const EditExerciseForm = ({
   useEffect(() => {
     if (currentRowData) {
       form.setFieldsValue({
-        id: currentRowData.id,
+        idExercise: currentRowData.idExercise,
         name: currentRowData.name,
         description: currentRowData.description,
         min_grade: currentRowData.min_grade,
@@ -33,6 +33,13 @@ const EditExerciseForm = ({
     }
   }, [currentRowData, form]);
 
+  // Reset form ketika modal ditutup
+  useEffect(() => {
+    if (!visible) {
+      form.resetFields();
+    }
+  }, [visible, form]);
+
   return (
     <Modal
       width={1000}
@@ -43,44 +50,108 @@ const EditExerciseForm = ({
       confirmLoading={confirmLoading}
     >
       <Form form={form} layout="horizontal" onFinish={onOk}>
-        <Form.Item label="ID Latihan:" name="id">
+        <Form.Item label="ID Latihan:" name="idExercise">
           <Input disabled />
         </Form.Item>
-        <Form.Item label="Nama Latihan:" name="name" rules={[{ required: true, message: "Nama wajib diisi" }]}>          
+        
+        <Form.Item 
+          label="Nama Latihan:" 
+          name="name" 
+          rules={[{ required: true, message: "Nama wajib diisi" }]}
+        >          
           <Input placeholder="Nama latihan" />
         </Form.Item>
-        <Form.Item label="Deskripsi Latihan:" name="description" rules={[{ required: true, message: "Silahkan isikan deskripsi latihan" }]}>          
+        
+        <Form.Item 
+          label="Deskripsi Latihan:" 
+          name="description" 
+          rules={[{ required: true, message: "Silahkan isikan deskripsi latihan" }]}
+        >          
           <TextArea rows={4} placeholder="Deskripsi latihan" />
         </Form.Item>
-        <Form.Item label="Nilai Minimum:" name="min_grade" rules={[{ required: true, message: "Nilai minimum wajib diisi" }]}>          
+        
+        <Form.Item 
+          label="Nilai Minimum:" 
+          name="min_grade" 
+          rules={[{ required: true, message: "Nilai minimum wajib diisi" }]}
+        >          
           <InputNumber min={1} style={{ width: 300 }} placeholder="Nilai minimum" />
         </Form.Item>
-        <Form.Item label="Durasi Latihan:" name="duration" rules={[{ required: true, message: "Durasi latihan wajib diisi" }]}>          
+        
+        <Form.Item 
+          label="Durasi Latihan:" 
+          name="duration" 
+          rules={[{ required: true, message: "Durasi latihan wajib diisi" }]}
+        >          
           <InputNumber min={1} style={{ width: 300 }} placeholder="Durasi latihan (menit)" />
         </Form.Item>
-        <Form.Item label="RPS:" name="rps_id" rules={[{ required: true, message: "Silahkan pilih RPS" }]}>          
-          <Select style={{ width: 300 }} placeholder="Pilih RPS" onChange={handleUpdateQuestion}>
-            {rpsAll.map((rps) => (
-              <Select.Option key={rps.id} value={rps.id}>
+        
+        <Form.Item 
+          label="RPS:" 
+          name="rps_id" 
+          rules={[{ required: true, message: "Silahkan pilih RPS" }]}
+        >          
+          <Select 
+            style={{ width: 300 }} 
+            placeholder="Pilih RPS" 
+            onChange={handleUpdateQuestion}
+          >
+            {rpsAll && rpsAll.map((rps) => (
+              <Select.Option 
+                key={`rps-${rps.idRps}`} 
+                value={rps.idRps}
+              >
                 {rps.name}
               </Select.Option>
             ))}
           </Select>
         </Form.Item>
-        <Form.Item label="Pertanyaan:" name="questions" rules={[{ required: true, message: "Silahkan pilih pertanyaan" }]}>          
-          <Select mode="multiple" style={{ width: 300 }} placeholder="Pilih Pertanyaan">
-            {questions.map((question) => (
-              <Select.Option key={question.id} value={question.id}>
+        
+        <Form.Item 
+          label="Pertanyaan:" 
+          name="questions" 
+          rules={[{ required: true, message: "Silahkan pilih pertanyaan" }]}
+        >          
+          <Select 
+            mode="multiple" 
+            style={{ width: 300 }} 
+            placeholder="Pilih Pertanyaan"
+          >
+            {questions && questions.map((question) => (
+              <Select.Option 
+                key={`question-${question.idQuestion}`} 
+                value={question.idQuestion}
+              >
                 {question.title}
               </Select.Option>
             ))}
           </Select>
         </Form.Item>
-        <Form.Item label="Tanggal Mulai:" name="date_start" rules={[{ required: true, message: "Tanggal Mulai wajib diisi" }]}>          
-          <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" placeholder="Pilih tanggal" />
+        
+        <Form.Item 
+          label="Tanggal Mulai:" 
+          name="date_start" 
+          rules={[{ required: true, message: "Tanggal Mulai wajib diisi" }]}
+        >          
+          <DatePicker 
+            showTime 
+            format="YYYY-MM-DD HH:mm:ss" 
+            placeholder="Pilih tanggal" 
+            style={{ width: 300 }}
+          />
         </Form.Item>
-        <Form.Item label="Tanggal Selesai:" name="date_end" rules={[{ required: true, message: "Tanggal Selesai wajib diisi" }]}>          
-          <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" placeholder="Pilih tanggal" />
+        
+        <Form.Item 
+          label="Tanggal Selesai:" 
+          name="date_end" 
+          rules={[{ required: true, message: "Tanggal Selesai wajib diisi" }]}
+        >          
+          <DatePicker 
+            showTime 
+            format="YYYY-MM-DD HH:mm:ss" 
+            placeholder="Pilih tanggal" 
+            style={{ width: 300 }}
+          />
         </Form.Item>
       </Form>
     </Modal>
@@ -93,7 +164,7 @@ EditExerciseForm.propTypes = {
   onOk: PropTypes.func.isRequired,
   confirmLoading: PropTypes.bool,
   currentRowData: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    idExercise: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     name: PropTypes.string,
     description: PropTypes.string,
     min_grade: PropTypes.number,
@@ -105,13 +176,13 @@ EditExerciseForm.propTypes = {
   }),
   rpsAll: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-      name: PropTypes.string.isRequired,
+      idRps: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      nameRps: PropTypes.string.isRequired,
     })
   ).isRequired,
   questions: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      idQuestion: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
       title: PropTypes.string.isRequired,
     })
   ).isRequired,

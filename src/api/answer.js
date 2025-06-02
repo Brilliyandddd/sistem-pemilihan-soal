@@ -16,9 +16,9 @@ export function getAnswers(questionID) {
   });
 }
 
-export function editAnswer(data, id) {
+export function editAnswer(data, idAnswer) {
   return request({
-    url: `/answer/${id}`,
+    url: `/answer/${idAnswer}`,
     method: "put",
     data,
   });
@@ -26,7 +26,7 @@ export function editAnswer(data, id) {
 
 export function deleteAnswer(data) {
   return request({
-    url: `/answer/${data.id}`,
+    url: `/answer/${data.idAnswer}`,
     method: "delete",
     data,
   });

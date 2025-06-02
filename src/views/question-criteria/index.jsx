@@ -9,6 +9,7 @@ import {
 import TypingCard from "@/components/TypingCard";
 import EditQuestionCriteriaForm from "./forms/edit-question-criteria-form";
 import AddQuestionCriteriaForm from "./forms/add-question-criteria-form";
+import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 
 const { Column } = Table;
 
@@ -91,9 +92,9 @@ const QuestionCriteria = () => {
             align="center"
             render={(text, row) => (
               <span>
-                <Button type="primary" shape="circle" icon="edit" title="Edit" onClick={() => handleEditQuestionCriteria(row)} />
+                <Button type="primary" shape="circle" icon={<EditOutlined/>} title="Edit" onClick={() => handleEditQuestionCriteria(row)} />
                 <Divider type="vertical" />
-                <Button type="primary" shape="circle" icon="delete" title="Hapus" onClick={() => handleDeleteQuestionCriteria(row)} />
+                <Button danger type="primary" shape="circle" icon={<DeleteOutlined/>} title="Hapus" onClick={() => handleDeleteQuestionCriteria(row)} />
               </span>
             )}
           />

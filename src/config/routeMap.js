@@ -196,6 +196,12 @@ export default [
     roles: ["ROLE_ADMINISTRATOR","ROLE_LECTURE"],
   },
   {
+    path: "/question/:questionID",
+    component: Answer,
+    roles: ["ROLE_ADMINISTRATOR"],
+    exact: true,
+  },
+  {
     path: "/team-teaching",
     component: TeamTeaching,
     roles: ["ROLE_ADMINISTRATOR"],
@@ -264,17 +270,17 @@ export default [
     roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
     exact: true,
   },
-  {
-    path: "/rps/:rpsID/:rpsDetailID",
-    component: Question,
-    roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
-    exact: true,
-  },
-  {
-    path: "/rps/:rpsID/:rpsDetailID/:questionID",
-    component: Answer,
-    roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
-  },
+  // {
+  //   path: "/rps/:rpsID/:rpsDetailID",
+  //   component: Question,
+  //   roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+  //   exact: true,
+  // },
+  // {
+  //   path: "/rps/:rpsID/:rpsDetailID/:questionID",
+  //   component: Answer,
+  //   roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+  // },
   {
     path: "/form-learning",
     component: FormLearning,

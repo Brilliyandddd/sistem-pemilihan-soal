@@ -28,16 +28,16 @@ export function getQuestionsByRPSQuiz2(rpsID) {
   });
 }
 
-export function getQuizByID(id) {
+export function getQuizByID(idQuiz) {
   return request({
-    url: `/quiz/${id}`,
+    url: `/quiz/${idQuiz}`,
     method: "get",
   });
 }
 
-export function editQuiz(data, id) {
+export function editQuiz(data, idQuiz) {
   return request({
-    url: `/quiz/${id}`,
+    url: `/quiz/${idQuiz}`,
     method: "put",
     data,
   });
@@ -45,7 +45,7 @@ export function editQuiz(data, id) {
 
 export function deleteQuiz(data) {
   return request({
-    url: `/quiz/${data.id}`,
+    url: `/quiz/${data.idQuiz}`,
     method: "delete",
     data,
   });

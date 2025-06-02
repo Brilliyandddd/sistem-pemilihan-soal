@@ -1,235 +1,251 @@
-import React, { Component } from "react";
-import { Card, Button, Table, message, Divider } from "antd";
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
+import React, { useState, useEffect } from "react";
+import { Card, Button, Table, message, Divider, Typography } from "antd";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { getAnswers, deleteAnswer, editAnswer, addAnswer } from "@/api/answer";
+import { getQuestionByIdPaged } from "@/api/question";
 import TypingCard from "@/components/TypingCard";
 import EditAnswerForm from "./forms/edit-answer-form";
 import AddAnswerForm from "./forms/add-answer-form";
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
 const { Column } = Table;
+const { Title } = Typography;
 
-class Answer extends Component {
-  state = {
+const Answer = () => {
+  const { questionID } = useParams();
+  const navigate = useNavigate();
+
+  const [state, setState] = useState({
     answers: [],
-    editAnswerModalVisible: false,
-    editAnswerModalLoading: false,
+    question: {},
     currentRowData: {},
-    addAnswerModalVisible: false,
-    addAnswerModalLoading: false,
-    rpsDetailID: "",
-    rpsID: "",
-    questionID: "",
-  };
-  getAnswers = async (questionID) => {
-    const result = await getAnswers(questionID);
-    const { content, statusCode } = result.data;
-    if (statusCode === 200) {
-      this.setState({
-        answers: content,
+    loading: false,
+  });
+
+  const [modal, setModal] = useState({
+    editVisible: false,
+    editLoading: false,
+    addVisible: false,
+    addLoading: false,
+  });
+
+  const fetchData = async () => {
+    if (!questionID) return;
+    
+    try {
+      setState(prev => ({ ...prev, loading: true }));
+      
+      const [answersRes, questionRes] = await Promise.all([
+        getAnswers(questionID),
+        getQuestionByIdPaged(questionID),
+      ]);
+
+      console.log("Answers Response:", answersRes);
+      console.log("Question Response:", questionRes);
+
+      setState({
+        answers: answersRes?.data?.content || [],
+        question: questionRes?.data?.content || {},
+        currentRowData: {},
+        loading: false,
       });
+    } catch (error) {
+      message.error("Failed to fetch data");
+      setState(prev => ({ ...prev, loading: false }));
     }
   };
 
-  handleEditAnswer = (row) => {
-    this.setState({
-      currentRowData: Object.assign({}, row),
-      editAnswerModalVisible: true,
-    });
+  useEffect(() => {
+    fetchData();
+  }, [questionID]);
+
+  const handleEdit = (row) => {
+    setState(prev => ({ ...prev, currentRowData: row }));
+    setModal(prev => ({ ...prev, editVisible: true }));
   };
 
-  handleDeleteAnswer = (row) => {
-    const { id } = row;
-    if (id === "admin") {
-      message.error("error");
-      return;
+  const handleDelete = async (row) => {
+    try {
+      await deleteAnswer({ idAnswer: row.idAnswer });
+      message.success("Deleted successfully");
+      fetchData();
+    } catch (error) {
+      message.error("Failed to delete");
     }
-    deleteAnswer({ id }).then((res) => {
-      message.success("berhasil dihapus");
-      this.getAnswers(this.state.questionID);
-    });
   };
 
-  handleEditAnswerOk = (_) => {
-    const { form } = this.editAnswerFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ editModalLoading: true });
-      editAnswer(values)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            editAnswerModalVisible: false,
-            editAnswerModalLoading: false,
-          });
-          message.success("berhasi;!");
-          this.getAnswers(this.state.questionID);
-        })
-        .catch((e) => {
-          message.success("gagal");
-        });
-    });
+  const handleEditSubmit = async (values) => {
+    setModal(prev => ({ ...prev, editLoading: true }));
+    
+    try {
+      await editAnswer(values, state.currentRowData.idAnswer);
+      message.success("Updated successfully");
+      setModal(prev => ({ ...prev, editVisible: false, editLoading: false }));
+      fetchData();
+    } catch (error) {
+      message.error("Update failed");
+      setModal(prev => ({ ...prev, editLoading: false }));
+    }
   };
 
-  handleCancel = (_) => {
-    this.setState({
-      editAnswerModalVisible: false,
-      addAnswerModalVisible: false,
-    });
-  };
-
-  handleAddAnswer = (row) => {
-    this.setState({
-      addAnswerModalVisible: true,
-    });
-  };
-
-  handleAddAnswerOk = () => {
-    const { form } = this.addAnswerFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ addAnswerModalLoading: true });
+  const handleAddSubmit = async (values) => {
+    setModal(prev => ({ ...prev, addLoading: true }));
+    
+    try {
       const { file, ...otherValues } = values;
-      if (file !== undefined) {
-        const formData = new FormData();
-        formData.append("title", otherValues.title);
-        formData.append("description", otherValues.description);
-        formData.append("type", otherValues.type);
-        formData.append("is_right", otherValues.is_right);
-        formData.append("file", file.fileList[0].originFileObj);
-        formData.append("question_id", this.state.questionID);
+      const formData = new FormData();
 
-        addAnswer(formData)
-          .then((response) => {
-            form.resetFields();
-            this.setState({
-              addAnswerModalVisible: false,
-              addAnswerModalLoading: false,
-            });
-            message.success("Berhasil!");
-            this.getAnswers(this.state.questionID);
-          })
-          .catch((e) => {
-            message.success("添加失败，请重试!");
-          });
-      } else {
-        const formData = new FormData();
-        formData.append("title", otherValues.title);
-        formData.append("description", otherValues.description);
-        formData.append("type", otherValues.type);
-        formData.append("is_right", otherValues.is_right);
-        formData.append("question_id", this.state.questionID);
-        addAnswer(formData)
-          .then((response) => {
-            form.resetFields();
-            this.setState({
-              addAnswerModalVisible: false,
-              addAnswerModalLoading: false,
-            });
-            message.success("Berhasil!");
-            this.getAnswers(this.state.questionID);
-          })
-          .catch((e) => {
-            message.success("添加失败，请重试!");
-          });
+      // Add all form values to FormData
+      Object.entries(otherValues).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+
+      // Add file if exists
+      if (file && file.length > 0) {
+        formData.append("file", file[0].originFileObj);
       }
-    });
+
+      // Add question ID
+      formData.append("idQuestion", questionID);
+      console.log("Current questionID:", questionID);
+
+      await addAnswer(formData);
+      message.success("Added successfully");
+      setModal(prev => ({ ...prev, addVisible: false, addLoading: false }));
+      fetchData();
+    } catch (error) {
+      message.error("Failed to add");
+      setModal(prev => ({ ...prev, addLoading: false }));
+    }
   };
-  componentDidMount() {
-    this.setState({
-      rpsID: this.props.match.params.rpsID,
-      rpsDetailID: this.props.match.params.rpsDetailID,
-      questionID: this.props.match.params.questionID,
-    });
-    this.getAnswers(this.props.match.params.questionID);
-  }
-  render() {
-    const { answers } = this.state;
-    const questionTitle = answers.length > 0 ? answers[0].question.title : 'No question available';
 
-    const title = (
-      <span>
-        <Button type="primary" onClick={this.handleAddAnswer}>
-          Tambahkan jawaban
-        </Button>
-      </span>
+  // Render answer type with better formatting
+  const renderAnswerType = (type) => {
+    const typeMap = {
+      'IMAGE': 'Gambar',
+      'AUDIO': 'Audio',
+      'VIDEO': 'Video',
+      'NORMAL': 'Normal'
+    };
+    return typeMap[type] || type;
+  };
+
+  // Render correct/incorrect answer status
+  const renderCorrectStatus = (isRight) => {
+    return isRight ? (
+      <span style={{ color: '#52c41a' }}>✓ Benar</span>
+    ) : (
+      <span style={{ color: '#ff4d4f' }}>✗ Salah</span>
     );
-    const cardContent = `Di sini, Anda dapat mengelola jawaban di sistem, seperti menambahkan jawaban baru, atau mengubah jawaban yang sudah ada di sistem.`;
-    return (
-      <div className="app-container">
-        <TypingCard title="Manajemen Jawaban" source={cardContent} />
-        <br />
-        <Card title={title}>
-        <h3>{questionTitle}</h3>
+  };
 
-          <Table bordered rowKey="id" dataSource={answers} pagination={false}>
-            <Column title="ID Jawaban" dataIndex="id" key="id" align="center" />
-            <Column
-              title="Jawaban"
-              dataIndex="title"
-              key="title"
-              align="center"
-            />
-            <Column
-              title="Deskripsi Jawaban"
-              dataIndex="description"
-              key="description"
-              align="center"
-            />
-            <Column
-              title="Tipe Soal"
-              dataIndex="type"
-              key="type"
-              align="center"
-            />
-            <Column
-              title="Operasi"
-              key="action"
-              width={195}
-              align="center"
-              render={(text, row) => (
-                <span>
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="edit"
-                    title="mengedit"
-                    onClick={this.handleEditAnswer.bind(null, row)}
-                  />
-                  <Divider type="vertical" />
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon="delete"
-                    title="menghapus"
-                    onClick={this.handleDeleteAnswer.bind(null, row)}
-                  />
-                </span>
-              )}
-            />
-          </Table>
+  const cardContent = "Di sini, Anda dapat mengelola jawaban di sistem, seperti menambahkan jawaban baru, atau mengubah jawaban yang sudah ada di sistem.";
+
+  return (
+    <div className="app-container">
+      <TypingCard title="Answer Management" source={cardContent} />
+      <br />
+      
+      {state.question.title && (
+        <Card>
+          <Title level={4} style={{ marginBottom: 16 }}>
+            Pertanyaan: {state.question.title}
+          </Title>
         </Card>
-        <EditAnswerForm
-          currentRowData={this.state.currentRowData}
-          wrappedComponentRef={(formRef) => (this.editAnswerFormRef = formRef)}
-          visible={this.state.editAnswerModalVisible}
-          confirmLoading={this.state.editAnswerModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleEditAnswerOk}
-        />
-        <AddAnswerForm
-          wrappedComponentRef={(formRef) => (this.addAnswerFormRef = formRef)}
-          visible={this.state.addAnswerModalVisible}
-          confirmLoading={this.state.addAnswerModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleAddAnswerOk}
-        />
-      </div>
-    );
-  }
-}
+      )}
+      <br />
+      
+      <Card
+        title={
+          <Button 
+            type="primary" 
+            onClick={() => setModal(prev => ({ ...prev, addVisible: true }))}
+          >
+            Add Answer
+          </Button>
+        }
+      >
+        <Table
+          bordered
+          rowKey="idAnswer"
+          dataSource={state.answers}
+          loading={state.loading}
+          pagination={false}
+        >
+          <Column
+            title="ID Jawaban"
+            dataIndex="idAnswer"
+            align="center"
+            width={120}
+          />
+          <Column
+            title="Jawaban"
+            dataIndex="title"
+            align="left"
+          />
+          <Column
+            title="Deskripsi Jawaban"
+            dataIndex="description"
+            align="left"
+            ellipsis={true}
+          />
+          <Column
+            title="Status"
+            dataIndex="is_right"
+            align="center"
+            width={100}
+            render={renderCorrectStatus}
+          />
+          <Column
+            title="Tipe Soal"
+            dataIndex="type"
+            align="center"
+            width={120}
+            render={renderAnswerType}
+          />
+          <Column
+            title="Actions"
+            align="center"
+            width={120}
+            render={(_, record) => (
+              <span>
+                <Button
+                  type="primary"
+                  shape="circle"
+                  icon={<EditOutlined />}
+                  onClick={() => handleEdit(record)}
+                />
+                <Divider type="vertical" />
+                <Button
+                  type="danger"
+                  shape="circle"
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleDelete(record)}
+                />
+              </span>
+            )}
+          />
+        </Table>
+      </Card>
 
-export default (Answer);
+      <EditAnswerForm
+        visible={modal.editVisible}
+        loading={modal.editLoading}
+        onCancel={() => setModal(prev => ({ ...prev, editVisible: false }))}
+        onOk={handleEditSubmit}
+        initialValues={state.currentRowData}
+      />
+
+      <AddAnswerForm
+        visible={modal.addVisible}
+        loading={modal.addLoading}
+        onCancel={() => setModal(prev => ({ ...prev, addVisible: false }))}
+        onOk={handleAddSubmit}
+      />
+    </div>
+  );
+};
+
+export default Answer;

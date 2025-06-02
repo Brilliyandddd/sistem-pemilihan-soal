@@ -1,10 +1,12 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Card, Button, Table, message, Modal } from "antd";
+import { Card, Button, Table, message, Modal, Divider } from "antd";
+import { Link } from "react-router-dom";
 import {
   EditOutlined,
   DeleteOutlined,
   ExclamationCircleOutlined,
+  DiffOutlined,
 } from "@ant-design/icons";
 import {
   getRPS,
@@ -188,6 +190,16 @@ const handleDeleteRPS = useCallback((row) => {
                   icon={<EditOutlined />}
                   onClick={() => handleEditRPS(row)}
                 />
+                <Divider type="vertical" />
+                  <Link to={`/rps/${row.idRps}`}>
+                    <Button
+                      type="primary"
+                      shape="circle"
+                      icon={<DiffOutlined />}
+                      title="Detail RPS"
+                    />
+                  </Link>
+                  <Divider type="vertical" />
                 <Button
                   danger
                   shape="circle"
