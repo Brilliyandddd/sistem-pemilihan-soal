@@ -329,6 +329,14 @@ const menuList = [
     icon: FileSearchOutlined,
     roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
   },
+
+  {
+    title: "Causality",
+    path: "/causality",
+    icon: ControlOutlined,
+    roles: ["ROLE_ADMINISTRATOR"],
+  },
+  
   {
     title: "Setting Ujian",
     path: "/setting-exam",

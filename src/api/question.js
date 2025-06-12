@@ -1,5 +1,5 @@
 import request from "@/utils/request";
-import requestForm from "@/utils/requestForm";
+// import requestForm from "@/utils/requestForm";
 
 // import axios from "axios";
 
@@ -122,3 +122,11 @@ export const getRpsDetails = async (rpsId) => {
     };
   }
 };
+
+export function submitQuestionCriteriaRating(payload) {
+  return request({
+    url: "/question/criteria-ratings", 
+    method: "post", 
+    data: payload, 
+  });
+}

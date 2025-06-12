@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Card, Button, Table, message, Divider, Checkbox, Form } from "antd";
+import { Card, Button, Table, message, Divider, Checkbox, Form, Image } from "antd"; // Import Image
 import { getQuestion, deleteQuestion, editQuestion, addQuestion, getRpsList, getRpsDetails } from "@/api/question";
 import TypingCard from "@/components/TypingCard";
 import EditQuestionForm from "./forms/edit-question-form";
@@ -49,7 +49,7 @@ const Question = () => {
       ],
       3: [
         { id: 5, name: "Array dan Linked List", title: "Array dan Linked List", description: "Struktur data dasar" },
-        { id: 6, name: "Sorting Algorithms", title: "Sorting Algorithms", description: "Algoritma pengurutan" },
+        { id: 6, name: "Sorting Algorithms", title: "Algoritma pengurutan", description: "Algoritma pengurutan" },
       ],
       4: [
         { id: 7, name: "Network Protocols", title: "Network Protocols", description: "Protokol jaringan" },
@@ -168,8 +168,8 @@ const Question = () => {
       console.error('Error adding question:', error);
       
       const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          'Gagal menambahkan pertanyaan';
+                           error.message || 
+                           'Gagal menambahkan pertanyaan';
       
       message.error(errorMessage);
     } finally {
@@ -246,6 +246,15 @@ const Question = () => {
     });
   };
 
+  // Fungsi untuk mendapatkan URL gambar dari path
+  const getImageUrl = (filePath) => {
+    if (!filePath) return null;
+    // Asumsi filePath adalah format "file/nama_gambar.png" atau sejenisnya
+    const imageName = filePath.substring(filePath.lastIndexOf('/') + 1);
+    // Pastikan http://localhost:8081 sesuai dengan alamat backend Anda
+    return `http://localhost:8081${filePath}`;
+  };
+
   return (
     <div className="app-container">
       <TypingCard
@@ -287,10 +296,10 @@ const Question = () => {
             width={60}
             render={(_, __, index) => index + 1} 
           />
-          <Column
-            title="ID"
-            dataIndex="idQuestion"
-            align="center"
+          <Column 
+            title="ID" 
+            dataIndex="idQuestion" 
+            align="center" 
           />
           <Column 
             title="Pertanyaan" 
@@ -303,6 +312,28 @@ const Question = () => {
                 {text || '-'}
               </span>
             )}
+          />
+          {/* Kolom untuk Gambar */}
+          <Column
+            title="Gambar"
+            key="image"
+            align="center"
+            width={120} // Sesuaikan lebar kolom sesuai kebutuhan
+            render={(_, row) => {
+              if (row.file_path) {
+                const imageUrl = getImageUrl(row.file_path);
+                return (
+                  <Image
+                    src={imageUrl}
+                    alt="Question Image"
+                    style={{ maxWidth: '80px', maxHeight: '80px', objectFit: 'contain' }} // Sesuaikan ukuran gambar
+                    fallback="https://via.placeholder.com/80?text=No+Image" // Gambar fallback jika gagal dimuat
+                  />
+                );
+              } else {
+                return <span>Tidak ada gambar</span>;
+              }
+            }}
           />
           <Column 
             title="Deskripsi" 
@@ -348,14 +379,14 @@ const Question = () => {
                   title="Edit"
                 />
                 <Divider type="vertical" />
-<Link to={`/question/${row.idQuestion}`}>
-  <Button 
-    type="primary" 
-    icon={<DiffOutlined />} 
-    size="small"
-    title="Answer"
-  />
-</Link>
+                <Link to={`/question/${row.idQuestion}`}>
+                  <Button 
+                    type="primary" 
+                    icon={<DiffOutlined />} 
+                    size="small"
+                    title="Answer"
+                  />
+                </Link>
                 <Divider type="vertical" />
                 <Button 
                   danger 

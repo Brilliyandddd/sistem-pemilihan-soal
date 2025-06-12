@@ -1,11 +1,11 @@
 import request from "@/utils/request";
-import requestForm from "@/utils/requestForm";
+// import requestForm from "@/utils/requestForm"; // Jika tidak digunakan, bisa dihapus
 
-export function getRPSs() {
-    return request({
-      url: `/criteria-value`,
-      method: "get",
-    });
+export function getCriteriaValue () {
+  return request({
+    url: `/criteria-value`,
+    method: "get",
+  });
 }
 
 export function getAllQuestionsByRPS(rpsID) {
@@ -22,42 +22,43 @@ export function getQuestionsWithCriteriaValuesFromQuizAnnouncement(quizAnnouncem
   });
 }
 
-export function getAllCriteriaValueByQuestion(questionID) {
-    return request({
-      url: `/criteria-value/question/${questionID}`,
-      method: "get",
-    });
-      
-}
-  
-export function addCriteriaValue(data, questionId) {
+export function getAllCriteriaValueByQuestion(questionId) {
   return request({
-      url: `/criteria-value/${questionId}`,
-      method: "post",
-      data,
+    url: `/criteria-value/question/${questionId}`,
+    method: "get",
+  });
+}
+
+export function addCriteriaValue(data, questionID) { // Tambahkan parameter questionID
+  return request({
+    url: `/criteria-value/${questionID}`, // URL kini mencakup questionID
+    method: "post",
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    data: data, // Axios akan otomatis men-*stringify* objek jika Content-Type adalah application/json
   });
 }
 
 export function getCriteriaValueById(criteriaValueId) {
-    return request({
-      url: `/criteria-value/${criteriaValueId}`,
-      method: "get",
-    });
-  }
+  return request({
+    url: `/criteria-value/${criteriaValueId}`,
+    method: "get",
+  });
+}
 
-  
 export function editCriteriaValue(criteriaValueId, criteriaValueRequest) {
-    return request({
-      url: `/criteria-value/${criteriaValueId}`,
-      method: "put",
-      data: criteriaValueRequest,
-    });
-  }
-  
-export function deleteCriteriavalue(data) {
-    return request({
-        url: `/criteria-value/${data.id}`,
-        method: "delete",
-        data
-    });
+  return request({
+    url: `/criteria-value/${criteriaValueId}`,
+    method: "put",
+    data: criteriaValueRequest,
+  });
+}
+
+export function deleteCriteriavalue(id) { // Ubah parameter dari `data` menjadi `id`
+  return request({
+    url: `/criteria-value/${id}`, // Gunakan ID langsung di URL
+    method: "delete",
+    // Metode DELETE biasanya tidak memerlukan body.
+  });
 }

@@ -32,6 +32,14 @@ export function getRPS() {
   });
 }
 
+// export function getRPSById(idRps, data){
+//   return request({
+//     url: `/rps/${idRps}`, 
+//     method: "get",
+//     data: data,
+//   })
+// }
+
 // Fungsi untuk mengedit RPS
 export function editRPS(idRps, data) {
   console.log("Mengirim permintaan edit RPS:", idRps, data);

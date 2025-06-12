@@ -1,5 +1,7 @@
 /* eslint-disable */
-require('script-loader!file-saver');
+// REMOVED: require('script-loader!file-saver');
+// ADDED: Standard ES module import for file-saver
+import { saveAs } from 'file-saver'; // Assuming file-saver exports saveAs as a named export
 import * as XLSX from 'xlsx';
 
 function generateArray(table) {
@@ -139,6 +141,7 @@ export function export_table_to_excel(id) {
     type: 'binary'
   });
 
+  // Use the imported saveAs function
   saveAs(new Blob([s2ab(wbout)], {
     type: "application/octet-stream"
   }), "test.xlsx")
@@ -151,7 +154,7 @@ export function export_json_to_excel({
   filename,
   merges = [],
   autoWidth = true,
-  bookType=  'xlsx'
+  bookType= 	'xlsx'
 } = {}) {
   /* original data */
   filename = filename || 'excel-list'
@@ -214,6 +217,7 @@ export function export_json_to_excel({
     bookSST: false,
     type: 'binary'
   });
+  // Use the imported saveAs function
   saveAs(new Blob([s2ab(wbout)], {
     type: "application/octet-stream"
   }), `${filename}.${bookType}`);

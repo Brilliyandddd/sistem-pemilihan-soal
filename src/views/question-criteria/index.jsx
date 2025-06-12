@@ -85,6 +85,7 @@ const QuestionCriteria = () => {
           <Column title="Nama" dataIndex="name" key="name" align="center" />
           <Column title="Deskripsi Kriteria Pertanyaan" dataIndex="description" key="description" align="center" />
           <Column title="Kategori" dataIndex="category" key="category" align="center" />
+          <Column title="Tipe" dataIndex="type" key="type" align="center" />
           <Column
             title="Operasi"
             key="action"

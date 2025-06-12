@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React from 'react';
 import Loading from "@/components/Loading";
 import Religion from "../views/religion";
@@ -5,6 +6,7 @@ import SubjectGroup from "../views/subject-group";
 import Student from "../views/student";
 import Subject from "../views/subject";
 import questionIndex from "../views/question-index";
+
 
 const Dashboard = React.lazy(() => import(/*webpackChunkName:'Dashboard'*/ "@/views/dashboard"));
 const Doc = React.lazy(() => import(/*webpackChunkName:'Doc'*/ "@/views/doc"));
@@ -35,6 +37,13 @@ const StudyProgram = React.lazy(() => import(/*webpackChunkName:'StudyProgram'*/
 const Lecture = React.lazy(() => import(/*webpackChunkName:'Lecture'*/ "@/views/lecture"));
 const RPS = React.lazy(() => import(/*webpackChunkName:'RPS'*/ "@/views/rps"));
 const RPSDetail = React.lazy(() => import(/*webpackChunkName:'RPS'*/ "@/views/rps-detail"));
+const Causality = React.lazy(() => import(/*webpackChunkName:'Causality'*/ "@/views/causality"));
+const CausalityRating = React.lazy(() => import(/*webpackChunkName:'CausalityRating'*/ "@/views/causality-rating"));
+const DematelGenerateStep1 = React.lazy(() => import(/*webpackChunkName:'DematelGenerateStep1'*/ "@/views/dematel-generate-step1"));
+const DematelGenerateStep2 = React.lazy(() => import(/*webpackChunkName:'DematelGenerateStep2'*/ "@/views/dematel-generate-step2"));
+const DematelGenerateStep3 = React.lazy(() => import(/*webpackChunkName:'DematelGenerateStep3'*/ "@/views/dematel-generate-step3"));
+const DematelGenerateStep4 = React.lazy(() => import(/*webpackChunkName:'DematelGenerateStep4'*/ "@/views/dematel-generate-step4"));
+const DematelGenerateStep5 = React.lazy(() => import(/*webpackChunkName:'DematelGenerateStep5'*/ "@/views/dematel-generate-step5"));
 const FormLearning = React.lazy(() => import(/*webpackChunkName:'FormLearning'*/ "@/views/form-learning"));
 const LearningMedia = React.lazy(() => import(/*webpackChunkName:'LearningMedia'*/ "@/views/learning-media"));
 const LearningMethod = React.lazy(() => import(/*webpackChunkName:'LearningMethod'*/ "@/views/learning-method"));
@@ -232,7 +241,7 @@ export default [
   //   roles: ["ROLE_ADMINISTRATOR"]
   // },
   {
-    path: "/index/question/quiz1/:rpsID",
+    path: "/quiz/questions/:quizID",
     component : QuestionIndexQuiz1,
     roles: ["ROLE_ADMINISTRATOR","ROLE_LECTURE"]
   },
@@ -270,17 +279,52 @@ export default [
     roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
     exact: true,
   },
-  // {
-  //   path: "/rps/:rpsID/:rpsDetailID",
-  //   component: Question,
-  //   roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
-  //   exact: true,
-  // },
+  {
+    path: "/rps/:rpsID/:rpsDetailID",
+    component: Question,
+    roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+    exact: true,
+  },
   // {
   //   path: "/rps/:rpsID/:rpsDetailID/:questionID",
   //   component: Answer,
   //   roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
   // },
+  {
+    path: "/causality",
+    component: Causality,
+    roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+  },
+  {
+    path:"/causality-rating/:idCausality",
+    component: CausalityRating,
+    roles: ["ROLE_LECTURE"],
+  },
+  {
+    path: "/dematel-generate-step1/:idCausality",
+    component: DematelGenerateStep1,
+    roles: ["ROLE_ADMINISTRATOR"],
+  },
+  {
+    path: "/dematel-generate-step2/:idCausality",
+    component: DematelGenerateStep2,
+    roles: ["ROLE_ADMINISTRATOR"],
+  },
+  {
+    path: "/dematel-generate-step3/:idCausality",
+    component: DematelGenerateStep3,
+    roles: ["ROLE_ADMINISTRATOR"],
+  },
+  {
+    path: "/dematel-generate-step4/:idCausality",
+    component: DematelGenerateStep4,
+    roles: ["ROLE_ADMINISTRATOR"],
+  },
+  {
+    path: "/dematel-generate-step5/:idCausality",
+    component: DematelGenerateStep5,
+    roles: ["ROLE_ADMINISTRATOR"],
+  },
   {
     path: "/form-learning",
     component: FormLearning,

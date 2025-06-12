@@ -299,7 +299,7 @@ const AddQuizForm = forwardRef(({
         >
           <DatePicker
             showTime
-            format="YYYY-MM-DD HH:mm:ss"
+            // format="YYYY-MM-DD HH:mm:ss"
             placeholder="Pilih tanggal"
             style={{ width: 300 }}
           />
@@ -312,7 +312,7 @@ const AddQuizForm = forwardRef(({
         >
           <DatePicker
             showTime
-            format="YYYY-MM-DD HH:mm:ss"
+            // format="YYYY-MM-DD HH:mm:ss"
             placeholder="Pilih tanggal"
             style={{ width: 300 }}
           />

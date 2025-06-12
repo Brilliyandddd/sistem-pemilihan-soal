@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
-import { Card, Button, Table, message, Divider, Typography } from "antd";
+import { Card, Button, Table, message, Divider, Typography, Image } from "antd"; // Import Image
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getAnswers, deleteAnswer, editAnswer, addAnswer } from "@/api/answer";
 import { getQuestionByIdPaged } from "@/api/question";
@@ -33,10 +33,10 @@ const Answer = () => {
 
   const fetchData = async () => {
     if (!questionID) return;
-    
+
     try {
       setState(prev => ({ ...prev, loading: true }));
-      
+
       const [answersRes, questionRes] = await Promise.all([
         getAnswers(questionID),
         getQuestionByIdPaged(questionID),
@@ -45,9 +45,17 @@ const Answer = () => {
       console.log("Answers Response:", answersRes);
       console.log("Question Response:", questionRes);
 
+      // Pastikan content atau data ada sebelum mengaksesnya
+      const fetchedAnswers = answersRes?.data?.content || answersRes?.data?.data || [];
+      const fetchedQuestion = questionRes?.data?.content || questionRes?.data?.data || {};
+
+      // Jika getQuestionByIdPaged mengembalikan array, ambil elemen pertama
+      const questionData = Array.isArray(fetchedQuestion) ? fetchedQuestion[0] : fetchedQuestion;
+
+
       setState({
-        answers: answersRes?.data?.content || [],
-        question: questionRes?.data?.content || {},
+        answers: fetchedAnswers,
+        question: questionData, // Pastikan ini adalah objek tunggal
         currentRowData: {},
         loading: false,
       });
@@ -78,7 +86,7 @@ const Answer = () => {
 
   const handleEditSubmit = async (values) => {
     setModal(prev => ({ ...prev, editLoading: true }));
-    
+
     try {
       await editAnswer(values, state.currentRowData.idAnswer);
       message.success("Updated successfully");
@@ -92,7 +100,7 @@ const Answer = () => {
 
   const handleAddSubmit = async (values) => {
     setModal(prev => ({ ...prev, addLoading: true }));
-    
+
     try {
       const { file, ...otherValues } = values;
       const formData = new FormData();
@@ -141,26 +149,48 @@ const Answer = () => {
     );
   };
 
+  // --- START: Tambahan untuk Gambar Pertanyaan ---
+  // Fungsi untuk mendapatkan URL gambar dari path pertanyaan
+  const getImageUrl = (filePath) => {
+    if (!filePath) return null;
+    // Asumsi filePath adalah format "/images/questions/nama_gambar.png"
+    // Pastikan http://localhost:8081 sesuai dengan alamat backend Anda
+    return `http://localhost:8081${filePath}`;
+  };
+  // --- END: Tambahan untuk Gambar Pertanyaan ---
+
   const cardContent = "Di sini, Anda dapat mengelola jawaban di sistem, seperti menambahkan jawaban baru, atau mengubah jawaban yang sudah ada di sistem.";
 
   return (
     <div className="app-container">
       <TypingCard title="Answer Management" source={cardContent} />
       <br />
-      
+
+      {/* Card untuk menampilkan informasi pertanyaan */}
       {state.question.title && (
         <Card>
           <Title level={4} style={{ marginBottom: 16 }}>
             Pertanyaan: {state.question.title}
           </Title>
+          {/* Tampilkan gambar pertanyaan jika ada */}
+          {state.question.file_path && (
+            <div style={{ marginBottom: 16, textAlign: 'left' }}> {/* Center the image */}
+              <Image
+                src={getImageUrl(state.question.file_path)}
+                alt="Question Image"
+                style={{ maxWidth: '250px', maxHeight: '250px', objectFit: 'contain' }} // Sesuaikan ukuran gambar
+                fallback="https://via.placeholder.com/250?text=Question+Image" // Gambar fallback jika gagal dimuat
+              />
+            </div>
+          )}
         </Card>
       )}
       <br />
-      
+
       <Card
         title={
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             onClick={() => setModal(prev => ({ ...prev, addVisible: true }))}
           >
             Add Answer

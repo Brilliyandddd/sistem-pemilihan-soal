@@ -35,6 +35,15 @@ export function getQuizByID(idQuiz) {
   });
 }
 
+// NEW: Fungsi untuk mendapatkan pertanyaan berdasarkan daftar ID
+export function getQuestionsByIds(questionIds) {
+  return request({
+    url: "/questions/by-ids", // <-- Ini adalah endpoint baru di backend Anda
+    method: "post", // Menggunakan POST karena array ID dikirim di body request
+    data: { questionIds: questionIds } // Payload: { "questionIds": ["ID1", "ID2", ...] }
+  });
+}
+
 export function editQuiz(data, idQuiz) {
   return request({
     url: `/quiz/${idQuiz}`,

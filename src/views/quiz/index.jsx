@@ -9,6 +9,7 @@ import EditQuizForm from "./forms/edit-quiz-form";
 import AddQuizForm from "./forms/add-quiz-form";
 import moment from "moment";
 import { EditOutlined, BarChartOutlined, DeleteOutlined, SettingOutlined } from "@ant-design/icons";
+import { getRPSById } from "../../api/rps";
 
 const { Column } = Table;
 
@@ -165,34 +166,99 @@ const Quiz = () => {
   };
 
   const handleAddQuizOk = () => {
-    const form = addQuizFormRef.current?.getForm();
-    if (!form) {
-      message.error("Form tidak ditemukan");
-      return;
-    }
+  const form = addQuizFormRef.current?.getForm();
+  if (!form) {
+    message.error("Form tidak ditemukan");
+    return;
+  }
 
-    form.validateFields()
-      .then(async (values) => {
-        setAddQuizModalLoading(true);
-        try {
-          await addQuiz(values);
-          form.resetFields();
-          setAddQuizModalVisible(false);
-          setAddQuizModalLoading(false);
-          message.success("Berhasil menambahkan kuis!");
-          fetchQuiz();
-          setFilteredQuestions([]);
-          addQuizFormRef.current?.resetForm();
-        } catch (error) {
-          console.error("Error adding quiz:", error);
-          setAddQuizModalLoading(false);
-          message.error("Gagal menambahkan kuis, coba lagi!");
+  form.validateFields()
+    .then(async (values) => {
+      setAddQuizModalLoading(true);
+      try {
+        // Ambil data RPS berdasarkan rps_id untuk mendapatkan developerId, coordinatorId, dan instructorId
+        let developerId = null;
+        let coordinatorId = null;
+        let instructorId = null;
+        
+        if (values.rps_id) {
+          try {
+            const rpsResponse = await getRPSById(values.rps_id);
+            
+            if (rpsResponse && rpsResponse.data && rpsResponse.data.content) {
+              const rpsContent = rpsResponse.data.content;
+              
+              // Ambil developerId
+              if (rpsContent.developerLecturer && rpsContent.developerLecturer.id) {
+                developerId = rpsContent.developerLecturer.id;
+              } else {
+                console.warn("DeveloperLecturer tidak ditemukan di RPS:", values.rps_id);
+              }
+
+              // Ambil coordinatorId
+              if (rpsContent.coordinatorLecturer && rpsContent.coordinatorLecturer.id) {
+                coordinatorId = rpsContent.coordinatorLecturer.id;
+              } else {
+                console.warn("CoordinatorLecturer tidak ditemukan di RPS:", values.rps_id);
+              }
+
+              // Ambil instructorId
+              if (rpsContent.instructorLecturer && rpsContent.instructorLecturer.id) {
+                instructorId = rpsContent.instructorLecturer.id;
+              } else {
+                console.warn("InstructorLecturer tidak ditemukan di RPS:", values.rps_id);
+              }
+              
+            } else {
+              console.warn("Data RPS tidak ditemukan:", values.rps_id);
+            }
+          } catch (rpsError) {
+            console.error("Error fetching RPS data:", rpsError);
+            message.warning("Tidak dapat mengambil data lecturer dari RPS");
+          }
         }
-      })
-      .catch((info) => {
-        console.log("Validation Failed:", info);
-      });
-  };
+
+        // Siapkan data untuk dikirim ke API
+        const updated = {
+          ...values,
+          developerId: developerId,
+          coordinatorId: coordinatorId, // Pastikan ini sesuai dengan struktur data RPS
+          instructorId: instructorId, // Pastikan ini sesuai dengan struktur data RPS
+          // Pastikan tanggal dalam format ISO string
+          date_start: values.date_start?.toISOString() || values.date_start,
+          date_end: values.date_end?.toISOString() || values.date_end,
+        };
+        
+        // Kirim data ke API
+        await addQuiz(updated);
+        
+        // Reset form dan tutup modal
+        form.resetFields();
+        setAddQuizModalVisible(false);
+        setAddQuizModalLoading(false);
+        message.success("Berhasil menambahkan kuis!");
+        
+        // Refresh data
+        fetchQuiz();
+        setFilteredQuestions([]);
+        addQuizFormRef.current?.resetForm();
+        
+      } catch (error) {
+        console.error("Error adding quiz:", error);
+        setAddQuizModalLoading(false);
+        
+        // Tampilkan pesan error yang lebih spesifik
+        const errorMessage = error.response?.data?.message || 
+                           error.response?.data?.error || 
+                           error.message || 
+                           "Gagal menambahkan kuis, coba lagi!";
+        message.error(errorMessage);
+      }
+    })
+    .catch((info) => {
+      console.log("Validation Failed:", info);
+    });
+};
 
   const renderQuizType = (type) => {
     const typeMap = {
