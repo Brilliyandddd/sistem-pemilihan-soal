@@ -6,7 +6,7 @@ import { Button, Table, Tabs, Tag, message, Spin, Alert, Image } from "antd";
 import {
     getQuestionsByRPSQuiz1,
 } from "@/api/quiz";
-import { getQuiz } from "@/api/quiz";
+import { getQuiz } from "@/api/quiz"; 
 import { getRPS } from "@/api/rps";
 import { getUsers } from "@/api/user";
 import { useNavigate, useParams } from 'react-router-dom';
@@ -17,7 +17,7 @@ const { TabPane } = Tabs;
 function withRouterWrapper(Component) {
     return function ComponentWithRouterProp(props) {
         const navigate = useNavigate();
-        const params = useParams();
+        const params = useParams(); 
 
         const history = {
             push: (path) => navigate(path),
@@ -45,10 +45,10 @@ class QuizGenerate extends Component {
             rps: [],
             quiz: [],
             userInfo: [],
-            questionsWithCriteria: [],
-            selectedLecturerId: '',
+            questionsData: [], 
+            selectedLecturerId: '', 
             quizId: '',
-            devLecturers: [],
+            devLecturers: [], 
             isMounted: false,
             matchingRPS: '',
             loading: false,
@@ -85,136 +85,202 @@ class QuizGenerate extends Component {
 
     fetchData = async () => {
         try {
+            const currentQuizId = this.props.match.params.quizID; 
+            console.log("DEBUG QuizGenerate (fetchData): currentQuizId dari URL:", currentQuizId); 
+
+            if (!currentQuizId) {
+                console.error("DEBUG QuizGenerate (fetchData): quizID dari URL tidak ditemukan. Pastikan URL dan Route definition benar.");
+                message.error("ID kuis tidak ditemukan di URL. Mohon periksa kembali navigasi.");
+                this.setState({ error: "ID kuis tidak ditemukan di URL." });
+                return;
+            }
+
             const [quizResponse, usersResponse, rpsResponse] = await Promise.all([
-                getQuiz(),
+                getQuiz(), 
                 getUsers(),
                 getRPS()
             ]);
 
-            const { content: quizContent } = quizResponse.data;
-            const { content: rpsContent } = rpsResponse.data;
-            const allUsers = usersResponse.data.content || usersResponse.data;
+            const allQuizzes = quizResponse.data?.content || []; 
+            const rpsContent = rpsResponse.data?.content || [];
+            const allUsers = usersResponse.data?.content || usersResponse.data || []; 
+            
+            console.log("DEBUG QuizGenerate (fetchData): allQuizzes yang berhasil diambil:", allQuizzes); 
+            
+            const targetQuiz = allQuizzes.find(q => q.idQuiz === currentQuizId);
 
-            if (!Array.isArray(allUsers)) {
-                console.error("Diharapkan allUsers adalah array, tetapi diterima:", allUsers);
-                throw new Error("Gagal memuat data user: format data tidak benar.");
+            if (!targetQuiz) {
+                console.error("DEBUG QuizGenerate (fetchData): Kuis dengan ID", currentQuizId, "TIDAK DITEMUKAN di daftar kuis yang diambil."); 
+                message.error("Kuis tidak ditemukan.");
+                this.setState({ error: "Kuis tidak ditemukan." });
+                return; 
             }
 
+            console.log("DEBUG QuizGenerate (fetchData): Kuis target ditemukan:", targetQuiz); 
+
             const uniqueLecturers = new Map();
+            let rpsIdForQuestions = ''; 
 
-            quizContent.forEach(quiz => {
-                const matchingRPS = rpsContent.find(rps => rps.idRps === quiz.rps.idRps);
+            const matchingRPS = rpsContent.find(rps => rps.idRps === targetQuiz.rps.idRps);
 
-                if (matchingRPS) {
-                    const lecturerIdsWithRoles = [];
+            if (matchingRPS) {
+                rpsIdForQuestions = matchingRPS.idRps; 
+                console.log("DEBUG QuizGenerate (fetchData): RPS ID untuk pertanyaan:", rpsIdForQuestions); 
+                
+                const lecturerIdsWithRoles = [];
 
-                    if (quiz.developerId) lecturerIdsWithRoles.push({ id: quiz.developerId.trim().toLowerCase(), role: 'developer' });
-                    if (quiz.coordinatorId) lecturerIdsWithRoles.push({ id: quiz.coordinatorId.trim().toLowerCase(), role: 'coordinator' });
-                    if (quiz.instructorId) lecturerIdsWithRoles.push({ id: quiz.instructorId.trim().toLowerCase(), role: 'instructor' });
+                if (targetQuiz.developerId) lecturerIdsWithRoles.push({ id: targetQuiz.developerId.trim().toLowerCase(), role: 'developer' });
+                if (targetQuiz.coordinatorId) lecturerIdsWithRoles.push({ id: targetQuiz.coordinatorId.trim().toLowerCase(), role: 'coordinator' });
+                if (targetQuiz.instructorId) lecturerIdsWithRoles.push({ id: targetQuiz.instructorId.trim().toLowerCase(), role: 'instructor' });
 
-                    const addRPSLecturers = (lecturersArray, role) => {
-                        if (Array.isArray(lecturersArray)) {
-                            lecturersArray.forEach(l => {
-                                if (l && l.id) {
-                                    const normalizedId = l.id.trim().toLowerCase();
-                                    if (!lecturerIdsWithRoles.some(item => item.id === normalizedId)) {
-                                        lecturerIdsWithRoles.push({ id: normalizedId, role: role });
+                const addRPSLecturers = (lecturersArray, role) => {
+                    if (Array.isArray(lecturersArray)) {
+                        lecturersArray.forEach(l => {
+                            if (l && l.id) {
+                                const normalizedId = l.id.trim().toLowerCase();
+                                const existingEntry = lecturerIdsWithRoles.find(item => item.id === normalizedId);
+                                if (existingEntry) {
+                                    if (existingEntry.role === 'Unknown' && role !== 'Unknown') {
+                                        existingEntry.role = role;
                                     }
-                                }
-                            });
-                        }
-                    };
-
-                    addRPSLecturers(matchingRPS.developerLecturer, 'developer');
-                    addRPSLecturers(matchingRPS.coordinatorLecturer, 'coordinator');
-                    addRPSLecturers(matchingRPS.instructorLecturer, 'instructor');
-
-                    lecturerIdsWithRoles.forEach(({ id, role }) => {
-                        if (id) {
-                            const user = allUsers.find(u => (u.id || '').trim().toLowerCase() === id);
-
-                            if (user && !uniqueLecturers.has(id)) {
-                                uniqueLecturers.set(id, {
-                                    id: id,
-                                    name: user.name,
-                                    role: role
-                                });
-                            } else if (user && uniqueLecturers.has(id)) {
-                                const existingLecturer = uniqueLecturers.get(id);
-                                if (existingLecturer.role === 'Unknown' && role !== 'Unknown') {
-                                    existingLecturer.role = role;
-                                    uniqueLecturers.set(id, existingLecturer);
+                                } else {
+                                    lecturerIdsWithRoles.push({ id: normalizedId, role: role });
                                 }
                             }
-                        }
-                    });
+                        });
+                    }
+                };
 
-                    this.setState({
-                        quizId: quiz.idQuiz,
-                        matchingRPS: matchingRPS
-                    });
-                }
-            });
+                addRPSLecturers(matchingRPS.developerLecturer, 'developer');
+                addRPSLecturers(matchingRPS.coordinatorLecturer, 'coordinator');
+                addRPSLecturers(matchingRPS.instructorLecturer, 'instructor');
+
+                lecturerIdsWithRoles.forEach(({ id, role }) => {
+                    if (id) {
+                        const user = allUsers.find(u => (u.id || '').trim().toLowerCase() === id);
+
+                        if (user && !uniqueLecturers.has(id)) {
+                            uniqueLecturers.set(id, {
+                                id: id,
+                                name: user.name,
+                                role: role
+                            });
+                        } else if (user && uniqueLecturers.has(id)) {
+                            const existingLecturer = uniqueLecturers.get(id);
+                            if (existingLecturer.role === 'Unknown' && role !== 'Unknown') {
+                                existingLecturer.role = role;
+                                uniqueLecturers.set(id, existingLecturer);
+                            }
+                        }
+                    }
+                });
+
+                this.setState({
+                    quizId: targetQuiz.idQuiz,
+                    matchingRPS: matchingRPS
+                });
+            } else {
+                console.error("DEBUG QuizGenerate (fetchData): RPS terkait kuis tidak ditemukan untuk ID Kuis:", currentQuizId); 
+                message.error("RPS terkait kuis tidak ditemukan.");
+                this.setState({ error: "RPS terkait kuis tidak ditemukan." });
+                return; 
+            }
 
             const devLecturers = Array.from(uniqueLecturers.values());
 
-            const uniqueQuestionsMap = new Map();
-            for (const quiz of quizContent) {
-                const matchingRPS = rpsContent.find(rps => rps.idRps === quiz.rps.idRps);
-                if (matchingRPS) {
-                    const result = await getQuestionsByRPSQuiz1(matchingRPS.idRps);
-                    const { content: questions } = result.data;
+            const questionIdsForThisQuiz = targetQuiz.questions.map(q => q.idQuestion);
+            console.log("DEBUG QuizGenerate (fetchData): ID pertanyaan untuk kuis ini:", questionIdsForThisQuiz);
 
-                    const quizQuestions = questions.filter(q => q.examType2 === 'QUIZ');
-                    for (const question of quizQuestions) {
-                        if (!uniqueQuestionsMap.has(question.idQuestion)) {
-                            if (!question.criteriaValues) {
-                                question.criteriaValues = []; 
-                            }
-                            question.criteriaValues = question.criteriaValues.map(cv => {
-                                const mappedCv = {
-                                    ...cv,
-                                    user: (cv.user || '').trim().toLowerCase(),
-                                    role: cv.role || 'unknown',
-                                };
-                                const rawRatingValue = typeof cv.ratingValue === 'string' ? parseFloat(cv.ratingValue) : cv.ratingValue;
+            const questionsFromBackendData = await getQuestionsByRPSQuiz1(rpsIdForQuestions); 
+            const allRPSQuestions = questionsFromBackendData.data?.content || [];
 
-                                if (cv.criterionId) {
-                                    try {
-                                        const index = parseInt(cv.criterionId.replace('QC', ''));
-                                        if (index >= 1 && index <= 10) {
-                                            // --- START MODIFICATION IN fetchData ---
-                                            // Change `name` to show the value even if it's 0.0 if explicitly set.
-                                            // We will rely on `value` property being undefined/null/not found in renderCriteriaValue
-                                            // to determine if it's truly "Belum Dinilai".
-                                            mappedCv[`value${index}`] = {
-                                                name: isNaN(rawRatingValue) ? 'N/A' : rawRatingValue.toFixed(2), // Show 0.0 as 0.00
-                                                value: isNaN(rawRatingValue) ? null : rawRatingValue // Store null if NaN, 0 if 0
-                                            };
-                                            // --- END MODIFICATION IN fetchData ---
-                                        }
-                                    } catch (e) {
-                                        console.warn(`Could not parse criterionId ${cv.criterionId} for mapping.`, e);
-                                    }
-                                }
-                                return mappedCv;
-                            });
+            const quizQuestions = allRPSQuestions.filter(q => 
+                questionIdsForThisQuiz.includes(q.idQuestion)
+            );
 
-                            uniqueQuestionsMap.set(question.idQuestion, question);
+            console.log("--- DEBUG: Memeriksa Struktur Data Mentah dari Backend ---");
+            quizQuestions.forEach(q => { 
+                console.log(`Question ID: ${q.idQuestion}`);
+                console.log(`       q.questionRating (as received):`, q.questionRating);
+                if (q.questionRating && typeof q.questionRating === 'object') {
+                    if (q.questionRating.reviewerRatings) { 
+                        console.log(`       q.questionRating.reviewerRatings (nested):`, q.questionRating.reviewerRatings);
+                        console.log(`       Keys dalam q.questionRating.reviewerRatings:`, Object.keys(q.questionRating.reviewerRatings));
+                        if (Object.keys(q.questionRating.reviewerRatings).length > 0) {
+                            console.log(`       Contoh entry pertama di q.questionRating.reviewerRatings:`, Object.values(q.questionRating.reviewerRatings)[0]);
+                        }
+                    } else {
+                        console.log(`       q.questionRating is object, but reviewerRatings property is missing or empty.`);
+                    }
+                } else {
+                    console.log(`       Peringatan: q.questionRating bukan objek atau null. Type: ${typeof q.questionRating}`);
+                }
+                console.log('----------------------------------------------------');
+            });
+
+            const processedQuestions = quizQuestions.map(q => { 
+                const transformedQuestion = { ...q };
+
+                const questionRatingObject = q.questionRating || {}; 
+                const reviewerRatings = questionRatingObject.reviewerRatings || {}; 
+
+                devLecturers.forEach(lecturer => {
+                    const lecturerIdKey = lecturer.id.trim().toLowerCase();
+                    
+                    let lecturerRating = reviewerRatings[lecturerIdKey];
+                    if (!lecturerRating && lecturerIdKey.length > 0) {
+                        const capitalizedLecturerIdKey = lecturerIdKey.charAt(0).toUpperCase() + lecturerIdKey.slice(1);
+                        lecturerRating = reviewerRatings[capitalizedLecturerIdKey];
+                    }
+                    
+                    if (lecturerRating && typeof lecturerRating === 'object') {
+                        for (let i = 1; i <= 10; i++) {
+                            const avgValueKey = `averageValue${i}`;
+                            const criterionValueKey = `criteriaValue${i}_${lecturer.id}`; 
+                            const rawValue = lecturerRating[avgValueKey];
+                            
+                            transformedQuestion[criterionValueKey] = {
+                                value: rawValue,
+                                name: rawValue !== undefined && rawValue !== null && !isNaN(rawValue) ? Number(rawValue).toFixed(2) : 'N/A',
+                                role: lecturer.role
+                            };
+                        }
+                    } else {
+                        for (let i = 1; i <= 10; i++) {
+                            const criterionValueKey = `criteriaValue${i}_${lecturer.id}`;
+                            transformedQuestion[criterionValueKey] = {
+                                value: null, 
+                                name: 'Belum Dinilai', 
+                                role: lecturer.role
+                            };
                         }
                     }
-                }
-            }
+                });
 
-            const questionsWithCriteria = Array.from(uniqueQuestionsMap.values());
+                return transformedQuestion;
+            });
+
+            console.log("Frontend: Data pertanyaan KUIS yang DITERIMA DARI BACKEND setelah re-fetch (PROCESSED):");
+            processedQuestions.forEach((q, index) => {
+              console.log(`        Question ${index + 1} (ID: ${q.idQuestion}):`, q); 
+              devLecturers.forEach(lecturer => {
+                  for (let i = 1; i <= 10; i++) {
+                      const criterionValueKey = `criteriaValue${i}_${lecturer.id}`;
+                      if (q[criterionValueKey]) {
+                          console.log(`         - Transformed ${criterionValueKey}:`, q[criterionValueKey]);
+                      }
+                  }
+              });
+            });
+            console.log("--- END PROCESSED DEBUG LOGGING ---");
 
             if (this.state.isMounted) {
                 this.setState({
                     devLecturers,
-                    questionsWithCriteria,
+                    questionsData: processedQuestions, 
                     userInfo: allUsers,
                     error: null,
-                    selectedLecturerId: devLecturers[0]?.id || ''
+                    selectedLecturerId: devLecturers[0]?.id || '' 
                 });
             }
         } catch (error) {
@@ -222,37 +288,27 @@ class QuizGenerate extends Component {
             if (this.state.isMounted) {
                 this.setState({ error: 'Gagal memuat data' });
             }
+        } finally {
+            this.setState({ loading: false });
         }
     };
 
     renderCriteriaValue = (text, record, valueIndex) => {
-        if (!record.criteriaValues || record.criteriaValues.length === 0) {
+        const criterionValueKey = `criteriaValue${valueIndex}_${this.state.selectedLecturerId}`;
+        const ratingEntry = record[criterionValueKey];
+
+        if (!ratingEntry || ratingEntry.value === null || ratingEntry.value === undefined || isNaN(ratingEntry.value)) {
             return <Tag color="default">Belum Dinilai</Tag>;
         }
 
-        const rating = record.criteriaValues.find(cv =>
-            // Check if user matches AND if there's a specific entry for this valueIndex
-            // Use `!== undefined` for checking if the rating for this specific valueIndex exists.
-            cv.user === this.state.selectedLecturerId && cv[`value${valueIndex}`]?.value !== undefined
-        );
-
-        // --- START MODIFICATION IN renderCriteriaValue ---
-        // Change logic: Only show "Belum Dinilai" if the `rating` object for the selected lecturer/criterion is not found,
-        // OR if its `value` property is explicitly null (which we now set for NaN).
-        // If `value` is 0, it should be displayed as a valid rating of 0.00.
-        if (!rating || rating[`value${valueIndex}`]?.value === null) { // Check for `null` to distinguish from `0`
-            return <Tag color="default">Belum Dinilai</Tag>;
-        }
-
-        // Now, if `rating.value` is defined (could be 0), display it.
-        const displayValue = rating[`value${valueIndex}`].name; // This already handles formatting to 0.00
+        const displayValue = ratingEntry.name; 
+        const role = ratingEntry.role; 
 
         return (
-            <Tag color={this.getColorForRole(rating.role)}>
+            <Tag color={this.getColorForRole(role)}>
                 {displayValue}
             </Tag>
         );
-        // --- END MODIFICATION IN renderCriteriaValue ---
     };
 
     getColorForRole = (role) => {
@@ -269,13 +325,22 @@ class QuizGenerate extends Component {
     };
 
     getImageUrl = (filePath) => {
-        if (!filePath) return null;
-        return `http://localhost:8081${filePath}`;
-    };
+    if (!filePath) {
+        console.warn("getImageUrl: filePath is null or empty.");
+        return "https://via.placeholder.com/200?text=No+Image+Path"; 
+    }
+    
+    // Asumsi filePath yang diterima dari backend adalah seperti "/images/questions/RPS001-D001-Q007.png"
+    // URL dasar aplikasi Spring Boot adalah http://localhost:8081
+    const imageUrl = `http://localhost:8081${filePath}`; 
+    
+    console.log(`getImageUrl DEBUG: Original filePath (from backend): ${filePath}, Generated Static URL: ${imageUrl}`);
+    return imageUrl;
+};
 
     render() {
         const {
-            questionsWithCriteria,
+            questionsData, 
             devLecturers,
             quizId,
             loading,
@@ -290,28 +355,48 @@ class QuizGenerate extends Component {
 
         const columns = [
             {
+                title: "ID Pertanyaan",
+                dataIndex: "idQuestion",
+                key: "idQuestion",
+                align: "center",
+                width: 120,
+            },
+            {
                 title: "Pertanyaan",
-                key: "questionTitle",
+                key: "questionContent", 
                 width: 250,
                 render: (text, record) => (
                     <div>
+                        {/* Judul Pertanyaan */}
                         {record.title || 'No Title Found'}
-                        {record.file_path && (
+
+                        {/* Menampilkan Gambar jika questionType adalah IMAGE dan ada file_path */}
+                        {record.questionType === 'IMAGE' && record.file_path && (
                             <div style={{ marginTop: 8 }}>
-                                <Image
-                                    src={this.getImageUrl(record.file_path)}
-                                    alt="Question Image"
-                                    style={{ maxWidth: '100px', maxHeight: '100px', objectFit: 'contain' }}
-                                    fallback="https://via.placeholder.com/100?text=No+Image"
-                                />
+                                <p>
+                                  <Image
+                                      src={this.getImageUrl(record.file_path)}
+                                      alt="Question Image"
+                                      style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
+                                      fallback="https://via.placeholder.com/200?text=Gambar+Tidak+Dimuat" // Pesan fallback yang lebih jelas
+                                  />
+                                </p>
                             </div>
+                        )}
+                        {/* Menampilkan Deskripsi jika questionType bukan IMAGE */}
+                        {record.description && record.questionType !== 'IMAGE' && (
+                            <p>{record.description}</p>
+                        )}
+                        {/* Informasi Tipe Pertanyaan jika bukan Normal atau Gambar */}
+                        {record.questionType && record.questionType !== 'IMAGE' && record.questionType !== 'NORMAL' && (
+                            <p>Tipe: {record.questionType}</p>
                         )}
                     </div>
                 )
             },
             ...criteriaNames.map((name, index) => ({
                 title: name,
-                key: `value${index + 1}`,
+                key: `value${index + 1}`, 
                 width: 150,
                 render: (text, record) => this.renderCriteriaValue(text, record, index + 1)
             }))
@@ -357,45 +442,36 @@ class QuizGenerate extends Component {
                     >
                         {devLecturers.length > 0 ? (
                             devLecturers.map((lecturer) => {
-                                // Filter pertanyaan yang *memiliki* nilai kriteria untuk dosen saat ini
-                                // Kriteria untuk memfilter agar ada nilai yang tidak "Belum Dinilai"
-                                // Sekarang kita perlu memeriksa apakah ada nilai numerik yang valid (tidak null)
-                                const filteredQuestions = questionsWithCriteria.filter(q =>
-                                    q.criteriaValues?.some(cv =>
-                                        cv.user === lecturer.id &&
-                                        Array.from({ length: 10 }, (_, i) => i + 1).some(idx =>
-                                            cv[`value${idx}`]?.value !== null && // Filter out explicitly null values
-                                            cv[`value${idx}`]?.value !== undefined // Ensure property exists
-                                        )
-                                    )
-                                );
+                                const questionsToShow = questionsData; 
 
-                                // Console log untuk debugging:
                                 console.log(`--- Tab Dosen ID (Normalized): ${lecturer.id} ---`);
-                                console.log(`--- Jumlah Pertanyaan Terfilter untuk ${lecturer.name} (${lecturer.id}): ${filteredQuestions.length} ---`);
-                                if (filteredQuestions.length > 0) {
-                                    console.log("Pertanyaan terfilter pertama:", filteredQuestions[0]);
-                                    console.log("Judul pertanyaan terfilter pertama:", filteredQuestions[0].title);
-                                    console.log("criteriaValues pertanyaan terfilter pertama:", filteredQuestions[0].criteriaValues);
+                                console.log(`--- Jumlah Pertanyaan Ditampilkan untuk ${lecturer.name} (${lecturer.id}): ${questionsToShow.length} ---`);
+                                if (questionsToShow.length > 0) {
+                                    console.log("Pertanyaan pertama di tab ini:", questionsToShow[0]);
                                 }
-                                console.log(`--- Data untuk Tabel di Tab ${lecturer.id} ---`);
-                                console.log(filteredQuestions);
                                 console.log(`-------------------------------------------`);
-
 
                                 return (
                                     <TabPane
                                         tab={`${lecturer.name} (${lecturer.role})`}
                                         key={lecturer.id}
                                     >
-                                        <Table
-                                            dataSource={filteredQuestions}
-                                            pagination={false}
-                                            rowKey={record => record.idQuestion || Math.random()}
-                                            locale={{ emptyText: 'Tidak ada pertanyaan tersedia untuk dosen ini' }}
-                                            columns={columns}
-                                            scroll={{ x: 'max-content' }}
-                                        />
+                                        {questionsToShow.length > 0 ? (
+                                            <Table
+                                                dataSource={questionsToShow} 
+                                                pagination={false}
+                                                rowKey={record => record.idQuestion || Math.random()}
+                                                columns={columns}
+                                                scroll={{ x: 'max-content' }}
+                                            />
+                                        ) : (
+                                            <Alert
+                                                message="Tidak Ada Pertanyaan Quiz"
+                                                description="Tidak ada pertanyaan quiz yang ditemukan untuk kuis ini."
+                                                type="info"
+                                                showIcon
+                                            />
+                                        )}
                                     </TabPane>
                                 );
                             })
@@ -413,7 +489,7 @@ class QuizGenerate extends Component {
                     <Button type="primary" onClick={this.handlePreviousPage}>
                         Halaman Sebelumnya
                     </Button>
-                    <Button type="primary" onClick={() => this.handleNextPage(quizId)}>
+                    <Button type="primary" onClick={this.handleNextPage.bind(this, quizId)}> 
                         Halaman Selanjutnya
                     </Button>
                 </div>
@@ -429,8 +505,8 @@ QuizGenerate.propTypes = {
     }).isRequired,
     match: PropTypes.shape({
         params: PropTypes.shape({
-            quizID: PropTypes.string,
-        }),
+            quizID: PropTypes.string.isRequired, 
+        }).isRequired, 
     }).isRequired,
 };
 

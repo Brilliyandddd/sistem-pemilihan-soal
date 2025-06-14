@@ -416,35 +416,35 @@ export default [
     roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
   },
   {
-    path: "/setting-quiz/generate-quiz/:id",
-    component: QuizGenerateQuiz1,
-    roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
-  },
-  {
-    path: "/setting-quiz/generate-quiz-step2/:id",
-    component: QuizGenerateQuizStep2,
-    roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
-  },
-  {
-    path: "/setting-quiz/generate-quiz-step3/:id",
-    component: QuizGenerateQuizStep3,
-    roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
-  },
-  {
-    path: "/setting-quiz/generate-quiz-step4/:id",
-    component: QuizGenerateQuizStep4,
-    roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
-  },
-  {
-    path: "/setting-quiz/generate-quiz-step5/:id",
-    component: QuizGenerateQuizStep5,
-    roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
-  },
-  {
-    path: "/setting-quiz/generate-quiz-step6/:id",
-    component: QuizGenerateQuizStep6,
-    roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
-  },
+  path: "/setting-quiz/generate-quiz/:quizID", // <-- CHANGE THIS TO :quizID (uppercase ID)
+  component: QuizGenerateQuiz1,
+  roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+},
+{
+  path: "/setting-quiz/generate-quiz-step2/:quizID", // <-- CHANGE THIS TO :quizID (uppercase ID)
+  component: QuizGenerateQuizStep2, // This is your QuizGenerate component
+  roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+},
+// {
+//   path: "/setting-quiz/generate-quiz-step3/:quizID", // <-- CHANGE THIS
+//   component: QuizGenerateQuiz3, // assuming you have QuizGenerateQuiz3 component for step3
+//   roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+// },
+// {
+//   path: "/setting-quiz/generate-quiz-step4/:quizID", // <-- CHANGE THIS
+//   component: QuizGenerateQuiz4, // assuming you have QuizGenerateQuiz4 component for step4
+//   roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+// },
+// {
+//   path: "/setting-quiz/generate-quiz-step5/:quizID", // <-- CHANGE THIS
+//   component: QuizGenerateQuiz5, // assuming you have QuizGenerateQuiz5 component for step5
+//   roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+// },
+// {
+//   path: "/setting-quiz/generate-quiz-step6/:quizID", // <-- CHANGE THIS
+//   component: QuizGenerateQuiz6, // assuming you have QuizGenerateQuiz6 component for step6
+//   roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+// },
   {
     path: "/setting-exercise/result/:id",
     component: ResultExercise,

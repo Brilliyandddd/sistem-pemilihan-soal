@@ -2,14 +2,15 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
 import { Card, Button, Table, message, Divider, Image, Tag, Modal, Form, InputNumber, Select } from "antd";
-import { getQuestionsByRPSQuiz1, getQuizByID } from "@/api/quiz"; // getQuizByID is the one returning the Quiz object with nested Questions
+import { getQuestionsByRPSQuiz1, getQuizByID } from "@/api/quiz"; 
 import { getLectures } from "@/api/lecture";
 import { getQuestionCriterias } from "@/api/questionCriteria";
+import { reqUserInfo } from '@/api/user';
 import { useParams, Link } from "react-router-dom";
 import TypingCard from "@/components/TypingCard";
 import PropTypes from "prop-types";
 
-import { submitQuestionCriteriaRating } from "@/api/question";
+import { submitQuestionCriteriaRating, editQuestion } from "@/api/question";
 import { getAnswers } from "@/api/answer";
 import { getLinguisticValues } from "@/api/linguisticValue";
 
@@ -28,36 +29,24 @@ const getImageUrl = (filePath) => {
   return `http://localhost:8081${filePath}`;
 };
 
-const RateQuestionModal = ({ visible, onCancel, onOk, confirmLoading, question, criteria, linguisticValues }) => {
+const RateQuestionModal = ({ visible, onCancel, handleRatingSubmit, confirmLoading, question, criteria, linguisticValues }) => {
   const [form] = Form.useForm();
-
-  // Helper to find linguistic term from a numeric value for display purposes
-  // This is used for setting initial values based on existing averageValueX from backend
-  const getLinguisticTerm = (numericValue) => {
-    // Using a tolerance for finding the linguistic term from numeric value
-    const tolerance = 0.0001; // Adjust as needed
-    const found = linguisticValues.find(lv => Math.abs(lv.averageValue - numericValue) < tolerance);
-    return found ? found.name : undefined; 
-  };
 
   useEffect(() => {
     if (visible && question) {
       const initialValues = {};
+      
       criteria.forEach((crit, index) => {
         const avgValueKey = `averageValue${index + 1}`;
-        // currentNumericValue could be undefined if not yet rated
         const currentNumericValue = question[avgValueKey]; 
         
-        // Find the corresponding linguistic value ID for initial selection
-        // We find the linguistic value that matches the numeric averageValue from the question
-        // then set the form field to its unique 'id' (e.g., "LV001")
-        // Apply parseFloat and tolerance here as well to accurately match existing values
         const foundLinguisticValue = linguisticValues.find(lv => 
           lv.averageValue !== undefined && Math.abs(lv.averageValue - parseFloat(currentNumericValue)) < 0.0001
         );
         initialValues[crit.name] = foundLinguisticValue ? foundLinguisticValue.id : undefined;
       });
       form.setFieldsValue(initialValues);
+      
     } else if (!visible) {
       form.resetFields();
     }
@@ -65,7 +54,7 @@ const RateQuestionModal = ({ visible, onCancel, onOk, confirmLoading, question, 
 
   const handleSubmit = () => {
     form.validateFields().then(values => {
-      onOk(question.idQuestion, values);
+      handleRatingSubmit(question.idQuestion, values);
     }).catch(info => {
       console.log('Validate Failed:', info);
     });
@@ -128,7 +117,6 @@ const RateQuestionModal = ({ visible, onCancel, onOk, confirmLoading, question, 
               style={{ width: '100%' }}
             >
               {linguisticValues.map(lv => (
-                // Use lv.id as value for unique identification in the form
                 <Option key={lv.id} value={lv.id}> 
                   {lv.name}
                 </Option>
@@ -144,7 +132,7 @@ const RateQuestionModal = ({ visible, onCancel, onOk, confirmLoading, question, 
 RateQuestionModal.propTypes = {
   visible: PropTypes.bool.isRequired,
   onCancel: PropTypes.func.isRequired,
-  onOk: PropTypes.func.isRequired,
+  handleRatingSubmit: PropTypes.func.isRequired,
   confirmLoading: PropTypes.bool,
   question: PropTypes.object,
   criteria: PropTypes.array.isRequired,
@@ -169,8 +157,24 @@ const QuestionIndexQuiz1 = () => {
   const [criteria, setCriteria] = useState([]);
   const [lecturers, setLecturers] = useState([]);
   const [linguisticValues, setLinguisticValues] = useState([]);
+  const [userInfo, setUserInfo] = useState(null); 
 
   const [expandedQuestionId, setExpandedQuestionId] = useState(null);
+
+  const fetchUserInfo = async () => {
+    try {
+      const response = await reqUserInfo();
+      if (response.status === 200) {
+        setUserInfo(response.data.id.toLowerCase()); // Ensure userInfo is lowercase
+      } else {
+        console.error("Failed to fetch user info:", response.data.message);
+        message.error("Gagal memuat informasi pengguna.");
+      }
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+      message.error("Terjadi kesalahan saat memuat informasi pengguna.");
+    }
+  };
 
   const findNameById = (list, id, idKey = "id", nameKey = "name") => {
     const item = list.find((item) => String(item[idKey]) === String(id));
@@ -181,72 +185,106 @@ const QuestionIndexQuiz1 = () => {
   };
 
   const fetchInitialData = async (quizId) => {
-    console.log("Frontend: Memuat detail kuis untuk quizId:", quizId);
+  console.log("Frontend: Memuat detail kuis untuk quizId:", quizId);
+  try {
+    const quizResult = await getQuizByID(quizId);
+    const criteriaResult = await getQuestionCriterias();
+    const lecturersResult = await getLectures();
+    const linguisticValuesResult = await getLinguisticValues();
+    
+    // Fetch user info and get the ID directly
+    let currentUserInfoId = null;
     try {
-      const quizResult = await getQuizByID(quizId); // This call should return updated Question data
-      const criteriaResult = await getQuestionCriterias();
-      const lecturersResult = await getLectures();
-      const linguisticValuesResult = await getLinguisticValues();
-
-      if (criteriaResult.status === 200 && criteriaResult.data && criteriaResult.data.content) {
-        setCriteria(criteriaResult.data.content);
+      const userInfoResponse = await reqUserInfo();
+      if (userInfoResponse.status === 200) {
+        currentUserInfoId = userInfoResponse.data.id.toLowerCase();
+        setUserInfo(currentUserInfoId); // Still update state for other parts of the component
       } else {
-        console.warn("Failed to load criteria for modal/columns.");
-        setCriteria([]);
-      }
-      if (lecturersResult.status === 200 && lecturersResult.data && lecturersResult.data.content) {
-        setLecturers(lecturersResult.data.content);
-      } else {
-        console.warn("Failed to load lecturers for modal.");
-        setLecturers([]);
-      }
-      if (linguisticValuesResult.status === 200 && linguisticValuesResult.data && linguisticValuesResult.data.content) {
-        setLinguisticValues(linguisticValuesResult.data.content);
-        console.log("Fetched Linguistic Values (with averageValue):", linguisticValuesResult.data.content); 
-      } else {
-        console.warn("Failed to load linguistic values.");
-        setLinguisticValues([]);
-      }
-
-      if (quizResult.status === 200 && quizResult.data) {
-        setQuizDetails(quizResult.data);
-        const quizQuestions = quizResult.data.questions || []; // Array of Question objects
-
-        if (quizQuestions.length === 0) {
-          message.warn("Kuis ini tidak memiliki pertanyaan yang terdaftar.");
-        }
-
-        const filteredQuestions = quizQuestions.filter(q => q.examType2 === "QUIZ");
-        
-        // --- LOG DATA YANG DITERIMA DARI BACKEND UNTUK VERIFIKASI ---
-        console.log("Frontend: Data pertanyaan KUIS yang DITERIMA DARI BACKEND setelah re-fetch:");
-        filteredQuestions.forEach((q, index) => {
-          console.log(`  Question ${index + 1} (ID: ${q.idQuestion}):`, {
-            is_rated: q.is_rated,
-            avg1: q.averageValue1,
-            avg2: q.averageValue2,
-            avg3: q.averageValue3,
-            avg4: q.averageValue4,
-            avg5: q.averageValue5,
-            avg6: q.averageValue6,
-            avg7: q.averageValue7,
-            avg8: q.averageValue8,
-            avg9: q.averageValue9,
-            avg10: q.averageValue10
-          });
-        });
-        // --- AKHIR LOG ---
-
-        return filteredQuestions;
-      } else {
-        message.error(quizResult.data?.message || "Gagal memuat detail kuis atau konten kosong.");
+        console.error("Failed to fetch user info:", userInfoResponse.data.message);
+        message.error("Gagal memuat informasi pengguna.");
       }
     } catch (error) {
-      console.error("Frontend: Error saat memuat pertanyaan kuis:", error);
-      message.error("Frontend: Terjadi kesalahan saat memuat data pertanyaan kuis.");
+      console.error("Error fetching user info in fetchInitialData:", error);
+      message.error("Terjadi kesalahan saat memuat informasi pengguna.");
     }
-    return [];
-  };
+
+    if (criteriaResult.status === 200 && criteriaResult.data && criteriaResult.data.content) {
+      setCriteria(criteriaResult.data.content);
+    } else {
+      console.warn("Failed to load criteria for modal/columns.");
+      setCriteria([]);
+    }
+    if (lecturersResult.status === 200 && lecturersResult.data && lecturersResult.data.content) {
+      setLecturers(lecturersResult.data.content);
+    } else {
+      console.warn("Failed to load lecturers for modal.");
+      setLecturers([]);
+    }
+    if (linguisticValuesResult.status === 200 && linguisticValuesResult.data && linguisticValuesResult.data.content) {
+      setLinguisticValues(linguisticValuesResult.data.content);
+      console.log("Fetched Linguistic Values (with averageValue):", linguisticValuesResult.data.content);
+    } else {
+      console.warn("Failed to load linguistic values.");
+      setLinguisticValues([]);
+    }
+
+    if (quizResult.status === 200 && quizResult.data) {
+      setQuizDetails(quizResult.data);
+      const quizQuestions = quizResult.data.questions || [];
+
+      if (quizQuestions.length === 0) {
+        message.warn("Kuis ini tidak memiliki pertanyaan yang terdaftar.");
+      }
+
+      console.log("Frontend: Data pertanyaan KUIS yang DITERIMA DARI BACKEND setelah re-fetch:");
+      const questionsWithRatingsForTable = quizQuestions
+        .filter(q => q.examType2 === "QUIZ")
+        .map(q => {
+          const questionCopy = { ...q };
+
+          console.log(`DEBUG fetchInitialData: Raw question for table processing (ID: ${q.idQuestion}):`, q);
+
+          // Use currentUserInfoId directly here, which is guaranteed to be the latest fetched value
+          if (questionCopy.questionRating && questionCopy.questionRating.reviewerRatings && currentUserInfoId) {
+            const reviewerKey = Object.keys(questionCopy.questionRating.reviewerRatings).find(
+              key => key.toLowerCase() === currentUserInfoId.toLowerCase()
+            );
+
+            if (reviewerKey) {
+              const userRating = questionCopy.questionRating.reviewerRatings[reviewerKey];
+              for (let i = 1; i <= 10; i++) {
+                const avgValueKey = `averageValue${i}`;
+                questionCopy[avgValueKey] = userRating[avgValueKey];
+                console.log(`DEBUG fetchInitialData: Flattened ${avgValueKey} for ${questionCopy.idQuestion} to:`, questionCopy[avgValueKey]);
+              }
+            } else {
+              console.log(`DEBUG fetchInitialData: No rating found for user (${currentUserInfoId}) for question ${questionCopy.idQuestion}. Setting averageValues to null.`);
+              for (let i = 1; i <= 10; i++) {
+                const avgValueKey = `averageValue${i}`;
+                questionCopy[avgValueKey] = null;
+              }
+            }
+          } else {
+            console.log(`DEBUG fetchInitialData: questionRating or reviewerRatings missing for question ${questionCopy.idQuestion} OR userInfo missing. Setting averageValues to null.`);
+            for (let i = 1; i <= 10; i++) {
+              const avgValueKey = `averageValue${i}`;
+              questionCopy[avgValueKey] = null;
+            }
+          }
+          console.log(`   Question ${questionCopy.idQuestion} (Processed for Table):`, questionCopy);
+          return questionCopy;
+        });
+
+      return questionsWithRatingsForTable;
+    } else {
+      message.error(quizResult.data?.message || "Gagal memuat detail kuis atau konten kosong.");
+    }
+  } catch (error) {
+    console.error("Frontend: Error saat memuat pertanyaan kuis:", error);
+    message.error("Frontend: Terjadi kesalahan saat memuat data pertanyaan kuis.");
+  }
+  return [];
+};
 
   useEffect(() => {
     if (quizID) {
@@ -264,27 +302,56 @@ const QuestionIndexQuiz1 = () => {
     setRatingModalLoading(true);
     try {
       const answerResult = await getAnswers(question.idQuestion);
+      
       let formattedAnswers = [];
-
-      if (answerResult.status === 200 && answerResult.data && answerResult.data.content && answerResult.data.content.length > 0) {
+      if (answerResult.status === 200 && answerResult.data?.content?.length > 0) {
         formattedAnswers = answerResult.data.content.map(ans => ({
           title: ans.title,
           is_right: ans.is_right
         }));
-      } else {
-        message.warn("Pilihan jawaban untuk pertanyaan ini tidak ditemukan.");
       }
 
-      const questionWithAnswers = {
+      const currentReviewerId = userInfo;
+      let reviewerRatings = {};
+      
+      if (question.questionRating?.reviewerRatings) {
+        reviewerRatings = question.questionRating.reviewerRatings;
+        
+        const reviewerKey = Object.keys(reviewerRatings).find(
+          key => key.toLowerCase() === currentReviewerId.toLowerCase()
+        );
+        
+        if (reviewerKey) {
+          reviewerRatings[currentReviewerId] = reviewerRatings[reviewerKey];
+        } else {
+          // If no rating for the current user, ensure it's an empty object, not undefined
+          reviewerRatings[currentReviewerId] = {}; 
+        }
+      } else {
+        reviewerRatings[currentReviewerId] = {}; // Initialize if questionRating or reviewerRatings is missing
+      }
+
+      const questionWithAnswersAndRatings = {
         ...question,
-        formattedAnswers: formattedAnswers,
+        formattedAnswers,
+        questionRating: {
+          ...question.questionRating, // Ensure existing questionRating properties are copied
+          reviewerRatings // Assign the (possibly modified) reviewerRatings map
+        }
       };
 
-      setCurrentQuestionForRating(questionWithAnswers);
+      for (let i = 1; i <= 10; i++) {
+        const avgValueKey = `averageValue${i}`;
+        // Populate with existing rating or null if not present
+        questionWithAnswersAndRatings[avgValueKey] = 
+          reviewerRatings[currentReviewerId]?.[avgValueKey] || null;
+      }
+
+      setCurrentQuestionForRating(questionWithAnswersAndRatings);
       setIsRatingModalVisible(true);
     } catch (error) {
-      console.error("Error fetching answer options:", error);
-      message.error("Gagal memuat pilihan jawaban. Silakan coba lagi.");
+      console.error("Error in handleOpenRatingModal:", error);
+      message.error("Gagal memuat data pertanyaan");
     } finally {
       setRatingModalLoading(false);
     }
@@ -293,209 +360,207 @@ const QuestionIndexQuiz1 = () => {
   const handleRatingSubmit = async (questionId, ratingValues) => {
     setRatingModalLoading(true);
     try {
-      const payload = Object.keys(ratingValues).map(criterionName => {
-        // selectedLinguisticValueId is the unique 'id' (e.g., "LV001")
-        const selectedLinguisticValueId = ratingValues[criterionName]; 
-        
-        // Find the full linguistic object using its unique 'id'
-        const linguisticObject = linguisticValues.find(lv => lv.id === selectedLinguisticValueId);
-        
-        if (!linguisticObject) {
-            console.warn(`Linguistic value with ID ${selectedLinguisticValueId} not found.`);
-            return null;
-        }
-        
-        const criterion = criteria.find(c => c.name === criterionName);
-        if (!criterion) {
-            console.warn(`Criterion with name ${criterionName} not found.`);
-            return null;
+        const updatedQuestionPayload = { ...currentQuestionForRating };
+
+        for (let i = 1; i <= 10; i++) {
+            updatedQuestionPayload[`averageValue${i}`] = updatedQuestionPayload[`averageValue${i}`] || null;
         }
 
-        return {
-          questionId: questionId,
-          criterionId: criterion.id,
-          // Use the actual averageValue from the found linguisticObject
-          ratingValue: linguisticObject.averageValue, 
-        };
-      }).filter(item => item !== null); // Filter out any nulls if lookups failed
+        Object.keys(ratingValues).forEach(criterionName => {
+            const selectedLinguisticValueId = ratingValues[criterionName];
+            const linguisticObject = linguisticValues.find(lv => lv.id === selectedLinguisticValueId);
+            const criterionIndex = criteria.findIndex(c => c.name === criterionName) + 1; 
 
-      console.log("Payload being sent (final check):", payload);
-
-      const response = await submitQuestionCriteriaRating(payload);
-
-      if (response.status === 200) {
-        message.success("Penilaian berhasil disimpan!");
-        setIsRatingModalVisible(false); // Close modal on success
-
-        // Re-fetch all data to update the table with the new ratings
-        // This is the correct way to get the latest state from the backend
-        fetchInitialData(quizID).then(data => {
-            setQuestions(data);
-            console.log("Frontend: Table data updated with new questions state.");
+            if (linguisticObject && criterionIndex >= 1 && criterionIndex <= 10) {
+                updatedQuestionPayload[`averageValue${criterionIndex}`] = linguisticObject.averageValue;
+            } else {
+                console.warn(`Could not find linguistic value or criterion for ${criterionName}.`);
+            }
         });
 
-      } else {
-        message.error(response.data?.message || "Gagal menyimpan penilaian. Silakan coba lagi.");
-      }
+        const isFullyRated = criteria.every((crit, index) => {
+            const avgValueKey = `averageValue${index + 1}`;
+            return updatedQuestionPayload[avgValueKey] !== null && updatedQuestionPayload[avgValueKey] !== undefined && updatedQuestionPayload[avgValueKey] !== 0;
+        });
+        updatedQuestionPayload.is_rated = isFullyRated;
+
+        const finalQuestionRequestPayload = {
+            idQuestion: updatedQuestionPayload.idQuestion,
+            reviewer: userInfo, 
+            averageValue1: updatedQuestionPayload.averageValue1,
+            averageValue2: updatedQuestionPayload.averageValue2,
+            averageValue3: updatedQuestionPayload.averageValue3,
+            averageValue4: updatedQuestionPayload.averageValue4,
+            averageValue5: updatedQuestionPayload.averageValue5,
+            averageValue6: updatedQuestionPayload.averageValue6,
+            averageValue7: updatedQuestionPayload.averageValue7,
+            averageValue8: updatedQuestionPayload.averageValue8,
+            averageValue9: updatedQuestionPayload.averageValue9,
+            averageValue10: updatedQuestionPayload.averageValue10,
+        };
+
+        console.log("Final QuestionRequest Payload being sent:", finalQuestionRequestPayload);
+
+        const response = await submitQuestionCriteriaRating(finalQuestionRequestPayload, questionId);
+
+        if (response.status === 200) {
+            message.success("Penilaian berhasil disimpan!");
+            setIsRatingModalVisible(false);
+
+            await fetchInitialData(quizID).then(data => {
+                setQuestions(data);
+                console.log("Frontend: Table data updated with new questions state.");
+            });
+
+        } else {
+            message.error(response.data?.message || "Gagal menyimpan penilaian. Silakan coba lagi.");
+        }
 
     } catch (error) {
-      console.error("Error submitting rating:", error);
-      message.error("Terjadi kesalahan saat menyimpan penilaian. Silakan coba lagi.");
+        console.error("Error submitting rating:", error);
+        message.error("Terjadi kesalahan saat menyimpan penilaian. Silakan coba lagi.");
     } finally {
-      setRatingModalLoading(false);
+        setRatingModalLoading(false);
     }
-  };
+};
 
-  // Helper to get linguistic term from numeric value for table display
-  const getLinguisticTermForTable = (numericValue) => {
-    const valueAsNumber = parseFloat(numericValue);
+     const getLinguisticTermForTable = (numericValue) => {
+          const valueAsNumber = parseFloat(numericValue);
 
-    // Check if it's not a valid number or 0 (for "Belum dinilai")
-    if (numericValue === null || numericValue === undefined || isNaN(valueAsNumber) || valueAsNumber === 0) {
-      return <Tag color="volcano" style={{ fontStyle: 'italic', fontSize: '0.8em' }}>Belum dinilai</Tag>;
-    }
+          if (numericValue === null || numericValue === undefined || isNaN(valueAsNumber) || valueAsNumber === 0) {
+               return <Tag color="volcano" style={{ fontStyle: 'italic', fontSize: '0.8em' }}>Belum dinilai</Tag>;
+          }
 
-    // Define a small tolerance for floating-point comparison
-    const tolerance = 0.0001; // Adjust this value if needed (e.g., 0.00001 for higher precision)
+          const tolerance = 0.0001; 
 
-    // Find the linguistic value that matches the numeric averageValue within the tolerance
-    const found = linguisticValues.find(lv => 
-      lv.averageValue !== undefined && Math.abs(lv.averageValue - valueAsNumber) < tolerance
-    );
+          const found = linguisticValues.find(lv => 
+               lv.averageValue !== undefined && Math.abs(lv.averageValue - valueAsNumber) < tolerance
+          );
 
-    if (found) {
-      return <Tag color="blue" style={{ fontWeight: 'bold' }}>{found.name}</Tag>; // Display the name as a blue tag
-    }
-    
-    // Fallback: If no linguistic term matches closely, display the number itself (rounded)
-    // Use green tag for numeric values that don't map to a specific linguistic term
-    return <Tag color="green" style={{ fontWeight: 'bold' }}>{valueAsNumber.toFixed(4)}</Tag>; // Display with 4 decimal places for precision
-  };
+          if (found) {
+               return <Tag color="blue" style={{ fontWeight: 'bold' }}>{found.name}</Tag>; 
+          }
+          
+          return <Tag color="green" style={{ fontWeight: 'bold' }}>{valueAsNumber.toFixed(4)}</Tag>; 
+     };
 
 
-  const getCriteriaValueColumns = () => {
-    if (criteria.length === 0) return [];
-    return criteria.map((crit, index) => ({
-      title: <span style={{ whiteSpace: 'normal', textAlign: 'center' }}>{crit.name}</span>,
-      dataIndex: `averageValue${index + 1}`,
-      key: `avg_val_${crit.id}`,
-      align: 'center',
-      width: 100,
-      // Render function directly uses getLinguisticTermForTable which returns a Tag
-      render: (value) => getLinguisticTermForTable(value), 
-    }));
-  };
+     const getCriteriaValueColumns = () => {
+          if (criteria.length === 0) return [];
+          return criteria.map((crit, index) => ({
+               title: <span style={{ whiteSpace: 'normal', textAlign: 'center' }}>{crit.name}</span>,
+               key: `avg_val_${crit.id}`, // Still useful for Ant Design internal keying
+               align: 'center',
+               width: 100,
+               // Remove dataIndex entirely if you fully control rendering via `render`
+               // Alternatively, dataIndex can be used but `render` overrides it visually.
+               // dataIndex: `averageValue${index + 1}`, // Can be here, but render takes precedence
+               render: (_, row) => { 
+                         const avgValueKey = `averageValue${index + 1}`;
+                         const valueToDisplay = row[avgValueKey]; // Access the flattened value directly
+                         console.log(`DEBUG getCriteriaValueColumns: Rendering ${row.idQuestion} - ${crit.name}. Value:`, valueToDisplay);
+                         return getLinguisticTermForTable(valueToDisplay); 
+               },
+          }));
+     };
 
-  return (
-    <div>
-      <TypingCard source={`Daftar Pertanyaan Kuis: ${quizDetails?.name || 'Memuat...'}`} />
-      <Card title={`Daftar Pertanyaan Kuis: ${quizDetails?.name || 'Memuat...'}`}>
-        <Table
-          dataSource={questions}
-          pagination={false}
-          rowKey="idQuestion"
-          scroll={{ x: 'max-content' }}
-        >
-          <Column
-            title="ID Pertanyaan"
-            dataIndex="idQuestion"
-            key="idQuestion"
-            align="center"
-            width={120}
-          />
-          <Column
-            title="Pertanyaan"
-            dataIndex="title"
-            key="title"
-            align="left"
-            width={250}
-            render={(text, row) => {
-              const isExpanded = row.idQuestion === expandedQuestionId;
-              const displayTitle = text || '';
-              const truncatedText = displayTitle.length > 100 ? `${displayTitle.substring(0, 97)}...` : displayTitle;
-
-              return (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <p style={{ margin: 0, fontWeight: 'normal',
-                                 maxHeight: isExpanded ? 'none' : '40px',
-                                 overflow: 'hidden',
-                                 textOverflow: 'ellipsis',
-                                 whiteSpace: isExpanded ? 'normal' : 'nowrap',
-                                 width: '100%'
-                                 }}>
-                    {isExpanded ? displayTitle : truncatedText}
-                  </p>
-                  {displayTitle.length > 100 && (
-                    <Button
-                      type="link"
-                      onClick={() => setExpandedQuestionId(isExpanded ? null : row.idQuestion)}
-                      icon={isExpanded ? <UpOutlined /> : <DownOutlined />}
-                      size="small"
-                      style={{ padding: 0, height: 'auto' }}
+     return (
+          <div>
+               <TypingCard source={`Daftar Pertanyaan Kuis: ${quizDetails?.name || 'Memuat...'}`} />
+               <Card title={`Daftar Pertanyaan Kuis: ${quizDetails?.name || 'Memuat...'}`}>
+                    <Table
+                         dataSource={questions}
+                         pagination={false}
+                         rowKey="idQuestion"
+                         scroll={{ x: 'max-content' }}
                     >
-                      {isExpanded ? 'Sembunyikan' : 'Lihat lebih banyak'}
-                    </Button>
-                  )}
+                         <Column
+                              title="ID Pertanyaan"
+                              dataIndex="idQuestion"
+                              key="idQuestion"
+                              align="center"
+                              width={120}
+                         />
+                         <Column
+                              title="Pertanyaan"
+                              dataIndex="title"
+                              key="title"
+                              align="left"
+                              width={250}
+                              render={(text, row) => {
+                                   const isExpanded = row.idQuestion === expandedQuestionId;
+                                   const displayTitle = text || '';
+                                   const truncatedText = displayTitle.length > 100 ? `${displayTitle.substring(0, 97)}...` : displayTitle;
 
-                  {row.file_path && (
-                    <Image
-                      src={getImageUrl(row.file_path)}
-                      alt="Question Image"
-                      style={{ maxWidth: '150px', maxHeight: '150px', objectFit: 'contain', marginTop: '8px' }}
-                      fallback="https://via.placeholder.com/150?text=Gambar+Tidak+Ada"
-                    />
-                  )}
-                </div>
-              );
-            }}
-          />
+                                   return (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                             <p style={{ margin: 0, fontWeight: 'normal',
+                                                                                     maxHeight: isExpanded ? 'none' : '40px',
+                                                                                     overflow: 'hidden',
+                                                                                     textOverflow: 'ellipsis',
+                                                                                     whiteSpace: isExpanded ? 'normal' : 'nowrap',
+                                                                                     width: '100%'
+                                                                                     }}>
+                                                  {isExpanded ? displayTitle : truncatedText}
+                                             </p>
+                                             {displayTitle.length > 100 && (
+                                                  <Button
+                                                       type="link"
+                                                       onClick={() => setExpandedQuestionId(isExpanded ? null : row.idQuestion)}
+                                                       icon={isExpanded ? <UpOutlined /> : <DownOutlined />}
+                                                       size="small"
+                                                       style={{ padding: 0, height: 'auto' }}
+                                                  >
+                                                       {isExpanded ? 'Sembunyikan' : 'Lihat lebih banyak'}
+                                                  </Button>
+                                             )}
 
-          {getCriteriaValueColumns().map((col, index) => <Column {...col} key={index} />)}
+                                             {row.file_path && (
+                                                  <Image
+                                                       src={getImageUrl(row.file_path)}
+                                                       alt="Question Image"
+                                                       style={{ maxWidth: '150px', maxHeight: '150px', objectFit: 'contain', marginTop: '8px' }}
+                                                       fallback="https://via.placeholder.com/150?text=Gambar+Tidak+Ada"
+                                                  />
+                                             )}
+                                        </div>
+                                   );
+                              }}
+                         />
 
-          <Column
-            title="Status Penilaian"
-            dataIndex="is_rated"
-            key="status_penilaian"
-            align="center"
-            width={150}
-            render={(isRated) => {
-              const statusText = isRated ? 'Sudah Dinilai' : 'Belum Dinilai';
-              const statusColor = isRated ? 'green' : 'red';
-              return <Tag color={statusColor}>{statusText}</Tag>;
-            }}
-          />
+                         {getCriteriaValueColumns().map((col, index) => <Column {...col} key={index} />)}
 
-          <Column
-            title="Operasi"
-            key="action"
-            align="center"
-            width={120}
-            fixed="right"
-            render={(_, row) => (
-              <Button
-                type="primary"
-                shape="circle"
-                icon={<EditOutlined />}
-                title="Nilai Pertanyaan"
-                onClick={() => handleOpenRatingModal(row)}
-              />
-            )}
-          />
-        </Table>
-      </Card>
+                         <Column
+                              title="Operasi"
+                              key="action"
+                              align="center"
+                              width={120}
+                              fixed="right"
+                              render={(_, row) => (
+                                   <Button
+                                        type="primary"
+                                        shape="circle"
+                                        icon={<EditOutlined />}
+                                        title="Nilai Pertanyaan"
+                                        onClick={() => handleOpenRatingModal(row)}
+                                   />
+                              )}
+                         />
+                    </Table>
+               </Card>
 
-      <RateQuestionModal
-        visible={isRatingModalVisible}
-        onCancel={() => setIsRatingModalVisible(false)}
-        onOk={handleRatingSubmit}
-        confirmLoading={ratingModalLoading}
-        question={currentQuestionForRating}
-        criteria={criteria}
-        lecturers={lecturers}
-        linguisticValues={linguisticValues}
-      />
-    </div>
-  );
+               <RateQuestionModal
+                    visible={isRatingModalVisible}
+                    onCancel={() => setIsRatingModalVisible(false)}
+                    handleRatingSubmit={handleRatingSubmit}
+                    confirmLoading={ratingModalLoading}
+                    question={currentQuestionForRating}
+                    criteria={criteria}
+                    lecturers={lecturers}
+                    linguisticValues={linguisticValues}
+               />
+          </div>
+     );
 };
 
 export default QuestionIndexQuiz1;

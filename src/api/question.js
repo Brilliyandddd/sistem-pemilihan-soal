@@ -123,10 +123,10 @@ export const getRpsDetails = async (rpsId) => {
   }
 };
 
-export function submitQuestionCriteriaRating(payload) {
+export function submitQuestionCriteriaRating(payload, idQuestion) {
   return request({
-    url: "/question/criteria-ratings", 
-    method: "post", 
+    url: `/question/rating/${idQuestion}`, 
+    method: "put", 
     data: payload, 
   });
 }
