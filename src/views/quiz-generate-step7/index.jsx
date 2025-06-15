@@ -10,7 +10,7 @@ import { getAllCriteriaValueByQuestion } from "@/api/criteriaValue";
 import { getQuiz } from "@/api/quiz";
 import { getRPS } from "@/api/rps";
 import { getUsers } from "@/api/user";
-import { getDematelWeightsBySubject } from "@/api/causality"; // Untuk mendapatkan bobot w_i
+import { getDematelWeightsBySubject } from "@/api/causality";
 
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -40,7 +40,7 @@ function withRouterWrapper(Component) {
 
 
 const { Column } = Table;
-const { TabPane } = Tabs; // Menggunakan Tabs untuk konsistensi, meskipun mungkin tidak ada tab di sini
+const { TabPane } = Tabs;
 
 class QuizGenerate extends Component {
     constructor(props) {
@@ -50,26 +50,38 @@ class QuizGenerate extends Component {
             quiz: [],
             userInfo: [],
             quizId: '',
-            questionsData: [], // Masih akan menyimpan rata-rata x_ij untuk perhitungan
+            questionsData: [], // Untuk menyimpan rata-rata x_ij
             isMounted: false,
             loading: false,
             error: null,
-            criteriaWeights: {}, // Bobot w_i dari Dematel
-            denominators: {}, // Pembagi dari Step 3 (digunakan untuk mendapatkan r_ij)
-            normalizedQuestionData: [], // r_ij dari Step 3
-            weightedNormalizedMatrix: [], // Y_ij hasil Step 4
+            criteriaWeights: {}, // w_i
+            denominators: {},    // Pembagi
+            normalizedQuestionData: [], // r_ij
+            weightedNormalizedMatrix: [], // Y_ij
+            criteriaTypes: { // Kriteria Tipe (BENEFIT/COST)
+                "Knowledge": "BENEFIT", "Comprehension": "BENEFIT", "Application": "BENEFIT",
+                "Analysis": "BENEFIT", "Evaluation": "BENEFIT", "Difficulty": "COST",
+                "Discrimination": "BENEFIT", "Reliability": "BENEFIT", "Problem Solving": "BENEFIT",
+                "Creativity": "BENEFIT",
+            },
+            idealPositiveSolution: {}, // y_j^+
+            idealNegativeSolution: {}, // y_j^-
+            distancePositiveIdeal: [], // D_i^+
+            distanceNegativeIdeal: [], // D_i^-
+            preferenceScores: [], // V_i dan Rank hasil Step 7
         };
     }
 
-    handleNextPage = (quizId) => {
-        const { history } = this.props;
-        history.push(`/setting-quiz/generate-quiz-step5/${quizId}`);
-    };
+    // Tidak ada handleNextPage untuk Step terakhir
+    // handleNextPage = (quizId) => {
+    //     const { history } = this.props;
+    //     history.push(`/setting-quiz/generate-quiz-step8/${quizId}`);
+    // };
 
     handlePreviousPage = () => {
         const { history } = this.props;
         const currentQuizId = this.props.match.params.quizID;
-        history.push(`/setting-quiz/generate-quiz-step3/${currentQuizId}`);
+        history.push(`/setting-quiz/generate-quiz-step6/${currentQuizId}`);
     };
 
     async componentDidMount() {
@@ -94,7 +106,7 @@ class QuizGenerate extends Component {
             const currentQuizId = this.props.match.params.quizID;
 
             if (!currentQuizId) {
-                console.error("DEBUG Step4 (fetchData): quizID dari URL tidak ditemukan.");
+                console.error("DEBUG Step7 (fetchData): quizID dari URL tidak ditemukan.");
                 message.error("ID kuis tidak ditemukan di URL. Mohon periksa kembali navigasi.");
                 this.setState({ error: "ID kuis tidak ditemukan di URL." });
                 return;
@@ -108,12 +120,10 @@ class QuizGenerate extends Component {
 
             const allQuizzes = quizResponse.data?.content || [];
             const rpsContent = rpsResponse.data?.content || [];
-            // const allUsers = usersResponse.data?.content || usersResponse.data || []; // Tidak digunakan di Step ini
-
             const targetQuiz = allQuizzes.find(q => q.idQuiz === currentQuizId);
 
             if (!targetQuiz) {
-                console.error("DEBUG Step4 (fetchData): Kuis dengan ID", currentQuizId, "TIDAK DITEMUKAN.");
+                console.error("DEBUG Step7 (fetchData): Kuis dengan ID", currentQuizId, "TIDAK DITEMUKAN.");
                 message.error("Kuis tidak ditemukan.");
                 this.setState({ error: "Kuis tidak ditemukan." });
                 return;
@@ -140,8 +150,8 @@ class QuizGenerate extends Component {
                 "Difficulty", "Discrimination", "Reliability", "Problem Solving", "Creativity"
             ];
 
-            let fetchedCriteriaWeights = {}; // Bobot w_i dari Dematel
-            let finalDenominators = {}; // Pembagi dari Step 3
+            let fetchedCriteriaWeights = {};
+            let finalDenominators = {}; 
 
             // --- Ambil Bobot Dematel (w_i) ---
             if (subjectIdForWeights) {
@@ -263,16 +273,16 @@ class QuizGenerate extends Component {
             // --- End Perhitungan r_ij ---
 
 
-            // --- BARU: Perhitungan Y_ij = w_i * r_ij (Step 4) ---
+            // --- Perhitungan Y_ij = w_i * r_ij (Seperti di Step 4) ---
             const weightedNormalizedMatrix = normalizedQuestionData.map(r_q => {
                 const weightedQ = {
                     idQuestion: r_q.idQuestion,
                     title: r_q.title,
-                    weightedNormalizedCriteria: {} // Y_ij akan disimpan di sini
+                    weightedNormalizedCriteria: {}
                 };
                 criteriaNamesInOrder.forEach(name => {
-                    const r_ij = r_q.normalizedCriteria[name]; // r_ij dari Step 3
-                    const w_i = fetchedCriteriaWeights[name]; // Bobot w_i dari Dematel
+                    const r_ij = r_q.normalizedCriteria[name];
+                    const w_i = fetchedCriteriaWeights[name];
                     
                     let y_ij = null;
                     if (r_ij !== null && r_ij !== undefined && w_i !== null && w_i !== undefined && !isNaN(w_i)) {
@@ -282,55 +292,177 @@ class QuizGenerate extends Component {
                 });
                 return weightedQ;
             });
-            // console.log("DEBUG Step4 (Weighted Normalized Matrix Y_ij):", weightedNormalizedMatrix);
+            // --- End Perhitungan Y_ij ---
+
+
+            // --- Perhitungan Solusi Ideal Positif y_j^+ dan Negatif y_j^- (Seperti di Step 5) ---
+            const idealPositiveSolution = {}; // y_j^+
+            const idealNegativeSolution = {}; // y_j^-
+            const { criteriaTypes } = this.state;
+
+            criteriaNamesInOrder.forEach(criterionName => {
+                const criterionType = criteriaTypes[criterionName];
+                const y_ij_values_for_criterion = weightedNormalizedMatrix
+                    .map(item => item.weightedNormalizedCriteria[criterionName])
+                    .filter(value => value !== null && value !== undefined && !isNaN(value));
+
+                if (y_ij_values_for_criterion.length > 0) {
+                    if (criterionType === "BENEFIT") {
+                        idealPositiveSolution[criterionName] = Math.max(...y_ij_values_for_criterion);
+                        idealNegativeSolution[criterionName] = Math.min(...y_ij_values_for_criterion);
+                    } else if (criterionType === "COST") {
+                        idealPositiveSolution[criterionName] = Math.min(...y_ij_values_for_criterion);
+                        idealNegativeSolution[criterionName] = Math.max(...y_ij_values_for_criterion);
+                    } else {
+                        console.warn(`WARN Step5: Unknown criterion type for ${criterionName}: ${criterionType}. Ideal solutions cannot be calculated.`);
+                        idealPositiveSolution[criterionName] = null;
+                        idealNegativeSolution[criterionName] = null;
+                    }
+                } else {
+                    console.warn(`WARN Step5: No valid Y_ij values for criterion ${criterionName}. Ideal solutions set to null.`);
+                    idealPositiveSolution[criterionName] = null;
+                    idealNegativeSolution[criterionName] = null;
+                }
+            });
+            // --- End Perhitungan Solusi Ideal ---
+
+
+            // --- Perhitungan Jarak Solusi Ideal (D_i^+ dan D_i^-) (Seperti di Step 6) ---
+            const distancePositiveIdeal = []; // D_i^+
+            const distanceNegativeIdeal = []; // D_i^-
+
+            weightedNormalizedMatrix.forEach(y_q => {
+                let sumSquaredDiffPositive = 0;
+                let sumSquaredDiffNegative = 0;
+
+                criteriaNamesInOrder.forEach(criterionName => {
+                    const y_ij = y_q.weightedNormalizedCriteria[criterionName];
+                    const y_j_plus = idealPositiveSolution[criterionName];
+                    const y_j_minus = idealNegativeSolution[criterionName];
+
+                    if (y_ij !== null && y_ij !== undefined && !isNaN(y_ij) &&
+                        y_j_plus !== null && y_j_plus !== undefined && !isNaN(y_j_plus) &&
+                        y_j_minus !== null && y_j_minus !== undefined && !isNaN(y_j_minus)) {
+                        
+                        sumSquaredDiffPositive += Math.pow((y_j_plus - y_ij), 2);
+                        sumSquaredDiffNegative += Math.pow((y_ij - y_j_minus), 2);
+                    } else {
+                        console.warn(`WARN Step6: Skipping calculation for ${y_q.idQuestion} - ${criterionName} due to invalid Y_ij, Yj+, or Yj- values.`);
+                    }
+                });
+
+                const diPlus = Math.sqrt(sumSquaredDiffPositive);
+                const diMinus = Math.sqrt(sumSquaredDiffNegative);
+                
+                distancePositiveIdeal.push({ idQuestion: y_q.idQuestion, title: y_q.title, value: diPlus });
+                distanceNegativeIdeal.push({ idQuestion: y_q.idQuestion, title: y_q.title, value: diMinus });
+            });
+            // --- End Perhitungan Jarak Solusi Ideal ---
+
+            // --- Perhitungan Nilai Preferensi V_i dan Perankingan (Seperti di Step 7) ---
+            const preferenceScores = [];
+
+            const combinedDistanceData = distancePositiveIdeal.map((dPlusItem) => {
+                const dMinusItem = distanceNegativeIdeal.find(dMinus => dMinus.idQuestion === dPlusItem.idQuestion);
+                return {
+                    idQuestion: dPlusItem.idQuestion,
+                    title: dPlusItem.title,
+                    diPlus: dPlusItem.value,
+                    diMinus: dMinusItem ? dMinusItem.value : null,
+                };
+            });
+
+            combinedDistanceData.forEach(item => {
+                const { diPlus, diMinus, idQuestion, title } = item;
+                let vi = null;
+
+                if (diPlus !== null && diPlus !== undefined && !isNaN(diPlus) &&
+                    diMinus !== null && diMinus !== undefined && !isNaN(diMinus)) {
+                    
+                    if ((diMinus + diPlus) > 0) {
+                        vi = diMinus / (diMinus + diPlus);
+                    } else {
+                        vi = 0;
+                        console.warn(`WARN Step7: Denominator (Di- + Di+) is zero for question ${idQuestion}. Vi set to 0.`);
+                    }
+                } else {
+                    console.warn(`WARN Step7: Invalid D+ or D- values for question ${idQuestion}. Vi set to null.`);
+                }
+                
+                preferenceScores.push({
+                    idQuestion: idQuestion,
+                    title: title,
+                    vi: vi,
+                });
+            });
+
+            const rankedPreferenceScores = [...preferenceScores]
+                .sort((a, b) => {
+                    if (a.vi === null || isNaN(a.vi)) return 1;
+                    if (b.vi === null || isNaN(b.vi)) return -1;
+                    return b.vi - a.vi;
+                })
+                .map((item, index) => ({
+                    ...item,
+                    rank: index + 1,
+                }));
+            
+            // --- End Perhitungan V_i dan Perankingan ---
 
 
             if (this.state.isMounted) {
                 this.setState({
-                    questionsData: processedQuestions, // Rata-rata asli
-                    denominators: finalDenominators, // Pembagi
-                    criteriaWeights: fetchedCriteriaWeights, // Bobot Dematel
-                    normalizedQuestionData: normalizedQuestionData, // r_ij
-                    weightedNormalizedMatrix: weightedNormalizedMatrix, // Y_ij
+                    questionsData: processedQuestions,
+                    denominators: finalDenominators,
+                    criteriaWeights: fetchedCriteriaWeights,
+                    normalizedQuestionData: normalizedQuestionData,
+                    weightedNormalizedMatrix: weightedNormalizedMatrix,
+                    idealPositiveSolution: idealPositiveSolution,
+                    idealNegativeSolution: idealNegativeSolution,
+                    distancePositiveIdeal: distancePositiveIdeal,
+                    distanceNegativeIdeal: distanceNegativeIdeal,
+                    preferenceScores: rankedPreferenceScores,
                     quizId: currentQuizId,
                 });
             }
         } catch (error) {
-            console.error('Error fetching data in Step 4:', error);
-            message.error('Gagal memuat data untuk Tahap 4');
+            console.error('Error fetching data in Step 7:', error);
+            message.error('Gagal memuat data untuk Tahap 7');
             if (this.state.isMounted) {
-                this.setState({ error: 'Gagal memuat data untuk Tahap 4' });
+                this.setState({ error: 'Gagal memuat data untuk Tahap 7' });
             }
         } finally {
             this.setState({ loading: false });
         }
     };
 
-    renderWeightedNormalizedValue = (record, criterionName) => {
-        const value = record.weightedNormalizedCriteria?.[criterionName];
+    // Render fungsi umum untuk menampilkan nilai desimal
+    renderValue = (value) => {
         if (value !== null && value !== undefined && !isNaN(value)) {
-            return <Tag color="green">{value.toFixed(4)}</Tag>; // Warna hijau untuk Y_ij
+            return <Tag color="blue">{value.toFixed(5)}</Tag>;
         }
         return <Tag color="default">N/A</Tag>;
     };
 
+    renderRank = (rank) => {
+        if (rank !== null && rank !== undefined && !isNaN(rank)) {
+            // Mengubah semua rank menjadi warna biru
+            return <Tag color="blue">{rank}</Tag>;
+        }
+        return <Tag color="default">N/A</Tag>;
+    };
+
+
     render() {
         const {
-            weightedNormalizedMatrix, // Data yang akan ditampilkan di tabel utama (Y_ij)
+            preferenceScores,
             quizId,
             loading,
             error,
-            criteriaWeights, // Bobot w_i
-            // denominators,    // Pembagi (tidak lagi ditampilkan di header)
         } = this.state;
 
-        const criteriaNames = [
-            "Knowledge", "Comprehension", "Application", "Analysis", "Evaluation",
-            "Difficulty", "Discrimination", "Reliability", "Problem Solving", "Creativity"
-        ];
-        
-        // --- Kolom untuk tabel utama (matriks Y_ij) ---
-        const mainTableColumns = [
+        // --- Kolom untuk tabel Hasil Akhir (V_i dan Rank) ---
+        const finalResultsTableColumns = [
             {
                 title: "ID Pertanyaan",
                 dataIndex: "idQuestion",
@@ -339,56 +471,35 @@ class QuizGenerate extends Component {
                 width: 150,
                 fixed: 'left',
             },
-            // Kolom "Pertanyaan" dihapus di sini
-            ...criteriaNames.map((name) => ({
-                title: name,
-                key: `weighted_normalized_${name}`,
-                width: 150,
-                render: (text, record) => this.renderWeightedNormalizedValue(record, name)
-            }))
-        ];
-
-        // --- Kolom untuk tabel header (HANYA Bobot) ---
-        const headerTableColumns = [
             {
-                title: "",
-                dataIndex: "label",
-                key: "label",
+                title: "Pertanyaan",
+                dataIndex: "title",
+                key: "title",
+                width: 250,
+                fixed: 'left',
+            },
+            {
+                title: "Nilai Preferensi",
+                dataIndex: "vi",
+                key: "vi_value",
                 align: "center",
                 width: 150,
-                fixed: 'left',
-                render: (text) => <span style={{ fontWeight: 'bold' }}>{text}</span>
+                render: (value) => this.renderValue(value),
             },
-            // Kolom "spacer" dihapus di sini
-            ...criteriaNames.map((name) => ({
-                title: name,
-                key: `header_${name}`,
-                width: 150,
-                render: (text, record) => {
-                    if (record.type === 'weights') {
-                        const weightValue = criteriaWeights[name]; // Akses bobot dengan nama kriteria
-                        if (weightValue !== null && weightValue !== undefined && !isNaN(weightValue)) {
-                            return <Tag color="cyan">{weightValue.toFixed(4)}</Tag>; // Bobot
-                        }
-                        return <Tag color="red">(Bobot Belum Tersedia)</Tag>;
-                    }
-                    // Baris 'Pembagi' dihapus
-                    return null;
-                }
-            }))
+            {
+                title: "Rank",
+                dataIndex: "rank",
+                key: "rank_value",
+                align: "center",
+                width: 100,
+                render: (rank) => this.renderRank(rank),
+            },
         ];
-
-        // Data source untuk tabel header (HANYA 'Bobot')
-        const headerDataSource = [
-            { label: 'Bobot', type: 'weights', id: 'header_weights_row' },
-            // Baris 'Pembagi' dihapus dari sini
-        ];
-
 
         if (error) {
             return (
                 <div className="app-container">
-                    <TypingCard source="Matriks Keputusan Ternormalisasi Berbobot (Tahap 4)" />
+                    <TypingCard source="Nilai Preferensi dan Perankingan (Tahap 7)" />
                     <Alert
                         message="Error"
                         description={error}
@@ -410,11 +521,8 @@ class QuizGenerate extends Component {
 
         return (
             <div className="app-container">
-                <TypingCard source="Matriks Keputusan Ternormalisasi Berbobot (Tahap 4)" />
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
-                    {/* Buttons moved below the tables */}
-                </div>
-
+                <TypingCard source="Nilai Preferensi dan Perankingan (Tahap 7)" />
+                
                 <br />
                 <br />
 
@@ -425,46 +533,35 @@ class QuizGenerate extends Component {
                     </div>
                 ) : (
                     <>
-                        {/* Tabel untuk Bobot saja */}
-                        <Table
-                            dataSource={headerDataSource}
-                            columns={headerTableColumns}
-                            pagination={false}
-                            showHeader={false}
-                            rowKey="id"
-                            scroll={{ x: 'max-content' }}
-                            style={{ marginBottom: 0, borderBottom: '1px solid #f0f0f0' }}
-                            className="criteria-header-table"
-                        />
-                        {/* Tabel Utama untuk matriks Y_ij */}
-                        {weightedNormalizedMatrix.length > 0 ? (
+                        {/* Tabel Utama untuk Nilai Preferensi dan Rank */}
+                        {preferenceScores.length > 0 ? (
                             <Table
-                                dataSource={weightedNormalizedMatrix}
-                                columns={mainTableColumns}
+                                dataSource={preferenceScores}
+                                columns={finalResultsTableColumns}
                                 pagination={false}
                                 rowKey="idQuestion"
                                 scroll={{ x: 'max-content' }}
-                                className="main-questions-table"
+                                className="main-results-table"
                             />
                         ) : (
                             <Alert
-                                message="Tidak Ada Data Pertanyaan untuk Normalisasi Berbobot"
-                                description="Tidak ada data pertanyaan yang ditemukan atau dapat dinormalisasi berbobot untuk kuis ini."
+                                message="Tidak Ada Data untuk Perankingan"
+                                description="Tidak ada data yang ditemukan atau dapat digunakan untuk menghitung nilai preferensi dan rank."
                                 type="info"
                                 showIcon
                             />
                         )}
-                        {/* Buttons moved here */}
+                        
+                        {/* Tombol Navigasi */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
                             <div>
                                 <Button type="primary" onClick={() => this.handlePreviousPage(quizId)}>
-                                    Tahap 3
+                                    Tahap 6
                                 </Button>
                             </div>
+                            {/* Tidak ada tombol "Tahap selanjutnya" di Step terakhir */}
                             <div>
-                                <Button type="primary" onClick={() => this.handleNextPage(quizId)}>
-                                    Tahap 5
-                                </Button>
+                                {/* Anda bisa menambahkan tombol "Selesai" atau "Export" di sini */}
                             </div>
                         </div>
                     </>

@@ -1,470 +1,562 @@
+/* eslint-disable no-unused-vars */
 import React, { Component } from "react";
-import { Row, Col, message,Button } from "antd";
+import PropTypes from 'prop-types'; // Pastikan PropTypes diimpor
 import TypingCard from "@/components/TypingCard";
-import { Card,  Table,Select } from "antd";
-import{
+import { Button, Table, Tabs, Tag, message, Spin, Alert, Image } from "antd"; // Tambahkan message, Spin, Alert
+import {
     getQuestionsByRPSQuiz1,
-  } from "@/api/quiz";
-  import{
-    getAllCriteriaValueByQuestion,
-  } from "@/api/criteriaValue";
-import { getQuiz ,addQuiz} from "@/api/quiz";
+} from "@/api/quiz";
+import { getAllCriteriaValueByQuestion } from "@/api/criteriaValue";
+import { getQuiz } from "@/api/quiz";
 import { getRPS } from "@/api/rps";
-import {reqUserInfo} from "@/api/user";
-import AddQuizForm from "./forms/add-quiz-form";
+import { getUsers } from "@/api/user";
+import { getDematelWeightsBySubject } from "@/api/causality";
+
+import { useNavigate, useParams } from 'react-router-dom';
+
+function withRouterWrapper(Component) {
+    return function ComponentWithRouterProp(props) {
+        const navigate = useNavigate();
+        const params = useParams();
+
+        const history = {
+            push: (path) => navigate(path),
+            goBack: () => navigate(-1),
+        };
+
+        const match = {
+            params: params,
+        };
+
+        return (
+            <Component
+                {...props}
+                history={history}
+                match={match}
+            />
+        );
+    };
+}
+
 
 const { Column } = Table;
+const { TabPane } = Tabs;
+
 class QuizGenerate extends Component {
     constructor(props) {
-      super(props);
-      this.state = {
-          rps: [],
-          quiz: [],
-          userInfo: [],
-          quizId:'',
-          quizName: '',
-          quizDuration:'',
-          quizDesc:'',
-          quizRpsId:'',
-          quizMinGrade:'',
-          quizType:'',
-          content: [],
-          questionsWithCriteria: [], // Ensure this is initialized
-          devLecturerIds: [],
-          devLecturers: [],
-          isMounted: false,  
-          list_questions: [],
-          addQuizModalVisible: false,
-          addQuizModalLoading: false,
-
-          
-      };
-  }
-    
-  getRps = async () => {
-    const result = await getRPS();
-    const { content, statusCode } = result.data;
-
-    if (statusCode === 200) {
-      this.setState({
-        rps: content,
-      });
+        super(props);
+        this.state = {
+            rps: [],
+            quiz: [],
+            userInfo: [],
+            quizId: '',
+            questionsData: [], // Untuk menyimpan rata-rata x_ij
+            isMounted: false,
+            loading: false,
+            error: null,
+            criteriaWeights: {}, // w_i
+            denominators: {},    // Pembagi
+            normalizedQuestionData: [], // r_ij
+            weightedNormalizedMatrix: [], // Y_ij
+            criteriaTypes: { // Kriteria Tipe (BENEFIT/COST)
+                "Knowledge": "BENEFIT", "Comprehension": "BENEFIT", "Application": "BENEFIT",
+                "Analysis": "BENEFIT", "Evaluation": "BENEFIT", "Difficulty": "COST",
+                "Discrimination": "BENEFIT", "Reliability": "BENEFIT", "Problem Solving": "BENEFIT",
+                "Creativity": "BENEFIT",
+            },
+            idealPositiveSolution: {}, // y_j^+
+            idealNegativeSolution: {}, // y_j^-
+            distancePositiveIdeal: [], // D_i^+
+            distanceNegativeIdeal: [], // D_i^-
+        };
     }
-  };
-  getQuiz = async () => {
-    const result = await getQuiz();
-    const { content, statusCode } = result.data;
-    console.log(result.data);
-    if (statusCode === 200) {
-      this.setState({
-        quiz: content,
-      });
-    }
-  };
-  getQuestions = async (id) => {
-    const result = await getQuestionsByRPSQuiz1(id);
-    const { content, statusCode } = result.data;
-  
-    if (statusCode === 200) {
 
-      // Process the results to calculate ranks
-      const results =this.calculateResult(this.state.questionsWithCriteria);
-  
-      // Adjust chunking logic to handle cases where the number of questions is less than 9
-      const chunkSize = Math.min(9, results.length);
-      const chunks = results.reduce((acc, result, index) => {
-        const chunkIndex = Math.floor(index / chunkSize);
-        if (!acc[chunkIndex]) {
-          acc[chunkIndex] = [];
+    handleNextPage = (quizId) => {
+        const { history } = this.props;
+        history.push(`/setting-quiz/generate-quiz-step7/${quizId}`); // Asumsi ada Step 7
+    };
+
+    handlePreviousPage = () => {
+        const { history } = this.props;
+        const currentQuizId = this.props.match.params.quizID;
+        history.push(`/setting-quiz/generate-quiz-step5/${currentQuizId}`);
+    };
+
+    async componentDidMount() {
+        this.setState({ isMounted: true, loading: true });
+        try {
+            await this.fetchData();
+        } catch (error) {
+            console.error('Error in componentDidMount:', error);
+            message.error('Gagal memuat data');
+            this.setState({ error: 'Gagal memuat data' });
+        } finally {
+            this.setState({ loading: false });
         }
-        acc[chunkIndex].push(result);
-        return acc;
-      }, []);
-  
-      const maxValues = chunks.map(chunk => Math.max(...chunk));
-      const sumValues = chunks.map(chunk => chunk.reduce((sum, value) => sum + value, 0));
-  
-      const overallMax = Math.max(...maxValues);
-      const overallMin = Math.min(...maxValues);
-      const Smax = Math.max(...sumValues);
-      const Smin = Math.min(...sumValues);
-  
-      const resultsWithRanks = chunks.map((chunk, chunkIndex) => {
-        const maxResult = Math.max(...chunk);
-        const sumResult = chunk.reduce((sum, value) => sum + value, 0);
-        const questionTitle = content[chunkIndex]?.title || `Question ${chunkIndex + 1}`;
-  
-        const normalizedMax = overallMax !== overallMin ? (maxResult - overallMin) / (overallMax - overallMin) : 0;
-        const normalizedSum = Smax !== Smin ? (sumResult - Smin) / (Smax - Smin) : 0;
-  
-        const result = (0.5 * normalizedSum + (1 - 0.5) * normalizedMax).toFixed(3);
-  
-        return { questionTitle, result: parseFloat(result), originalIndex: chunkIndex };
-      });
-  
-      const sortedResults = [...resultsWithRanks].sort((a, b) => a.result - b.result);
-  
-      const rankedResults = sortedResults.map((item, index) => ({
-        ...item,
-        rank: index + 1,
-      }));
-  
-      const sortedQuestions = rankedResults.map(item => ({
-        ...content[item.originalIndex],
-        id: item.rank, // Update the id based on rank
-        rank: item.rank, // Add rank to each question
-      }));
-  
-      this.setState({
-        list_questions: sortedQuestions,
-      });
     }
-  };
- 
-  async componentDidMount() {
-    this.setState({ isMounted: true });
-    await this.fetchData();
-    const rpsResponse = await getRPS();
-    const { content: rpsContent, statusCode: rpsStatusCode } = rpsResponse.data;
-    const rpsID = rpsContent[0].id;
-    this.getQuestions(rpsID);
 
-    this.getRps();
-  }
-   handleCancel = (_) => {
-    this.setState({
-      editQuizModalVisible: false,
-      addQuizModalVisible: false,
-    });
-  };
+    componentWillUnmount() {
+        this.setState({ isMounted: false });
+    }
 
-  handleAddQuiz = (row) => {
-    this.setState({
-      addQuizModalVisible: true,
-    });
-  };
+    fetchData = async () => {
+        try {
+            const currentQuizId = this.props.match.params.quizID;
 
-  handleAddQuizOk = (_) => {
-    const { form } = this.addQuizFormRef.props;
-    form.validateFields((err, values) => {
-      if (err) {
-        return;
-      }
-      this.setState({ addQuizModalLoading: true });
-      addQuiz(values)
-        .then((response) => {
-          form.resetFields();
-          this.setState({
-            addQuizModalVisible: false,
-            addQuizModalLoading: false,
-          });
-          message.success("Berhasil!");
-          this.getQuiz();
-        })
-        .catch((e) => {
-          message.success("Gagal menambahkan, coba lagi!");
-        });
-    });
-  };
-
-  fetchData = async () => {
-    try {
-      const quizResponse = await getQuiz();
-      const { content: quizContent, statusCode: quizStatusCode } = quizResponse.data;
-
-      const userInfoResponse = await reqUserInfo();
-      const { content: userInfoContent, statusCode: userInfoStatusCode } = userInfoResponse.data;
-
-      const rpsResponse = await getRPS();
-      const { content: rpsContent, statusCode: rpsStatusCode } = rpsResponse.data;
-
-      let devLecturers = [];
-
-      if (quizStatusCode === 200 && rpsStatusCode === 200) {
-        quizContent.forEach(quiz => {
-          const matchingRPS = rpsContent.find(rps => rps.id === quiz.rps.id);
-          if (matchingRPS) {
-            devLecturers.push(...matchingRPS.dev_lecturers);
-            console.log(`Dev Lecturers for quiz ${quiz.id}:`, matchingRPS.dev_lecturers);
-          } else {
-            console.log(`No matching RPS found for quiz ${quiz.id}`);
-          }  this.setState({
-            quizId: quiz.id,
-            quizName : quiz.name,
-            quizDuration : quiz.duration,
-            quizDesc : quiz.description,
-            quizRpsId : quiz.rps.id,
-            quizMinGrade: quiz.min_grade,
-            quizType: quiz.type_quiz
-
-            // other state properties if any
-          });
-        });
-      }
-
-      if (this.state.isMounted) {
-        this.setState({ devLecturers });
-      }
-
-      if (quizStatusCode === 200 && rpsStatusCode === 200) {
-        quizContent.forEach(async (quiz) => {
-        const matchingRPS = rpsContent.find(rps => rps.id === quiz.rps.id);
-        const rpsID = matchingRPS.id;
-  
-        const result = await getQuestionsByRPSQuiz1(rpsID);
-        const { content, statusCode } = result.data;
-
-        if (statusCode === 200) {
-          const quizQuestions = content.filter(question => question.examType2 === 'QUIZ');
-
-          const questionsWithCriteria = await Promise.all(quizQuestions.map(async (question) => {
-            const criteriaResult = await getAllCriteriaValueByQuestion(question.id);
-            if (criteriaResult.data.statusCode === 200 ) {
-              question.criteriaValues = criteriaResult.data.content;
-             // Calculate the average of value1.avg for each question's responses
-            const totalAvg1 = question.criteriaValues.reduce((sum, response) => sum + parseFloat(response.value1.average), 0);
-            const avgOfAvgValue1 = totalAvg1 / question.criteriaValues.length;
-            
-            const totalAvg2 = question.criteriaValues.reduce((sum, response) => sum + parseFloat(response.value2.average), 0);
-            const avgOfAvgValue2 = totalAvg2 / question.criteriaValues.length;
-
-            const totalAvg3 = question.criteriaValues.reduce((sum, response) => sum + parseFloat(response.value3.average), 0);
-            const avgOfAvgValue3 = totalAvg3 / question.criteriaValues.length;
-
-            const totalAvg4 = question.criteriaValues.reduce((sum, response) => sum + parseFloat(response.value4.average), 0);
-            const avgOfAvgValue4 = totalAvg4 / question.criteriaValues.length;
-
-            const totalAvg5 = question.criteriaValues.reduce((sum, response) => sum + parseFloat(response.value5.average), 0);
-            const avgOfAvgValue5 = totalAvg5 / question.criteriaValues.length;
-
-            const totalAvg6 = question.criteriaValues.reduce((sum, response) => sum + parseFloat(response.value6.average), 0);
-            const avgOfAvgValue6 = totalAvg6 / question.criteriaValues.length;
-
-            const totalAvg7 = question.criteriaValues.reduce((sum, response) => sum + parseFloat(response.value7.average), 0);
-            const avgOfAvgValue7 = totalAvg7 / question.criteriaValues.length;
-
-            const totalAvg8 = question.criteriaValues.reduce((sum, response) => sum + parseFloat(response.value8.average), 0);
-            const avgOfAvgValue8 = totalAvg8 / question.criteriaValues.length;
-
-            const totalAvg9 = question.criteriaValues.reduce((sum, response) => sum + parseFloat(response.value9.average), 0);
-            const avgOfAvgValue9 = totalAvg9 / question.criteriaValues.length;
-
-            // Add the average to the question object
-            question.avgOfAvgValue1 = avgOfAvgValue1;
-            question.avgOfAvgValue2 = avgOfAvgValue2;
-            question.avgOfAvgValue3 = avgOfAvgValue3;
-            question.avgOfAvgValue4 = avgOfAvgValue4;
-            question.avgOfAvgValue5 = avgOfAvgValue5;
-            question.avgOfAvgValue6 = avgOfAvgValue6;
-            question.avgOfAvgValue7 = avgOfAvgValue7;
-            question.avgOfAvgValue8 = avgOfAvgValue8;
-            question.avgOfAvgValue9 = avgOfAvgValue9;
-
-            } else {
-              question.criteriaValues = [];
+            if (!currentQuizId) {
+                console.error("DEBUG Step6 (fetchData): quizID dari URL tidak ditemukan.");
+                message.error("ID kuis tidak ditemukan di URL. Mohon periksa kembali navigasi.");
+                this.setState({ error: "ID kuis tidak ditemukan di URL." });
+                return;
             }
-            return question;
-          }));
 
+            const [quizResponse, usersResponse, rpsResponse] = await Promise.all([
+                getQuiz(),
+                getUsers(),
+                getRPS()
+            ]);
 
-          if (this.state.isMounted) {
-            this.setState({
-              rpsContent: rpsContent,
-              questionsWithCriteria: questionsWithCriteria,
-            });
-          }
-        }
-      });
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  };
+            const allQuizzes = quizResponse.data?.content || [];
+            const rpsContent = rpsResponse.data?.content || [];
+            const targetQuiz = allQuizzes.find(q => q.idQuiz === currentQuizId);
 
- 
-    calculateMinMax(questionsWithCriteria) {
-      const calculateTop3MinMax = (array) => {
-          const top3 = array.slice(0, 3);
-          return {
-              min: Math.min(...top3),
-              max: Math.max(...top3)
-          };
-      };
+            if (!targetQuiz) {
+                console.error("DEBUG Step6 (fetchData): Kuis dengan ID", currentQuizId, "TIDAK DITEMUKAN.");
+                message.error("Kuis tidak ditemukan.");
+                this.setState({ error: "Kuis tidak ditemukan." });
+                return;
+            }
 
-      const averagesArray1 = questionsWithCriteria.map(question => question.avgOfAvgValue1);
-      const { min: minValue1, max: maxValue1 } = calculateTop3MinMax(averagesArray1);
+            let rpsIdForQuestions = '';
+            let subjectIdForWeights = null;
+            let fullRPSData = null;
 
-      const averagesArray2 = questionsWithCriteria.map(question => question.avgOfAvgValue2);
-      const { min: minValue2, max: maxValue2 } = calculateTop3MinMax(averagesArray2);
-
-      const averagesArray3 = questionsWithCriteria.map(question => question.avgOfAvgValue3);
-      const { min: minValue3, max: maxValue3 } = calculateTop3MinMax(averagesArray3);
-
-      const averagesArray4 = questionsWithCriteria.map(question => question.avgOfAvgValue4);
-      const { min: minValue4, max: maxValue4 } = calculateTop3MinMax(averagesArray4);
-
-      const averagesArray5 = questionsWithCriteria.map(question => question.avgOfAvgValue5);
-      const { min: minValue5, max: maxValue5 } = calculateTop3MinMax(averagesArray5);
-
-      const averagesArray6 = questionsWithCriteria.map(question => question.avgOfAvgValue6);
-      const { min: minValue6, max: maxValue6 } = calculateTop3MinMax(averagesArray6);
-
-      const averagesArray7 = questionsWithCriteria.map(question => question.avgOfAvgValue7);
-      const { min: minValue7, max: maxValue7 } = calculateTop3MinMax(averagesArray7);
-
-      const averagesArray8 = questionsWithCriteria.map(question => question.avgOfAvgValue8);
-      const { min: minValue8, max: maxValue8 } = calculateTop3MinMax(averagesArray8);
-
-      const averagesArray9 = questionsWithCriteria.map(question => question.avgOfAvgValue9);
-      const { min: minValue9, max: maxValue9 } = calculateTop3MinMax(averagesArray9);
-
-      return {
-          minValue1, maxValue1,
-          minValue2, maxValue2,
-          minValue3, maxValue3,
-          minValue4, maxValue4,
-          minValue5, maxValue5,
-          minValue6, maxValue6,
-          minValue7, maxValue7,
-          minValue8, maxValue8,
-          minValue9, maxValue9
-      };
-    }
-    calculateResult(questionsWithCriteria) {
-      const calculateResultForArray = (array, index, minValue, maxValue) => {
-        const q = array.slice(index, index + 1);
-        const avgOfAvgValue = q.reduce((sum, avg) => sum + avg, 0) / q.length;
-        return 0.11 * (maxValue - avgOfAvgValue) / (maxValue - minValue);
-      };
-
-      const minMaxValues = this.calculateMinMax(questionsWithCriteria);
-      const results = Array.from({ length: questionsWithCriteria.length }, () => []);
-
-      for (let i = 1; i <= 9; i++) {
-        const averagesArray = questionsWithCriteria.map(question => question[`avgOfAvgValue${i}`]);
-        for (let j = 0; j < questionsWithCriteria.length; j++) {
-          const result = calculateResultForArray(averagesArray, j, minMaxValues[`minValue${i}`], minMaxValues[`maxValue${i}`]);
-          results[j].push(result);
-        }
-      }
- 
-      const flattenedResults = [...results].flat();
-      return flattenedResults;
-
-    }
-  
-render() {
-  const { questionsWithCriteria, list_questions, rps } = this.state;
-
-
-const results =this.calculateResult(questionsWithCriteria);
-const title = (
-    <span>
-      <Button type="primary" onClick={this.handleAddQuiz}>
-        Tambahkan Soal dalam Kuis
-      </Button>
-    </span>
-  );
-  
-  return (
-    <div className="app-container">
+            if (targetQuiz.rps && targetQuiz.rps.idRps) {
+                rpsIdForQuestions = targetQuiz.rps.idRps;
+                fullRPSData = rpsContent.find(rps => rps.idRps === rpsIdForQuestions);
+                if (fullRPSData && fullRPSData.subject && fullRPSData.subject.id) {
+                    subjectIdForWeights = fullRPSData.subject.id;
+                }
+            } else {
+                message.error("Data RPS kuis tidak lengkap.");
+                this.setState({ error: "Data RPS kuis tidak lengkap." });
+                return;
+            }
             
+            const criteriaNamesInOrder = [
+                "Knowledge", "Comprehension", "Application", "Analysis", "Evaluation",
+                "Difficulty", "Discrimination", "Reliability", "Problem Solving", "Creativity"
+            ];
 
-      <TypingCard source="Hasil Akhir IVIHF-VIKOR dengan perankingan nya" />
-      <br />
-        <Card title={title}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', margin: '20px 0' }}>
-            <thead>
-                <tr>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2' }}>Question</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2' }}>Nilai Q</th>
-                    <th style={{ border: '1px solid #ddd', padding: '8px', backgroundColor: '#f2f2f2' }}>Rank</th>
-                </tr>
-            </thead>
-            <tbody>
-                {results.length > 0 ? (
-                    (() => {
-                        const chunks = results.reduce((acc, result, index) => {
-                            const chunkIndex = Math.floor(index / 9);
-                            if (!acc[chunkIndex]) {
-                                acc[chunkIndex] = [];
+            let fetchedCriteriaWeights = {};
+            let finalDenominators = {}; 
+
+            // --- Ambil Bobot Dematel (w_i) ---
+            if (subjectIdForWeights) {
+                try {
+                    const dematelResponse = await getDematelWeightsBySubject(subjectIdForWeights);
+                    let dematelCriteriaWeightsList = [];
+                    let apiStatusCode = null;
+
+                    if (dematelResponse.data && typeof dematelResponse.data === 'object' && Object.prototype.hasOwnProperty.call(dematelResponse.data, 'statusCode')) {
+                        apiStatusCode = dematelResponse.data.statusCode;
+                        dematelCriteriaWeightsList = dematelResponse.data.content || [];
+                    } else if (Array.isArray(dematelResponse.data)) {
+                        dematelCriteriaWeightsList = dematelResponse.data;
+                        apiStatusCode = 200;
+                    }
+
+                    if (apiStatusCode === 200 && dematelCriteriaWeightsList.length > 0) {
+                        const processedWeightsMap = {};
+                        const backendCriterionIdToFrontendName = {
+                            "QC001": "Knowledge", "QC002": "Comprehension", "QC003": "Application",
+                            "QC004": "Analysis", "QC005": "Evaluation", "QC006": "Difficulty",
+                            "QC007": "Discrimination", "QC008": "Reliability", "QC009": "Problem Solving",
+                            "QC010": "Creativity",
+                        };
+
+                        dematelCriteriaWeightsList.forEach(weightItem => {
+                            const frontendKey = backendCriterionIdToFrontendName[weightItem.criterionId];
+                            if (frontendKey) {
+                                processedWeightsMap[frontendKey] = weightItem.normalizedWeight;
                             }
-                            acc[chunkIndex].push(result);
-                            return acc;
-                        }, []);
-                        
-                        const maxValues = chunks.map(chunk => Math.max(...chunk));
-                        const sumValues = chunks.map(chunk => chunk.reduce((sum, value) => sum + value, 0));
-                        
-                        const overallMax = Math.max(...maxValues);
-                        const overallMin = Math.min(...maxValues);
-                        const Smax = Math.max(...sumValues);
-                        const Smin = Math.min(...sumValues);
-                        
-                        const resultsWithRanks = chunks.map((chunk, chunkIndex) => {
-                            const maxResult = Math.max(...chunk);
-                            const sumResult = chunk.reduce((sum, value) => sum + value, 0);
-                            const questionTitle = questionsWithCriteria[chunkIndex]?.title || `Question ${chunkIndex + 1}`;
-                        
-                            const normalizedMax = overallMax !== overallMin ? (maxResult - overallMin) / (overallMax - overallMin) : 0;
-                            const normalizedSum = Smax !== Smin ? (sumResult - Smin) / (Smax - Smin) : 0;
-                        
-                            const result = (0.5 * normalizedSum + (1 - 0.5) * normalizedMax).toFixed(3);
-                        
-                            return { questionTitle, result: parseFloat(result) };
                         });
-
-                        // Step 1: Sort the results array by the 'result' property
-                        const sortedResults = [...resultsWithRanks].sort((a, b) => a.result - b.result);
-
-                        // Step 2: Map the sorted results to include their ranks
-                        const rankedResults = sortedResults.map((item, index) => ({
-                            ...item,
-                            rank: index + 1,
-                        }));
-
-                        // Step 3: Render the results with their ranks in the table
-                        const finalRows = rankedResults.map((item, index) => (
-                            <tr key={index}>
-                                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.questionTitle}</td>
-                                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.result}</td>
-                                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.rank}</td>
-                            </tr>
-                        ));
+                        fetchedCriteriaWeights = processedWeightsMap;
                         
-                        return (
-                            <>
-                                {finalRows}
-                            </>
-                        );
-                    })()
+                    } else {
+                        message.warning("Bobot Dematel tidak ditemukan untuk mata kuliah ini.");
+                    }
+                } catch (dematelError) {
+                    console.error('Error fetching Dematel weights:', dematelError);
+                    message.error('Gagal memuat bobot Dematel.');
+                }
+            } else {
+                message.info("Subject ID tidak tersedia untuk mengambil bobot Dematel. Panggilan API dilewati.");
+            }
+            // --- End Ambil Bobot Dematel ---
+
+
+            // --- Bagian Perhitungan r_ij (Seperti di Step 3) ---
+            const questionIdsForThisQuiz = targetQuiz.questions.map(q => q.idQuestion);
+            const questionsFromBackendData = await getQuestionsByRPSQuiz1(rpsIdForQuestions);
+            const allRPSQuestions = questionsFromBackendData.data?.content || [];
+
+            const quizQuestions = allRPSQuestions.filter(q =>
+                questionIdsForThisQuiz.includes(q.idQuestion)
+            );
+
+            const tempDenominatorsSumOfSquares = {};
+            criteriaNamesInOrder.forEach(name => {
+                tempDenominatorsSumOfSquares[name] = 0;
+            });
+
+
+            const processedQuestions = await Promise.all(quizQuestions.map(async (q) => {
+                const transformedQuestion = { ...q };
+                
+                const criteriaResult = await getAllCriteriaValueByQuestion(q.idQuestion);
+                const questionRatingObject = q.questionRating || {}; 
+                const reviewerRatings = questionRatingObject.reviewerRatings || {};
+                
+                transformedQuestion.averageCriteria = {};
+                for (let i = 0; i < criteriaNamesInOrder.length; i++) {
+                    const criterionName = criteriaNamesInOrder[i];
+                    const avgValueKey = `averageValue${i + 1}`;
+
+                    let sum = 0;
+                    let count = 0;
+                    
+                    Object.values(reviewerRatings).forEach(reviewerRating => {
+                        const rawValue = reviewerRating[avgValueKey];
+                        if (rawValue !== undefined && rawValue !== null && !isNaN(rawValue)) {
+                            const value = Number(rawValue);
+                            sum += value;
+                            count++;
+                        }
+                    });
+
+                    const overallAverage = count > 0 ? (sum / count) : null;
+                    transformedQuestion.averageCriteria[criterionName] = overallAverage;
+
+                    if (overallAverage !== null) {
+                        tempDenominatorsSumOfSquares[criterionName] += (overallAverage * overallAverage);
+                    }
+                }
+                return transformedQuestion;
+            }));
+
+            criteriaNamesInOrder.forEach(name => {
+                const sumOfSquares = tempDenominatorsSumOfSquares[name];
+                finalDenominators[`criterion_${name}`] = (sumOfSquares > 0) ? Math.sqrt(sumOfSquares) : 0;
+            });
+
+            const normalizedQuestionData = processedQuestions.map(q => {
+                const normalizedQ = { 
+                    idQuestion: q.idQuestion,
+                    title: q.title,
+                    normalizedCriteria: {} 
+                };
+                criteriaNamesInOrder.forEach(name => {
+                    const x_ij = q.averageCriteria[name];
+                    const denominator = finalDenominators[`criterion_${name}`];
+                    
+                    let normalizedValue = null;
+                    if (x_ij !== null && x_ij !== undefined && denominator !== null && denominator > 0) {
+                        normalizedValue = (x_ij / denominator);
+                    }
+                    normalizedQ.normalizedCriteria[name] = normalizedValue;
+                });
+                return normalizedQ;
+            });
+            // --- End Perhitungan r_ij ---
+
+
+            // --- Perhitungan Y_ij = w_i * r_ij (Seperti di Step 4) ---
+            const weightedNormalizedMatrix = normalizedQuestionData.map(r_q => {
+                const weightedQ = {
+                    idQuestion: r_q.idQuestion,
+                    title: r_q.title,
+                    weightedNormalizedCriteria: {}
+                };
+                criteriaNamesInOrder.forEach(name => {
+                    const r_ij = r_q.normalizedCriteria[name];
+                    const w_i = fetchedCriteriaWeights[name];
+                    
+                    let y_ij = null;
+                    if (r_ij !== null && r_ij !== undefined && w_i !== null && w_i !== undefined && !isNaN(w_i)) {
+                        y_ij = r_ij * w_i;
+                    }
+                    weightedQ.weightedNormalizedCriteria[name] = y_ij;
+                });
+                return weightedQ;
+            });
+            // --- End Perhitungan Y_ij ---
+
+
+            // --- Perhitungan Solusi Ideal Positif y_j^+ dan Negatif y_j^- (Seperti di Step 5) ---
+            const idealPositiveSolution = {}; // y_j^+
+            const idealNegativeSolution = {}; // y_j^-
+            const { criteriaTypes } = this.state;
+
+            criteriaNamesInOrder.forEach(criterionName => {
+                const criterionType = criteriaTypes[criterionName];
+                const y_ij_values_for_criterion = weightedNormalizedMatrix
+                    .map(item => item.weightedNormalizedCriteria[criterionName])
+                    .filter(value => value !== null && value !== undefined && !isNaN(value));
+
+                if (y_ij_values_for_criterion.length > 0) {
+                    if (criterionType === "BENEFIT") {
+                        idealPositiveSolution[criterionName] = Math.max(...y_ij_values_for_criterion);
+                        idealNegativeSolution[criterionName] = Math.min(...y_ij_values_for_criterion);
+                    } else if (criterionType === "COST") {
+                        idealPositiveSolution[criterionName] = Math.min(...y_ij_values_for_criterion);
+                        idealNegativeSolution[criterionName] = Math.max(...y_ij_values_for_criterion);
+                    } else {
+                        console.warn(`WARN Step5: Unknown criterion type for ${criterionName}: ${criterionType}. Ideal solutions cannot be calculated.`);
+                        idealPositiveSolution[criterionName] = null;
+                        idealNegativeSolution[criterionName] = null;
+                    }
+                } else {
+                    console.warn(`WARN Step5: No valid Y_ij values for criterion ${criterionName}. Ideal solutions set to null.`);
+                    idealPositiveSolution[criterionName] = null;
+                    idealNegativeSolution[criterionName] = null;
+                }
+            });
+            // --- End Perhitungan Solusi Ideal ---
+
+
+            // --- BARU: Perhitungan Jarak Solusi Ideal (D_i^+ dan D_i^-) (Step 6) ---
+            const distancePositiveIdeal = []; // D_i^+
+            const distanceNegativeIdeal = []; // D_i^-
+
+            weightedNormalizedMatrix.forEach(y_q => { // Iterasi setiap pertanyaan (alternatif)
+                let sumSquaredDiffPositive = 0;
+                let sumSquaredDiffNegative = 0;
+
+                criteriaNamesInOrder.forEach(criterionName => {
+                    const y_ij = y_q.weightedNormalizedCriteria[criterionName];
+                    const y_j_plus = idealPositiveSolution[criterionName];
+                    const y_j_minus = idealNegativeSolution[criterionName];
+
+                    if (y_ij !== null && y_ij !== undefined && !isNaN(y_ij) &&
+                        y_j_plus !== null && y_j_plus !== undefined && !isNaN(y_j_plus) &&
+                        y_j_minus !== null && y_j_minus !== undefined && !isNaN(y_j_minus)) {
+                        
+                        sumSquaredDiffPositive += Math.pow((y_j_plus - y_ij), 2);
+                        sumSquaredDiffNegative += Math.pow((y_ij - y_j_minus), 2);
+                    } else {
+                        console.warn(`WARN Step6: Skipping calculation for ${y_q.idQuestion} - ${criterionName} due to invalid Y_ij, Yj+, or Yj- values.`);
+                    }
+                });
+
+                const diPlus = Math.sqrt(sumSquaredDiffPositive);
+                const diMinus = Math.sqrt(sumSquaredDiffNegative);
+                
+                distancePositiveIdeal.push({ idQuestion: y_q.idQuestion, title: y_q.title, value: diPlus });
+                distanceNegativeIdeal.push({ idQuestion: y_q.idQuestion, title: y_q.title, value: diMinus });
+            });
+            // console.log("DEBUG Step6 (Distance Positive Ideal D_i^+):", distancePositiveIdeal);
+            // console.log("DEBUG Step6 (Distance Negative Ideal D_i^-):", distanceNegativeIdeal);
+            // --- End Perhitungan Jarak Solusi Ideal ---
+
+
+            if (this.state.isMounted) {
+                this.setState({
+                    questionsData: processedQuestions,
+                    denominators: finalDenominators,
+                    criteriaWeights: fetchedCriteriaWeights,
+                    normalizedQuestionData: normalizedQuestionData,
+                    weightedNormalizedMatrix: weightedNormalizedMatrix,
+                    idealPositiveSolution: idealPositiveSolution,
+                    idealNegativeSolution: idealNegativeSolution,
+                    distancePositiveIdeal: distancePositiveIdeal, // Simpan D+
+                    distanceNegativeIdeal: distanceNegativeIdeal, // Simpan D-
+                    quizId: currentQuizId,
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching data in Step 6:', error);
+            message.error('Gagal memuat data untuk Tahap 6');
+            if (this.state.isMounted) {
+                this.setState({ error: 'Gagal memuat data untuk Tahap 6' });
+            }
+        } finally {
+            this.setState({ loading: false });
+        }
+    };
+
+    // Render fungsi umum untuk menampilkan nilai desimal (seperti D+, D-)
+    renderValue = (value) => {
+        if (value !== null && value !== undefined && !isNaN(value)) {
+            return <Tag color="blue">{value.toFixed(4)}</Tag>;
+        }
+        return <Tag color="default">N/A</Tag>;
+    };
+
+    render() {
+        const {
+            distancePositiveIdeal,    // D_i^+
+            distanceNegativeIdeal,    // D_i^-
+            quizId,
+            loading,
+            error,
+        } = this.state;
+
+        // --- Kolom untuk tabel D+ dan D- ---
+        const distanceTableColumns = [
+            {
+                title: "ID Pertanyaan",
+                dataIndex: "idQuestion",
+                key: "idQuestion",
+                align: "center",
+                width: 150,
+                fixed: 'left',
+            },
+            {
+                title: "D+",
+                dataIndex: "value",
+                key: "di_plus_value",
+                align: "center",
+                width: 150,
+                render: (value) => this.renderValue(value),
+            },
+            {
+                title: "D-",
+                dataIndex: "value", // Akan di-map dari distanceNegativeIdeal
+                key: "di_minus_value",
+                align: "center",
+                width: 150,
+                render: (value) => this.renderValue(value),
+            },
+        ];
+
+        // Combine D+ and D- into a single dataSource for rendering
+        // Need to merge them by idQuestion
+        const combinedDistanceData = distancePositiveIdeal.map((dPlusItem) => {
+            const dMinusItem = distanceNegativeIdeal.find(dMinus => dMinus.idQuestion === dPlusItem.idQuestion);
+            return {
+                idQuestion: dPlusItem.idQuestion,
+                title: dPlusItem.title,
+                diPlus: dPlusItem.value,
+                diMinus: dMinusItem ? dMinusItem.value : null,
+            };
+        });
+
+        // --- Tidak ada tabel header khusus di Step 6 karena hanya D+ dan D- ---
+
+        if (error) {
+            return (
+                <div className="app-container">
+                    <TypingCard source="Jarak Solusi Ideal Positif dan Negatif (Tahap 6)" />
+                    <Alert
+                        message="Error"
+                        description={error}
+                        type="error"
+                        showIcon
+                        action={
+                            <Button
+                                size="small"
+                                type="primary"
+                                onClick={this.fetchData}
+                            >
+                                Coba Lagi
+                            </Button>
+                        }
+                    />
+                </div>
+            );
+        }
+
+        return (
+            <div className="app-container">
+                <TypingCard source="Jarak Solusi Ideal Positif dan Negatif (Tahap 6)" />
+                
+                <br />
+                <br />
+
+                {loading ? (
+                    <div style={{ textAlign: 'center', padding: '50px' }}>
+                        <Spin size="large" />
+                        <p>Memuat data...</p>
+                    </div>
                 ) : (
-                    <tr>
-                        <td colSpan="3" style={{ border: '1px solid #ddd', padding: '8px', textAlign: 'center' }}>No results available</td>
-                    </tr>
+                    <>
+                        {/* Tabel Utama untuk D+ dan D- */}
+                        {combinedDistanceData.length > 0 ? (
+                            <Table
+                                dataSource={combinedDistanceData}
+                                columns={[
+                                    {
+                                        title: "ID Pertanyaan",
+                                        dataIndex: "idQuestion",
+                                        key: "idQuestion",
+                                        align: "center",
+                                        width: 150,
+                                        fixed: 'left',
+                                    },
+                                    {
+                                        title: "D+",
+                                        dataIndex: "diPlus", // Menggunakan field diPlus
+                                        key: "di_plus_value",
+                                        align: "center",
+                                        width: 150,
+                                        render: (value) => this.renderValue(value),
+                                    },
+                                    {
+                                        title: "D-",
+                                        dataIndex: "diMinus", // Menggunakan field diMinus
+                                        key: "di_minus_value",
+                                        align: "center",
+                                        width: 150,
+                                        render: (value) => this.renderValue(value),
+                                    },
+                                ]}
+                                pagination={false}
+                                rowKey="idQuestion"
+                                scroll={{ x: 'max-content' }}
+                                className="main-questions-table"
+                            />
+                        ) : (
+                            <Alert
+                                message="Tidak Ada Data untuk Perhitungan Jarak Solusi Ideal"
+                                description="Tidak ada data Y_ij yang ditemukan atau dapat digunakan untuk menghitung D+ dan D-."
+                                type="info"
+                                showIcon
+                            />
+                        )}
+                        
+                        {/* Buttons moved here */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
+                            <div>
+                                <Button type="primary" onClick={() => this.handlePreviousPage(quizId)}>
+                                    Tahap 5
+                                </Button>
+                            </div>
+                            <div>
+                                <Button type="primary" onClick={() => this.handleNextPage(quizId)}>
+                                    Tahap 7
+                                </Button>
+                            </div>
+                        </div>
+                    </>
                 )}
-            </tbody>
-        </table>
-    </Card>
-    <AddQuizForm
-          wrappedComponentRef={(formRef) => (this.addQuizFormRef = formRef)}
-          visible={this.state.addQuizModalVisible}
-          confirmLoading={this.state.addQuizModalLoading}
-          onCancel={this.handleCancel}
-          onOk={this.handleAddQuizOk}
-          list_questions={this.state.list_questions} // Pass the ranked list_questions
-          rps={rps}
-          quizName={this.state.quizName}
-          quizDuration={this.state.quizDuration}
-          quizDesc={this.state.quizDesc}
-          quizRpsId={this.state.quizRpsId}
-          quizMinGrade={this.state.quizMinGrade}
-          quizType={this.state.quizType}
-        />
-    </div>
-  );
+            </div>
+        );
+    }
 }
 
-}
+QuizGenerate.propTypes = {
+    history: PropTypes.shape({
+        push: PropTypes.func.isRequired,
+        goBack: PropTypes.func,
+    }).isRequired,
+    match: PropTypes.shape({
+        params: PropTypes.shape({
+            quizID: PropTypes.string.isRequired,
+        }).isRequired,
+    }).isRequired,
+};
 
-export default QuizGenerate;
+const QuizGenerateWithRouter = withRouterWrapper(QuizGenerate);
+QuizGenerateWithRouter.displayName = 'QuizGenerateWithRouter';
+export default QuizGenerateWithRouter;

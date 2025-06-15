@@ -63,6 +63,7 @@ const QuizGenerateQuizStep3 = React.lazy(() => import(/*webpackChunkName:'questi
 const QuizGenerateQuizStep4 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step4"));
 const QuizGenerateQuizStep5 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step5"));
 const QuizGenerateQuizStep6 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step6"));
+const QuizGenerateQuizStep7 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step7"));
 const CriteriaIndex = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/criteria-index"));
 const ExerciseIndex = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/exercise-index"));
 const AppraisalForm = React.lazy(() => import(/*webpackChunkName:'AppraisalForm'*/ "@/views/appraisal-form"));
@@ -425,26 +426,31 @@ export default [
   component: QuizGenerateQuizStep2, // This is your QuizGenerate component
   roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
 },
-// {
-//   path: "/setting-quiz/generate-quiz-step3/:quizID", // <-- CHANGE THIS
-//   component: QuizGenerateQuiz3, // assuming you have QuizGenerateQuiz3 component for step3
-//   roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
-// },
-// {
-//   path: "/setting-quiz/generate-quiz-step4/:quizID", // <-- CHANGE THIS
-//   component: QuizGenerateQuiz4, // assuming you have QuizGenerateQuiz4 component for step4
-//   roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
-// },
-// {
-//   path: "/setting-quiz/generate-quiz-step5/:quizID", // <-- CHANGE THIS
-//   component: QuizGenerateQuiz5, // assuming you have QuizGenerateQuiz5 component for step5
-//   roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
-// },
-// {
-//   path: "/setting-quiz/generate-quiz-step6/:quizID", // <-- CHANGE THIS
-//   component: QuizGenerateQuiz6, // assuming you have QuizGenerateQuiz6 component for step6
-//   roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
-// },
+{
+  path: "/setting-quiz/generate-quiz-step3/:quizID", // <-- CHANGE THIS
+  component: QuizGenerateQuizStep3, // assuming you have QuizGenerateQuiz3 component for step3
+  roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+},
+{
+  path: "/setting-quiz/generate-quiz-step4/:quizID", // <-- CHANGE THIS
+  component: QuizGenerateQuizStep4, // assuming you have QuizGenerateQuiz4 component for step4
+  roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+},
+{
+  path: "/setting-quiz/generate-quiz-step5/:quizID", // <-- CHANGE THIS
+  component: QuizGenerateQuizStep5, // assuming you have QuizGenerateQuiz5 component for step5
+  roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+},
+{
+  path: "/setting-quiz/generate-quiz-step6/:quizID", // <-- CHANGE THIS
+  component: QuizGenerateQuizStep6, // assuming you have QuizGenerateQuiz6 component for step6
+  roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+},
+{
+  path: "/setting-quiz/generate-quiz-step7/:quizID", // <-- CHANGE THIS
+  component: QuizGenerateQuizStep7, // assuming you have QuizGenerateQuiz7 component for step7
+  roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+},
   {
     path: "/setting-exercise/result/:id",
     component: ResultExercise,
