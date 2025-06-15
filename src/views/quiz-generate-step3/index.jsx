@@ -308,7 +308,7 @@ class QuizGenerate extends Component {
     renderNormalizedValue = (record, criterionName) => {
         const value = record.normalizedCriteria?.[criterionName];
         if (value !== null && value !== undefined && !isNaN(value)) {
-            return <Tag color="blue">{value.toFixed(4)}</Tag>;
+            return <Tag color="blue">{value.toFixed(2)}</Tag>;
         }
         return <Tag color="default">N/A</Tag>;
     };
@@ -365,13 +365,13 @@ class QuizGenerate extends Component {
                     if (record.type === 'weights') {
                         const weightValue = criteriaWeights[name];
                         if (weightValue !== null && weightValue !== undefined && !isNaN(weightValue)) {
-                            return <Tag color="cyan">{weightValue.toFixed(4)}</Tag>;
+                            return <Tag color="cyan">{weightValue.toFixed(2)}</Tag>;
                         }
                         return <Tag color="red">(Bobot Belum Tersedia)</Tag>;
                     } else if (record.type === 'denominators') {
                         const denominator = denominators[`criterion_${name}`]; 
                         if (denominator !== null && denominator !== undefined && !isNaN(denominator) && denominator > 0) {
-                            return <Tag color="volcano">{denominator.toFixed(4)}</Tag>;
+                            return <Tag color="volcano">{denominator.toFixed(2)}</Tag>;
                         }
                         return <Tag color="default">0.0000</Tag>;
                     }

@@ -309,7 +309,7 @@ class QuizGenerate extends Component {
     renderWeightedNormalizedValue = (record, criterionName) => {
         const value = record.weightedNormalizedCriteria?.[criterionName];
         if (value !== null && value !== undefined && !isNaN(value)) {
-            return <Tag color="green">{value.toFixed(4)}</Tag>; // Warna hijau untuk Y_ij
+            return <Tag color="green">{value.toFixed(2)}</Tag>; // Warna hijau untuk Y_ij
         }
         return <Tag color="default">N/A</Tag>;
     };
@@ -368,7 +368,7 @@ class QuizGenerate extends Component {
                     if (record.type === 'weights') {
                         const weightValue = criteriaWeights[name]; // Akses bobot dengan nama kriteria
                         if (weightValue !== null && weightValue !== undefined && !isNaN(weightValue)) {
-                            return <Tag color="cyan">{weightValue.toFixed(4)}</Tag>; // Bobot
+                            return <Tag color="cyan">{weightValue.toFixed(2)}</Tag>; // Bobot
                         }
                         return <Tag color="red">(Bobot Belum Tersedia)</Tag>;
                     }

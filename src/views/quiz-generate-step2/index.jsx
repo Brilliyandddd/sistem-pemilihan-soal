@@ -9,9 +9,11 @@ import {
 import { getQuiz } from "@/api/quiz";
 import { getRPS } from "@/api/rps";
 import { getUsers } from "@/api/user";
-import { getDematelWeightsBySubject } from "@/api/causality"; // Pastikan path ini benar
-
 import { useNavigate, useParams } from 'react-router-dom';
+import { getDematelWeightsBySubject } from "@/api/causality"; // Pastikan path ini benar (diperlukan untuk Bobot/Pembagi)
+
+const { Column } = Table;
+const { TabPane } = Tabs;
 
 function withRouterWrapper(Component) {
     return function ComponentWithRouterProp(props) {
@@ -37,10 +39,6 @@ function withRouterWrapper(Component) {
     };
 }
 
-
-const { Column } = Table;
-const { TabPane } = Tabs;
-
 class QuizGenerate extends Component {
     constructor(props) {
         super(props);
@@ -48,8 +46,8 @@ class QuizGenerate extends Component {
             rps: [],
             quiz: [],
             userInfo: [],
-            questionsData: [],
-            selectedLecturerId: 'all-lecturers-average',
+            questionsData: [], // Akan menyimpan pertanyaan dengan rata-rata (x_ij)
+            selectedLecturerId: 'all-lecturers-average', // Default ke tab rata-rata
             quizId: '',
             devLecturers: [],
             isMounted: false,
@@ -69,7 +67,7 @@ class QuizGenerate extends Component {
                 "Problem Solving": "BENEFIT",
                 "Creativity": "BENEFIT",
             },
-            denominators: {},
+            denominators: {}, // Pembagi
         };
     }
 
@@ -80,8 +78,8 @@ class QuizGenerate extends Component {
 
     handlePreviousPage = () => {
         const { history } = this.props;
-        const currentQuizId = this.props.match.params.quizID;
-        history.push(`/setting-quiz/generate-quiz/${currentQuizId}`);
+        const currentQuizId = this.props.match.params.quizID; // Dapatkan quizId dari URL
+        history.push(`/setting-quiz/generate-quiz/${currentQuizId}`); // Kembali ke Step 1
     };
 
     async componentDidMount() {
@@ -102,11 +100,16 @@ class QuizGenerate extends Component {
     }
 
     fetchData = async () => {
+        // Deklarasikan variabel di scope ini
+        let fetchedCriteriaWeights = {};
+        let finalDenominators = {}; 
+        
         try {
             const currentQuizId = this.props.match.params.quizID;
+            console.log("DEBUG QuizGenerate (fetchData): currentQuizId dari URL:", currentQuizId);
 
             if (!currentQuizId) {
-                console.error("DEBUG QuizGenerate (fetchData): quizID dari URL tidak ditemukan.");
+                console.error("DEBUG QuizGenerate (fetchData): quizID dari URL tidak ditemukan. Pastikan URL dan Route definition benar.");
                 message.error("ID kuis tidak ditemukan di URL. Mohon periksa kembali navigasi.");
                 this.setState({ error: "ID kuis tidak ditemukan di URL." });
                 return;
@@ -122,14 +125,18 @@ class QuizGenerate extends Component {
             const rpsContent = rpsResponse.data?.content || [];
             const allUsers = usersResponse.data?.content || usersResponse.data || [];
 
+            console.log("DEBUG QuizGenerate (fetchData): allQuizzes yang berhasil diambil:", allQuizzes);
+
             const targetQuiz = allQuizzes.find(q => q.idQuiz === currentQuizId);
 
             if (!targetQuiz) {
-                console.error("DEBUG QuizGenerate (fetchData): Kuis dengan ID", currentQuizId, "TIDAK DITEMUKAN.");
+                console.error("DEBUG QuizGenerate (fetchData): Kuis dengan ID", currentQuizId, "TIDAK DITEMUKAN di daftar kuis yang diambil.");
                 message.error("Kuis tidak ditemukan.");
                 this.setState({ error: "Kuis tidak ditemukan." });
                 return;
             }
+
+            console.log("DEBUG QuizGenerate (fetchData): Kuis target ditemukan:", targetQuiz);
 
             const uniqueLecturers = new Map();
             let rpsIdForQuestions = '';
@@ -214,16 +221,19 @@ class QuizGenerate extends Component {
 
                 this.setState({
                     quizId: targetQuiz.idQuiz,
-                    matchingRPS: fullRPSData
+                    matchingRPS: '' // Initialize with an empty string or appropriate default value
                 });
-
             } else {
                 console.error(`DEBUG QuizGenerate (fetchData): fullRPSData untuk idRps ${rpsIdForQuestions} tidak ditemukan setelah pencarian.`);
+                message.error("RPS terkait kuis tidak ditemukan.");
+                this.setState({ error: "RPS terkait kuis tidak ditemukan." });
+                return;
             }
 
             const devLecturers = Array.from(uniqueLecturers.values());
 
             const questionIdsForThisQuiz = targetQuiz.questions.map(q => q.idQuestion);
+            console.log("DEBUG QuizGenerate (fetchData): ID pertanyaan untuk kuis ini:", questionIdsForThisQuiz);
 
             const questionsFromBackendData = await getQuestionsByRPSQuiz1(rpsIdForQuestions);
             const allRPSQuestions = questionsFromBackendData.data?.content || [];
@@ -246,60 +256,43 @@ class QuizGenerate extends Component {
             console.log("DEBUG FRONTEND (Criteria Name to ID Mapping):", criteriaNameToIdMapping);
 
 
-            let fetchedCriteriaWeights = {};
+            // Ambil fetchedCriteriaWeights dan finalDenominators dari Dematel API
+            // Ini akan mengisi nilai Bobot dan Pembagi di tampilan.
             if (subjectIdForWeights) {
                 console.log(`DEBUG: Melakukan panggilan getDematelWeightsBySubject dengan subjectId: ${subjectIdForWeights}`);
                 try {
                     const dematelResponse = await getDematelWeightsBySubject(subjectIdForWeights);
-                    // Log response API keseluruhan
-                    console.log("DEBUG FRONTEND (Full API Response Object):", dematelResponse);
-
                     let dematelCriteriaWeightsList = [];
                     let apiStatusCode = null;
 
-                    // Adaptasi untuk struktur respons DefaultResponse Anda
                     if (dematelResponse.data && typeof dematelResponse.data === 'object' && Object.prototype.hasOwnProperty.call(dematelResponse.data, 'statusCode')) {
                         apiStatusCode = dematelResponse.data.statusCode;
                         dematelCriteriaWeightsList = dematelResponse.data.content || [];
-                        console.log("DEBUG FRONTEND (Detected DefaultResponse structure. Status Code:", apiStatusCode, "Content:", dematelCriteriaWeightsList);
                     } else if (Array.isArray(dematelResponse.data)) {
-                        // Jika respons langsung array (tanpa DefaultResponse wrapper)
                         dematelCriteriaWeightsList = dematelResponse.data;
-                        apiStatusCode = 200; // Asumsikan 200 OK jika langsung array dan berhasil
-                        console.log("DEBUG FRONTEND (Detected direct Array response structure. Content:", dematelCriteriaWeightsList);
-                    } else {
-                        console.error("DEBUG FRONTEND: Unexpected API response structure for Dematel weights:", dematelResponse.data);
-                        message.error('Format respons bobot Dematel tidak terduga.');
-                        this.setState({ error: 'Format respons bobot Dematel tidak terduga.' });
-                        return; // Hentikan proses lebih lanjut
+                        apiStatusCode = 200;
                     }
 
                     if (apiStatusCode === 200 && dematelCriteriaWeightsList.length > 0) {
-                        console.log("DEBUG FRONTEND (Processing Dematel Weights List):", dematelCriteriaWeightsList);
-
                         const processedWeightsMap = {};
-                        
+                        // Kriteria ini adalah nama yang digunakan di objek `criteriaWeights` di state
+                        const backendCriterionIdToFrontendName = {
+                            "QC001": "Knowledge", "QC002": "Comprehension", "QC003": "Application",
+                            "QC004": "Analysis", "QC005": "Evaluation", "QC006": "Difficulty",
+                            "QC007": "Discrimination", "QC008": "Reliability", "QC009": "Problem Solving",
+                            "QC010": "Creativity",
+                        };
+
                         dematelCriteriaWeightsList.forEach(weightItem => {
-                            console.log(`DEBUG FRONTEND (Processing weight item): criterionId=${weightItem.criterionId}, normalizedWeight=${weightItem.normalizedWeight}`);
-
-                            const foundCriterionName = Object.keys(criteriaNameToIdMapping).find(
-                                key => criteriaNameToIdMapping[key] === weightItem.criterionId
-                            );
-
-                            if (foundCriterionName) {
-                                processedWeightsMap[foundCriterionName] = weightItem.normalizedWeight;
-                                console.log(`DEBUG FRONTEND (Mapped to Name): ${weightItem.criterionId} (${foundCriterionName}) = ${weightItem.normalizedWeight}`);
-                            } else {
-                                console.warn(`DEBUG FRONTEND (Mapping skipped): No frontend name found for criterionId: ${weightItem.criterionId}. This weight will be skipped.`);
+                            const frontendKey = backendCriterionIdToFrontendName[weightItem.criterionId];
+                            if (frontendKey) {
+                                processedWeightsMap[frontendKey] = weightItem.normalizedWeight;
                             }
                         });
-                        
                         fetchedCriteriaWeights = processedWeightsMap;
-                        console.log("DEBUG FRONTEND (Final Processed Weights Map for state):", fetchedCriteriaWeights);
-
+                        
                     } else {
                         message.warning("Bobot Dematel tidak ditemukan untuk mata kuliah ini.");
-                        console.warn("DEBUG FRONTEND: Dematel API returned no content or non-200 status.");
                     }
                 } catch (dematelError) {
                     console.error('Error fetching Dematel weights:', dematelError);
@@ -307,104 +300,79 @@ class QuizGenerate extends Component {
                 }
             } else {
                 message.info("Subject ID tidak tersedia untuk mengambil bobot Dematel. Panggilan API dilewati.");
-                criteriaNamesInOrder.forEach(name => {
-                    fetchedCriteriaWeights[name] = null;
-                });
             }
 
-            const initialDenominators = {};
-            criteriaNamesInOrder.forEach((name, index) => {
-                initialDenominators[`criterion${index + 1}`] = { sumOfSquares: 0, denominator: null };
+            // --- Bagian Memproses Pertanyaan dan Menghitung Rata-rata (x_ij) ---
+            const actualTempDenominatorsSumOfSquares = {}; // Untuk menghitung pembagi
+            criteriaNamesInOrder.forEach(name => {
+                actualTempDenominatorsSumOfSquares[name] = 0;
             });
 
             const processedQuestions = quizQuestions.map(q => {
                 const transformedQuestion = { ...q };
-
-                const questionRatingObject = q.questionRating || {};
+                
+                // q.questionRating sudah tersedia dari getQuestionsByRPSQuiz1 (dari Step 1)
+                const questionRatingObject = q.questionRating || {}; 
                 const reviewerRatings = questionRatingObject.reviewerRatings || {};
 
-                for (let i = 1; i <= criteriaNamesInOrder.length; i++) {
+                transformedQuestion.averageCriteria = {}; // Untuk menyimpan rata-rata x_ij per kriteria
+                for (let i = 0; i < criteriaNamesInOrder.length; i++) {
+                    const criterionName = criteriaNamesInOrder[i];
+                    const avgValueKey = `averageValue${i + 1}`; // e.g., averageValue1, averageValue2
+
                     let sum = 0;
                     let count = 0;
 
                     devLecturers.forEach(lecturer => {
                         const lecturerIdKey = lecturer.id.trim().toLowerCase();
                         let lecturerRating = reviewerRatings[lecturerIdKey];
-
+                        
                         if (!lecturerRating && lecturerIdKey.length > 0) {
                             const capitalizedLecturerIdKey = lecturerIdKey.charAt(0).toUpperCase() + lecturerIdKey.slice(1);
                             lecturerRating = reviewerRatings[capitalizedLecturerIdKey];
                         }
 
-                        if (lecturerRating && typeof lecturerRating === 'object' && lecturerRating[`averageValue${i}`] !== undefined && lecturerRating[`averageValue${i}`] !== null && !isNaN(lecturerRating[`averageValue${i}`])) {
-                            const value = Number(lecturerRating[`averageValue${i}`]);
+                        if (lecturerRating && typeof lecturerRating === 'object' && lecturerRating[avgValueKey] !== undefined && lecturerRating[avgValueKey] !== null && !isNaN(lecturerRating[avgValueKey])) {
+                            const value = Number(lecturerRating[avgValueKey]);
                             sum += value;
                             count++;
                         }
                     });
 
                     const overallAverage = count > 0 ? (sum / count) : null;
-                    transformedQuestion[`averageCriterion${i}`] = {
-                        value: overallAverage,
-                        name: overallAverage !== null ? overallAverage.toFixed(2) : 'N/A',
-                        role: 'average',
-                    };
-
-                    if (overallAverage !== null) {
-                        const squaredAverage = overallAverage * overallAverage;
-                        initialDenominators[`criterion${i}`].sumOfSquares += squaredAverage;
-                    }
+                    // FIX: Bulatkan overallAverage ke 2 desimal agar konsisten dengan tampilan dan perhitungan selanjutnya
+                    transformedQuestion.averageCriteria[criterionName] = overallAverage !== null ? parseFloat(overallAverage.toFixed(2)) : null;
                 }
-
-                devLecturers.forEach(lecturer => {
-                    const lecturerIdKey = lecturer.id.trim().toLowerCase();
-                    let lecturerRating = reviewerRatings[lecturerIdKey];
-                    if (!lecturerRating && lecturerIdKey.length > 0) {
-                        const capitalizedLecturerIdKey = lecturerIdKey.charAt(0).toUpperCase() + lecturerIdKey.slice(1);
-                        lecturerRating = reviewerRatings[capitalizedLecturerIdKey];
-                    }
-                    if (lecturerRating && typeof lecturerRating === 'object') {
-                        for (let i = 1; i <= criteriaNamesInOrder.length; i++) {
-                            const avgValueKey = `averageValue${i}`;
-                            const criterionValueKey = `criteriaValue${i}_${lecturer.id}`;
-                            const rawValue = lecturerRating[avgValueKey];
-                            transformedQuestion[criterionValueKey] = {
-                                value: rawValue,
-                                name: rawValue !== undefined && rawValue !== null && !isNaN(rawValue) ? Number(rawValue).toFixed(2) : 'N/A',
-                                role: lecturer.role
-                            };
-                        }
-                    } else {
-                        for (let i = 1; i <= criteriaNamesInOrder.length; i++) {
-                            const criterionValueKey = `criteriaValue${i}_${lecturer.id}`;
-                            transformedQuestion[criterionValueKey] = {
-                                value: null,
-                                name: 'Belum Dinilai',
-                                role: lecturer.role
-                            };
-                        }
-                    }
-                });
-
                 return transformedQuestion;
             });
 
-            const finalDenominators = {};
-            criteriaNamesInOrder.forEach((name, index) => {
-                const totalSumOfSquares = initialDenominators[`criterion${index + 1}`].sumOfSquares;
-                finalDenominators[`criterion${index + 1}`] = Math.sqrt(totalSumOfSquares);
+            // HITUNG DENOMINATOR SETELAH semua overallAverage (x_ij) dihitung
+            processedQuestions.forEach(q => {
+                criteriaNamesInOrder.forEach(name => {
+                    const overallAverage = q.averageCriteria[name];
+                    if (overallAverage !== null) {
+                        actualTempDenominatorsSumOfSquares[name] += (overallAverage * overallAverage);
+                    }
+                });
+            });
+
+            // Finalisasi Pembagi
+            criteriaNamesInOrder.forEach(name => {
+                const sumOfSquares = actualTempDenominatorsSumOfSquares[name];
+                // FIX: Bulatkan pembagi ke 2 desimal
+                finalDenominators[`criterion_${name}`] = (sumOfSquares > 0) ? parseFloat(Math.sqrt(sumOfSquares).toFixed(2)) : 0;
             });
 
 
             if (this.state.isMounted) {
                 this.setState({
                     devLecturers,
-                    questionsData: processedQuestions,
+                    questionsData: processedQuestions, // questionsData sekarang berisi rata-rata x_ij
                     userInfo: allUsers,
                     error: null,
                     quizId: currentQuizId,
-                    denominators: finalDenominators,
-                    criteriaWeights: fetchedCriteriaWeights, // Ini akan diisi dengan map yang benar
+                    denominators: finalDenominators, // Simpan pembagi di state
+                    criteriaWeights: fetchedCriteriaWeights, // Simpan bobot di state
                     selectedLecturerId: 'all-lecturers-average',
                 });
             }
@@ -416,6 +384,31 @@ class QuizGenerate extends Component {
         } finally {
             this.setState({ loading: false });
         }
+    };
+
+    // Render fungsi untuk nilai kriteria (rata-rata atau per dosen)
+    renderCriteriaValue = (record, valueIndex, criterionName) => {
+        const { selectedLecturerId } = this.state;
+        let displayValue = 'N/A';
+        let color = 'default';
+
+        if (selectedLecturerId === 'all-lecturers-average') {
+            const avgValue = record.averageCriteria?.[criterionName]; // Ambil dari averageCriteria
+            if (avgValue !== null && avgValue !== undefined && !isNaN(avgValue)) {
+                displayValue = avgValue.toFixed(2); // Bulatkan untuk tampilan
+                color = this.getColorForRole('average');
+            }
+        } else {
+            const criterionValueKey = `criteriaValue${valueIndex}_${selectedLecturerId}`;
+            const ratingEntry = record[criterionValueKey];
+            if (ratingEntry && ratingEntry.value !== null && ratingEntry.value !== undefined && !isNaN(ratingEntry.value)) {
+                displayValue = ratingEntry.name; // Nama linguistic term
+                color = this.getColorForRole(ratingEntry.role);
+            } else {
+                displayValue = 'Belum Dinilai';
+            }
+        }
+        return <Tag color={color}>{displayValue}</Tag>;
     };
 
     getColorForRole = (role) => {
@@ -431,23 +424,29 @@ class QuizGenerate extends Component {
         }
     };
 
-    renderAverageCriteriaValue = (record, valueIndex) => {
-        const averageKey = `averageCriterion${valueIndex}`;
-        const ratingEntry = record[averageKey];
+    selectLecture = (key) => {
+        this.setState({ selectedLecturerId: key });
+    };
 
-        if (!ratingEntry || ratingEntry.value === null || ratingEntry.value === undefined || isNaN(ratingEntry.value)) {
-            return <Tag color="default">N/A</Tag>;
+    getImageUrl = (filePath) => {
+        if (!filePath) {
+            console.warn("getImageUrl: filePath is null or empty.");
+            return "https://via.placeholder.com/200?text=No+Image+Path";
         }
-        return <Tag color={this.getColorForRole('average')}>{ratingEntry.name}</Tag>;
+
+        const imageUrl = `http://localhost:8081${filePath}`;
+        return imageUrl;
     };
 
     render() {
         const {
             questionsData,
+            devLecturers,
             quizId,
             loading,
             error,
-            criteriaWeights, // Ini yang sekarang akan berisi Map yang benar
+            selectedLecturerId,
+            criteriaWeights,
             criteriaTypes,
             denominators
         } = this.state;
@@ -457,39 +456,52 @@ class QuizGenerate extends Component {
             "Difficulty", "Discrimination", "Reliability", "Problem Solving", "Creativity"
         ];
 
-        // Buat mapping dari nama kriteria di frontend ke ID kriteria yang sebenarnya (QC001, dst.)
-        // Ini digunakan di `render` untuk mencari bobot yang benar di `criteriaWeights`.
-        const criteriaNameToQCIdMapping = {};
-        criteriaNames.forEach((name, index) => {
-            const qcId = `QC0${index < 9 ? '0' : ''}${index + 1}`; // QC001, QC002, ..., QC010
-            criteriaNameToQCIdMapping[name] = qcId; // e.g., "Knowledge": "QC001"
-        });
-
-
-        const baseColumns = [
+        const dynamicColumns = [
             {
                 title: "ID Pertanyaan",
                 dataIndex: "idQuestion",
                 key: "idQuestion",
                 align: "center",
-                width: 150,
-                fixed: 'left',
-                render: (text, record) => {
-                    return text;
-                }
+                width: 120,
             },
-        ];
-
-        const mainTableColumns = [
-            ...baseColumns,
+            {
+                title: "Pertanyaan",
+                key: "questionContent",
+                width: 250,
+                render: (text, record) => (
+                    <div>
+                        {record.title || 'No Title Found'}
+                        {record.questionType === 'IMAGE' && record.file_path && (
+                            <div style={{ marginTop: 8 }}>
+                                <p>
+                                    <Image
+                                        src={this.getImageUrl(record.file_path)}
+                                        alt="Question Image"
+                                        style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
+                                        fallback="https://via.placeholder.com/200?text=Gambar+Tidak+Dimuat"
+                                    />
+                                </p>
+                            </div>
+                        )}
+                        {record.description && record.questionType !== 'IMAGE' && (
+                            <p>{record.description}</p>
+                        )}
+                        {record.questionType && record.questionType !== 'IMAGE' && record.questionType !== 'NORMAL' && (
+                            <p>Tipe: {record.questionType}</p>
+                        )}
+                    </div>
+                )
+            },
             ...criteriaNames.map((name, index) => ({
                 title: name,
-                key: `criterion_${index + 1}`,
+                key: `criterion_value_${index + 1}`,
                 width: 150,
-                render: (text, record) => this.renderAverageCriteriaValue(record, index + 1)
+                // FIX: Passing criterion name to renderCriteriaValue
+                render: (text, record) => this.renderCriteriaValue(record, index + 1, name)
             }))
         ];
 
+        // Header Table Columns (Bobot, Tipe, Pembagi)
         const headerTableColumns = [
             {
                 title: "",
@@ -498,9 +510,13 @@ class QuizGenerate extends Component {
                 align: "center",
                 width: 150,
                 fixed: 'left',
-                render: (text, record) => {
-                    return <span style={{ fontWeight: 'bold' }}>{text}</span>;
-                }
+                render: (text) => <span style={{ fontWeight: 'bold' }}>{text}</span>
+            },
+            {
+                title: "", // Spacer untuk kolom "Pertanyaan"
+                key: "spacer",
+                width: 250,
+                fixed: 'left',
             },
             ...criteriaNames.map((name, index) => ({
                 title: name,
@@ -508,28 +524,22 @@ class QuizGenerate extends Component {
                 width: 150,
                 render: (text, record) => {
                     if (record.type === 'weights') {
-                        // Ambil ID kriteria yang sesuai untuk kolom ini
-                        const criterionId = criteriaNameToQCIdMapping[name]; // e.g., "QC001"
-                        
-                        // Akses bobot langsung dari criteriaWeights menggunakan ID kriteria (yang sekarang menjadi kunci)
-                        const weightValue = criteriaWeights[name]; // <--- PERBAIKAN DI SINI
-
-                        // Log nilai yang sedang diakses
-                        console.log(`DEBUG FRONTEND (Render Weight): name="${name}", criterionId="${criterionId}", weightValue=${weightValue}, criteriaWeights state:`, criteriaWeights);
-
-                        if (weightValue !== null && weightValue !== undefined) {
-                            return <Tag color={this.getColorForRole('info')}>{weightValue.toFixed(4)}</Tag>;
+                        const weightValue = criteriaWeights[name];
+                        if (weightValue !== null && weightValue !== undefined && !isNaN(weightValue)) {
+                            // FIX: Bulatkan bobot ke 2 desimal
+                            return <Tag color={this.getColorForRole('info')}>{weightValue.toFixed(2)}</Tag>;
                         }
-                        return <Tag color={this.getColorForRole('not-available-weight')}>(Bobot Belum Tersedia)</Tag>;
+                        return <Tag color="red">(Bobot Belum Tersedia)</Tag>;
                     } else if (record.type === 'types') {
                         const type = criteriaTypes[name] !== undefined ? criteriaTypes[name] : 'N/A';
                         return <Tag color={this.getColorForRole('info')}>{type}</Tag>;
                     } else if (record.type === 'denominators') {
-                        const denominator = denominators[`criterion${index + 1}`];
+                        const denominator = denominators[`criterion_${name}`];
                         if (denominator !== null && denominator !== undefined && !isNaN(denominator)) {
-                            return <Tag color={this.getColorForRole('denominator')}>{denominator.toFixed(4)}</Tag>;
+                            // FIX: Bulatkan pembagi ke 2 desimal
+                            return <Tag color={this.getColorForRole('denominator')}>{denominator.toFixed(2)}</Tag>;
                         }
-                        return <Tag color="default">N/A</Tag>;
+                        return <Tag color="default">0.00</Tag>;
                     }
                     return null;
                 }
@@ -568,8 +578,8 @@ class QuizGenerate extends Component {
 
         return (
             <div className="app-container">
-                <TypingCard source="Daftar Nilai Quiz Berdasarkan Dosen Yang Menilai Dalam bentuk numerik" />
-                
+                <TypingCard source="Daftar Nilai Quiz Berdasarkan Dosen Yang Menilai" />
+
                 {loading ? (
                     <div style={{ textAlign: 'center', padding: '50px' }}>
                         <Spin size="large" />
@@ -577,11 +587,13 @@ class QuizGenerate extends Component {
                     </div>
                 ) : (
                     <Tabs
-                        activeKey="all-lecturers-average"
+                        onChange={this.selectLecture}
                         style={{ marginBottom: 20 }}
+                        activeKey={selectedLecturerId}
                     >
+                        {/* Tab untuk Rata-rata Semua Dosen */}
                         <TabPane
-                            tab="Rata-rata Penilaian Dosen & Pembagi"
+                            tab="Rata-rata Semua Dosen"
                             key="all-lecturers-average"
                         >
                             {/* Tabel untuk Bobot, Tipe, Pembagi */}
@@ -601,32 +613,63 @@ class QuizGenerate extends Component {
                                     dataSource={questionsData}
                                     pagination={false}
                                     rowKey={record => record.idQuestion || Math.random()}
-                                    columns={mainTableColumns}
+                                    columns={dynamicColumns} // Use dynamicColumns for consistency
                                     scroll={{ x: 'max-content' }}
-                                    className="main-questions-table"
                                 />
                             ) : (
                                 <Alert
-                                    message="Tidak Ada Data Penilaian Quiz"
-                                    description="Tidak ada data penilaian quiz atau dosen yang ditemukan untuk kuis ini."
+                                    message="Tidak Ada Pertanyaan Quiz"
+                                    description="Tidak ada pertanyaan quiz yang ditemukan untuk kuis ini."
                                     type="info"
                                     showIcon
                                 />
                             )}
                         </TabPane>
+
+                        {/* Tabs untuk Setiap Dosen */}
+                        {devLecturers.length > 0 ? (
+                            devLecturers.map((lecturer) => (
+                                <TabPane
+                                    tab={`${lecturer.name} (${lecturer.role})`}
+                                    key={lecturer.id}
+                                >
+                                    {questionsData.length > 0 ? (
+                                        <Table
+                                            dataSource={questionsData}
+                                            pagination={false}
+                                            rowKey={record => record.idQuestion || Math.random()}
+                                            columns={dynamicColumns}
+                                            scroll={{ x: 'max-content' }}
+                                        />
+                                    ) : (
+                                        <Alert
+                                            message="Informasi"
+                                            description="Tidak ada dosen yang terlibat dalam kuis ini, atau data dosen tidak dapat dimuat."
+                                            type="info"
+                                            showIcon
+                                        />
+                                    )}
+                                </TabPane>
+                            ))
+                        ) : (
+                            selectedLecturerId !== 'all-lecturers-average' && (
+                                <Alert
+                                    message="Informasi"
+                                    description="Tidak ada dosen yang terlibat dalam kuis ini, atau data dosen tidak dapat dimuat."
+                                    type="info"
+                                    showIcon
+                                />
+                            )
+                        )}
                     </Tabs>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
-                    <div>
-                        <Button type="primary" onClick={() => this.handlePreviousPage()}>
-                            Tahap 1
-                        </Button>
-                    </div>
-                    <div>
-                        <Button type="primary" onClick={() => this.handleNextPage(quizId)}>
-                            Tahap 3
-                        </Button>
-                    </div>
+                    <Button type="primary" onClick={this.handlePreviousPage}>
+                        Halaman Sebelumnya
+                    </Button>
+                    <Button type="primary" onClick={this.handleNextPage.bind(this, quizId)}>
+                        Halaman Selanjutnya
+                    </Button>
                 </div>
             </div>
         );

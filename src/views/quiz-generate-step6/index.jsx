@@ -142,14 +142,14 @@ class QuizGenerate extends Component {
                 this.setState({ error: "Data RPS kuis tidak lengkap." });
                 return;
             }
-            
+
             const criteriaNamesInOrder = [
                 "Knowledge", "Comprehension", "Application", "Analysis", "Evaluation",
                 "Difficulty", "Discrimination", "Reliability", "Problem Solving", "Creativity"
             ];
 
             let fetchedCriteriaWeights = {};
-            let finalDenominators = {}; 
+            let finalDenominators = {};
 
             // --- Ambil Bobot Dematel (w_i) ---
             if (subjectIdForWeights) {
@@ -182,7 +182,7 @@ class QuizGenerate extends Component {
                             }
                         });
                         fetchedCriteriaWeights = processedWeightsMap;
-                        
+
                     } else {
                         message.warning("Bobot Dematel tidak ditemukan untuk mata kuliah ini.");
                     }
@@ -213,11 +213,11 @@ class QuizGenerate extends Component {
 
             const processedQuestions = await Promise.all(quizQuestions.map(async (q) => {
                 const transformedQuestion = { ...q };
-                
+
                 const criteriaResult = await getAllCriteriaValueByQuestion(q.idQuestion);
-                const questionRatingObject = q.questionRating || {}; 
+                const questionRatingObject = q.questionRating || {};
                 const reviewerRatings = questionRatingObject.reviewerRatings || {};
-                
+
                 transformedQuestion.averageCriteria = {};
                 for (let i = 0; i < criteriaNamesInOrder.length; i++) {
                     const criterionName = criteriaNamesInOrder[i];
@@ -225,7 +225,7 @@ class QuizGenerate extends Component {
 
                     let sum = 0;
                     let count = 0;
-                    
+
                     Object.values(reviewerRatings).forEach(reviewerRating => {
                         const rawValue = reviewerRating[avgValueKey];
                         if (rawValue !== undefined && rawValue !== null && !isNaN(rawValue)) {
@@ -251,15 +251,15 @@ class QuizGenerate extends Component {
             });
 
             const normalizedQuestionData = processedQuestions.map(q => {
-                const normalizedQ = { 
+                const normalizedQ = {
                     idQuestion: q.idQuestion,
                     title: q.title,
-                    normalizedCriteria: {} 
+                    normalizedCriteria: {}
                 };
                 criteriaNamesInOrder.forEach(name => {
                     const x_ij = q.averageCriteria[name];
                     const denominator = finalDenominators[`criterion_${name}`];
-                    
+
                     let normalizedValue = null;
                     if (x_ij !== null && x_ij !== undefined && denominator !== null && denominator > 0) {
                         normalizedValue = (x_ij / denominator);
@@ -281,7 +281,7 @@ class QuizGenerate extends Component {
                 criteriaNamesInOrder.forEach(name => {
                     const r_ij = r_q.normalizedCriteria[name];
                     const w_i = fetchedCriteriaWeights[name];
-                    
+
                     let y_ij = null;
                     if (r_ij !== null && r_ij !== undefined && w_i !== null && w_i !== undefined && !isNaN(w_i)) {
                         y_ij = r_ij * w_i;
@@ -341,8 +341,10 @@ class QuizGenerate extends Component {
                     if (y_ij !== null && y_ij !== undefined && !isNaN(y_ij) &&
                         y_j_plus !== null && y_j_plus !== undefined && !isNaN(y_j_plus) &&
                         y_j_minus !== null && y_j_minus !== undefined && !isNaN(y_j_minus)) {
-                        
+
+                        // Implementasi rumus D+
                         sumSquaredDiffPositive += Math.pow((y_j_plus - y_ij), 2);
+                        // Implementasi rumus D-
                         sumSquaredDiffNegative += Math.pow((y_ij - y_j_minus), 2);
                     } else {
                         console.warn(`WARN Step6: Skipping calculation for ${y_q.idQuestion} - ${criterionName} due to invalid Y_ij, Yj+, or Yj- values.`);
@@ -351,7 +353,7 @@ class QuizGenerate extends Component {
 
                 const diPlus = Math.sqrt(sumSquaredDiffPositive);
                 const diMinus = Math.sqrt(sumSquaredDiffNegative);
-                
+
                 distancePositiveIdeal.push({ idQuestion: y_q.idQuestion, title: y_q.title, value: diPlus });
                 distanceNegativeIdeal.push({ idQuestion: y_q.idQuestion, title: y_q.title, value: diMinus });
             });
@@ -388,7 +390,7 @@ class QuizGenerate extends Component {
     // Render fungsi umum untuk menampilkan nilai desimal (seperti D+, D-)
     renderValue = (value) => {
         if (value !== null && value !== undefined && !isNaN(value)) {
-            return <Tag color="blue">{value.toFixed(4)}</Tag>;
+            return <Tag color="blue">{value.toFixed(2)}</Tag>;
         }
         return <Tag color="default">N/A</Tag>;
     };
@@ -402,34 +404,6 @@ class QuizGenerate extends Component {
             error,
         } = this.state;
 
-        // --- Kolom untuk tabel D+ dan D- ---
-        const distanceTableColumns = [
-            {
-                title: "ID Pertanyaan",
-                dataIndex: "idQuestion",
-                key: "idQuestion",
-                align: "center",
-                width: 150,
-                fixed: 'left',
-            },
-            {
-                title: "D+",
-                dataIndex: "value",
-                key: "di_plus_value",
-                align: "center",
-                width: 150,
-                render: (value) => this.renderValue(value),
-            },
-            {
-                title: "D-",
-                dataIndex: "value", // Akan di-map dari distanceNegativeIdeal
-                key: "di_minus_value",
-                align: "center",
-                width: 150,
-                render: (value) => this.renderValue(value),
-            },
-        ];
-
         // Combine D+ and D- into a single dataSource for rendering
         // Need to merge them by idQuestion
         const combinedDistanceData = distancePositiveIdeal.map((dPlusItem) => {
@@ -441,8 +415,6 @@ class QuizGenerate extends Component {
                 diMinus: dMinusItem ? dMinusItem.value : null,
             };
         });
-
-        // --- Tidak ada tabel header khusus di Step 6 karena hanya D+ dan D- ---
 
         if (error) {
             return (
@@ -470,7 +442,7 @@ class QuizGenerate extends Component {
         return (
             <div className="app-container">
                 <TypingCard source="Jarak Solusi Ideal Positif dan Negatif (Tahap 6)" />
-                
+
                 <br />
                 <br />
 
@@ -496,7 +468,7 @@ class QuizGenerate extends Component {
                                     },
                                     {
                                         title: "D+",
-                                        dataIndex: "diPlus", // Menggunakan field diPlus
+                                        dataIndex: "diPlus", // Corrected to use diPlus
                                         key: "di_plus_value",
                                         align: "center",
                                         width: 150,
@@ -504,7 +476,7 @@ class QuizGenerate extends Component {
                                     },
                                     {
                                         title: "D-",
-                                        dataIndex: "diMinus", // Menggunakan field diMinus
+                                        dataIndex: "diMinus", // Corrected to use diMinus
                                         key: "di_minus_value",
                                         align: "center",
                                         width: 150,
@@ -524,7 +496,7 @@ class QuizGenerate extends Component {
                                 showIcon
                             />
                         )}
-                        
+
                         {/* Buttons moved here */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
                             <div>
