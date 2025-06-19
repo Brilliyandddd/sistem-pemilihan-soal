@@ -232,7 +232,7 @@ const Causality = () => {
     // Asumsi Anda memiliki sistem routing (misalnya React Router)
     // Untuk tujuan demo ini, kita akan menggunakan window.location.href
     // Di aplikasi nyata, Anda akan menggunakan history.push('/path') atau Link
-    window.location.href = `/dematel-generate-step1/${row.idCausality}`;
+    window.location.href = `/dematel-generate-step-linguistic/${row.idCausality}`;
     // Anda perlu membuat komponen baru di path ini untuk menampilkan matriks
     // Di komponen tersebut, Anda akan memanggil API getAllCausalityRatingsForTask(row.idCausality)
     // untuk mendapatkan data penilaian dari dosen-dosen.

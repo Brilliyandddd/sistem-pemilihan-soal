@@ -277,6 +277,11 @@ const DematelGenerateStep1 = () => {
   //   return filteredLecturers.sort((a, b) => a.name.localeCompare(b.name));
   // }, [causalityDetails, lecturers, ratings]);
 
+  const handlePreviousStep = () => {
+    // Navigate back to the previous step, which is the numeric ratings page
+    navigate(`/dematel-generate-step-numeric/${idCausality}`);
+  };
+
   // Handler for "Lanjutkan ke Step 2" button
   const handleNextStep = () => {
     // Navigate to the next step, passing the causality ID
@@ -375,7 +380,13 @@ const DematelGenerateStep1 = () => {
                   scroll={{ x: 'max-content' }}
                   
                 />
-                <div style={{ textAlign: 'right', marginTop: '20px' }}>
+                <div style={{ textAlign: 'right', marginTop: '20px', display: 'flex', justifyContent: 'space-between' }}>
+                  <Button
+                    type="primary"
+                    onClick={handlePreviousStep}
+                    disabled={loading || error}>
+                      Kembali ke Numeric
+                  </Button>
                   <Button
                     type="primary"
                     onClick={handleNextStep}

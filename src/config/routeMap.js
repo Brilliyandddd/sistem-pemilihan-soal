@@ -39,6 +39,8 @@ const RPS = React.lazy(() => import(/*webpackChunkName:'RPS'*/ "@/views/rps"));
 const RPSDetail = React.lazy(() => import(/*webpackChunkName:'RPS'*/ "@/views/rps-detail"));
 const Causality = React.lazy(() => import(/*webpackChunkName:'Causality'*/ "@/views/causality"));
 const CausalityRating = React.lazy(() => import(/*webpackChunkName:'CausalityRating'*/ "@/views/causality-rating"));
+const DematelGenerateStepLinguistic = React.lazy(() => import(/*webpackChunkName:'DematelGenerateStepLinguistic'*/ "@/views/dematel-generate-step-linguistic"));
+const DematelGenerateStepNumeric = React.lazy(() => import(/*webpackChunkName:'DematelGenerateStepNumeric'*/ "@/views/dematel-generate-step-numeric"));
 const DematelGenerateStep1 = React.lazy(() => import(/*webpackChunkName:'DematelGenerateStep1'*/ "@/views/dematel-generate-step1"));
 const DematelGenerateStep2 = React.lazy(() => import(/*webpackChunkName:'DematelGenerateStep2'*/ "@/views/dematel-generate-step2"));
 const DematelGenerateStep3 = React.lazy(() => import(/*webpackChunkName:'DematelGenerateStep3'*/ "@/views/dematel-generate-step3"));
@@ -300,6 +302,16 @@ export default [
     path:"/causality-rating/:idCausality",
     component: CausalityRating,
     roles: ["ROLE_LECTURE"],
+  },
+  {
+    path: "/dematel-generate-step-linguistic/:idCausality",
+    component: DematelGenerateStepLinguistic,
+    roles: ["ROLE_ADMINISTRATOR"],
+  },
+  {
+    path: "/dematel-generate-step-numeric/:idCausality",
+    component: DematelGenerateStepNumeric,
+    roles: ["ROLE_ADMINISTRATOR"],
   },
   {
     path: "/dematel-generate-step1/:idCausality",
