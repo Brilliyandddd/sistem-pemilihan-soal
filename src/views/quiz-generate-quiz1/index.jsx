@@ -33,6 +33,7 @@ function withRouterWrapper(Component) {
                 {...props}
                 history={history}
                 match={match}
+                navigate={navigate}
             />
         );
     };
@@ -56,14 +57,15 @@ class QuizGenerate extends Component {
         };
     }
 
-    handleNextPage = (quizId) => {
+    handleNextPage = (quizID) => {
         const { history } = this.props;
-        history.push(`/setting-quiz/generate-quiz-step2/${quizId}`);
+        history.push(`/setting-quiz/generate-quiz-step2/${quizID}`);
     };
 
     handlePreviousPage = () => {
-        const { history } = this.props;
-        history.push(`/setting-quiz/`);
+        const { navigate } = this.props;
+        const { quizId } = this.state;
+        navigate(`/setting-quiz/generate-quiz-step-numeric/${quizId}`);
     };
 
     async componentDidMount() {
@@ -407,34 +409,6 @@ class QuizGenerate extends Component {
                 align: "center",
                 width: 120,
             },
-            {
-                title: "Pertanyaan",
-                key: "questionContent",
-                width: 250,
-                render: (text, record) => (
-                    <div>
-                        {record.title || 'No Title Found'}
-                        {record.questionType === 'IMAGE' && record.file_path && (
-                            <div style={{ marginTop: 8 }}>
-                                <p>
-                                    <Image
-                                        src={this.getImageUrl(record.file_path)}
-                                        alt="Question Image"
-                                        style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
-                                        fallback="https://via.placeholder.com/200?text=Gambar+Tidak+Dimuat"
-                                    />
-                                </p>
-                            </div>
-                        )}
-                        {record.description && record.questionType !== 'IMAGE' && (
-                            <p>{record.description}</p>
-                        )}
-                        {record.questionType && record.questionType !== 'IMAGE' && record.questionType !== 'NORMAL' && (
-                            <p>Tipe: {record.questionType}</p>
-                        )}
-                    </div>
-                )
-            },
             // Map over criteria names to create columns for each criterion
             ...criteriaNames.map((name, index) => ({
                 title: name, // Title for the criterion
@@ -557,6 +531,7 @@ class QuizGenerate extends Component {
 }
 
 QuizGenerate.propTypes = {
+    navigate: PropTypes.func.isRequired,
     history: PropTypes.shape({
         push: PropTypes.func.isRequired,
         goBack: PropTypes.func,

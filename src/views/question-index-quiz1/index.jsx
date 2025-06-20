@@ -397,19 +397,29 @@ const QuestionIndexQuiz1 = () => {
             updatedQuestionPayload.is_rated = isFullyRated;
 
             const finalQuestionRequestPayload = {
-                idQuestion: updatedQuestionPayload.idQuestion,
-                reviewer: userInfo, 
-                averageValue1: updatedQuestionPayload.averageValue1,
-                averageValue2: updatedQuestionPayload.averageValue2,
-                averageValue3: updatedQuestionPayload.averageValue3,
-                averageValue4: updatedQuestionPayload.averageValue4,
-                averageValue5: updatedQuestionPayload.averageValue5,
-                averageValue6: updatedQuestionPayload.averageValue6,
-                averageValue7: updatedQuestionPayload.averageValue7,
-                averageValue8: updatedQuestionPayload.averageValue8,
-                averageValue9: updatedQuestionPayload.averageValue9,
-                averageValue10: updatedQuestionPayload.averageValue10,
-            };
+    idQuestion: updatedQuestionPayload.idQuestion,
+    reviewer: userInfo,
+    averageValue1: updatedQuestionPayload.averageValue1,
+    linguisticValue1Id: ratingValues[criteria[0].name], // Add this line
+    averageValue2: updatedQuestionPayload.averageValue2,
+    linguisticValue2Id: ratingValues[criteria[1].name], // Add this line
+    averageValue3: updatedQuestionPayload.averageValue3,
+    linguisticValue3Id: ratingValues[criteria[2].name], // Add this line
+    averageValue4: updatedQuestionPayload.averageValue4,
+    linguisticValue4Id: ratingValues[criteria[3].name], // Add this line
+    averageValue5: updatedQuestionPayload.averageValue5,
+    linguisticValue5Id: ratingValues[criteria[4].name], // Add this line
+    averageValue6: updatedQuestionPayload.averageValue6,
+    linguisticValue6Id: ratingValues[criteria[5].name], // Add this line
+    averageValue7: updatedQuestionPayload.averageValue7,
+    linguisticValue7Id: ratingValues[criteria[6].name], // Add this line
+    averageValue8: updatedQuestionPayload.averageValue8,
+    linguisticValue8Id: ratingValues[criteria[7].name], // Add this line
+    averageValue9: updatedQuestionPayload.averageValue9,
+    linguisticValue9Id: ratingValues[criteria[8].name], // Add this line
+    averageValue10: updatedQuestionPayload.averageValue10,
+    linguisticValue10Id: ratingValues[criteria[9].name], // Add this line
+};
 
             console.log("Final QuestionRequest Payload being sent:", finalQuestionRequestPayload);
 

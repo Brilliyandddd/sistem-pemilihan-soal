@@ -59,6 +59,8 @@ const ListTodo = React.lazy(() => import(/*webpackChunkName:'criteriaValue'*/ "@
 const ListTodoAdmin = React.lazy(() => import(/*webpackChunkName:'criteriaValue'*/ "@/views/list-todo-admin"));
 const QuestionIndexQuiz1 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/question-index-quiz1"));
 const QuestionIndexQuiz2 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/question-index-quiz2"));
+const QuizGenerateStepLinguistic = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step-linguistic"));
+const QuizGenerateStepNumeric = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step-numeric"));
 const QuizGenerateQuiz1 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-quiz1"));
 const QuizGenerateQuizStep2 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step2"));
 const QuizGenerateQuizStep3 = React.lazy(() => import(/*webpackChunkName:'questionIndex'*/ "@/views/quiz-generate-step3"));
@@ -428,6 +430,16 @@ export default [
     component: ResultQuiz,
     roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
   },
+{
+  path: "/setting-quiz/generate-quiz-step-linguistic/:quizID", // <-- CHANGE THIS TO :quizID (uppercase ID)
+  component: QuizGenerateStepLinguistic, // This is your QuizGenerateStepLinguistic component
+  roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+},
+{
+  path: "/setting-quiz/generate-quiz-step-numeric/:quizID", // <-- CHANGE THIS TO :quizID (uppercase ID)
+  component: QuizGenerateStepNumeric, // This is your QuizGenerateStepNumeric component
+  roles: ["ROLE_ADMINISTRATOR", "ROLE_LECTURE"],
+},
   {
   path: "/setting-quiz/generate-quiz/:quizID", // <-- CHANGE THIS TO :quizID (uppercase ID)
   component: QuizGenerateQuiz1,

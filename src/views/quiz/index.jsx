@@ -378,7 +378,7 @@ const Quiz = () => {
                   />
                 </Link>
                 <Divider type="vertical" />
-                <Link to={`/setting-quiz/generate-quiz/${row.idQuiz}`}>
+                <Link to={`/setting-quiz/generate-quiz-step-linguistic/${row.idQuiz}`}>
                   <Button
                     type="default"
                     shape="circle"
