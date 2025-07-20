@@ -200,7 +200,7 @@ const DematelGenerateStep1 = () => {
         if (rowCriterionName === colCriterionName) {
             displayValue = "0.00";
         } else if (data && data.count > 0) {
-            displayValue = (data.sum / data.count).toFixed(2);
+            displayValue = (data.sum / data.count).toFixed(4);
         } else {
             displayValue = "belum dinilai";
         }

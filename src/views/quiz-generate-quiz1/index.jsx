@@ -249,7 +249,7 @@ class QuizGenerate extends Component {
                     const overallAverage = count > 0 ? (sum / count) : null;
                     transformedQuestion[`averageCriterion${i}`] = {
                         value: overallAverage,
-                        name: overallAverage !== null ? overallAverage.toFixed(2) : 'N/A',
+                        name: overallAverage !== null ? overallAverage.toFixed(4) : 'N/A',
                         role: 'average' // Indicate this is an average rating
                     };
                 }
@@ -272,7 +272,7 @@ class QuizGenerate extends Component {
 
                             transformedQuestion[criterionValueKey] = {
                                 value: rawValue,
-                                name: rawValue !== undefined && rawValue !== null && !isNaN(rawValue) ? Number(rawValue).toFixed(2) : 'N/A',
+                                name: rawValue !== undefined && rawValue !== null && !isNaN(rawValue) ? Number(rawValue).toFixed(4) : 'N/A',
                                 role: lecturer.role
                             };
                         }

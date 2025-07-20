@@ -179,7 +179,7 @@ const DematelGenerateStep5 = () => {
             const rowData = { id: rowCritName, criterion: rowCritName };
             orderedCriterionNames.forEach((colCritName, colIndex) => {
                 const value = totalRelationMatrixT_2D[rowIndex][colIndex];
-                rowData[colCritName] = typeof value === 'number' ? value.toFixed(2) : "N/A";
+                rowData[colCritName] = typeof value === 'number' ? value.toFixed(4) : "N/A";
             });
             return rowData;
         });
@@ -243,10 +243,10 @@ const DematelGenerateStep5 = () => {
 
     const drValuesFormatted = sortedForRank.map(item => ({
       ...item,
-      Di: item.Di.toFixed(2),
-      Rj: item.Rj.toFixed(2),
-      DplusR: item.DplusR.toFixed(2),
-      DminusR: item.DminusR.toFixed(2),
+      Di: item.Di.toFixed(4),
+      Rj: item.Rj.toFixed(4),
+      DplusR: item.DplusR.toFixed(4),
+      DminusR: item.DminusR.toFixed(4),
       causeEffect: item.DminusR > 0 ? "CAUSE" : (item.DminusR < 0 ? "EFFECT" : "NEUTRAL")
     }));
 

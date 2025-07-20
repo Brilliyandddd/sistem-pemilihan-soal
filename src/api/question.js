@@ -1,14 +1,38 @@
 import request from "@/utils/request";
-// import requestForm from "@/utils/requestForm";
-
-// import axios from "axios";
+// import requestForm from "@/utils/requestForm"; // Jika ini tidak digunakan, bisa dihapus
 
 // Your existing code goes here...
-export function addQuestion(data) {
+export function addQuestion(payload) { // Mengganti 'data' menjadi 'payload' agar lebih jelas
+  const formData = new FormData();
+
+  for (const key in payload) {
+    if (Object.prototype.hasOwnProperty.call(payload, key)) {
+      const value = payload[key];
+
+      if (value !== null && value !== undefined) {
+          if (Array.isArray(value)) {
+              value.forEach(item => {
+                  if (item !== null && item !== undefined && item !== '') {
+                      formData.append(key, item);
+                  }
+              });
+          } else if (typeof value === 'boolean') {
+              formData.append(key, value.toString());
+          }
+          else {
+              formData.append(key, value);
+          }
+      }
+    }
+  }
+
   return request({
-    url: "/question",
+    url: "/question", // Ini akan memanggil @PostMapping tanpa /json
     method: "post",
-    data,
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   });
 }
 
@@ -37,6 +61,13 @@ export function getQuestions(rpsDetailID) {
 export function getQuestionsByRPS(rpsID) {
   return request({
     url: `/question?rpsID=${rpsID}`,
+    method: "get",
+  });
+}
+
+export function getQuestionsByRpsDetailId(rpsDetailId) {
+  return request({
+    url: `/question?rpsDetailId=${rpsDetailId}`,
     method: "get",
   });
 }
@@ -80,37 +111,39 @@ export function getRpsById(rpsId) {
   });
 }
 
+// --- Perbaikan Opsi 1: Menghapus filter frontend di getRpsDetails ---
 export const getRpsDetails = async (rpsId) => {
   try {
     const response = await request({
-      url: `/rps-detail?rpsId=${rpsId}`,
+      url: `/rps-detail?rpsId=${rpsId}`, // Asumsi backend memfilter dengan benar
       method: 'GET'
     });
 
-    // Debugging: Log raw response
-    console.log('Raw API Response:', response);
+    console.log('Raw API Response (getRpsDetails):', response);
 
-    // Handle potential response formats
-    const content = Array.isArray(response.data) 
-      ? response.data 
+    const content = Array.isArray(response.data)
+      ? response.data
       : response.data?.content || response.data?.data || [];
 
-    // Filter di frontend jika backend belum memfilter
-    const filteredContent = content.filter(item => {
-      // Cek beberapa kemungkinan struktur data
-      const itemRpsId = item.rps?.idRps || item.rpsId || item.rps;
-      return itemRpsId === rpsId;
-    });
+    // --- Filter Frontend Telah Dihapus di Sini ---
+    // return {
+    //   ...response,
+    //   data: {
+    //     statusCode: 200,
+    //     content: content.filter(item => { /* ... filter logic ... */ })
+    //   }
+    // };
 
-    console.log('Filtered Content:', filteredContent);
-
+    // --- Langsung Kembalikan Konten dari API ---
     return {
       ...response,
       data: {
         statusCode: 200,
-        content: filteredContent
+        content: content // Mengembalikan semua konten yang didapat dari API
       }
     };
+    // --- Akhir Perubahan ---
+
   } catch (error) {
     console.error('Error fetching RPS details:', error);
     return {
@@ -125,8 +158,8 @@ export const getRpsDetails = async (rpsId) => {
 
 export function submitQuestionCriteriaRating(payload, idQuestion) {
   return request({
-    url: `/question/rating/${idQuestion}`, 
-    method: "put", 
-    data: payload, 
+    url: `/question/rating/${idQuestion}`,
+    method: "put",
+    data: payload,
   });
 }

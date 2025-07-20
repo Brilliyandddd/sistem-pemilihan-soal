@@ -284,7 +284,7 @@ const QuizGenerateNumericStep = () => {
 
   // Render function for single numeric values (A, B, C, D) using Tag
   const renderSingleNumericValue = useCallback((value, criteriaId) => { // Now accepts criteriaId
-    const formatValue = (val) => val !== null ? val.toFixed(2) : '-';
+    const formatValue = (val) => val !== null ? val.toFixed(4) : '-';
     const valueStr = formatValue(value);
 
     // Get color based on the criterion ID from the new map

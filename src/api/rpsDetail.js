@@ -36,7 +36,7 @@ export function getRPSDetail(rpsID) {
   });
 }
 
-export function editRPSDetail(data, id) {
+export function editRPSDetail(id, data) {
   return request({
     url: `/rps-detail/${id}`,
     method: "put",

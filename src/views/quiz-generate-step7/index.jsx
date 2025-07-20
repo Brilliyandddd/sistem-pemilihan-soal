@@ -439,7 +439,7 @@ class QuizGenerate extends Component {
     // Render fungsi umum untuk menampilkan nilai desimal
     renderValue = (value) => {
         if (value !== null && value !== undefined && !isNaN(value)) {
-            return <Tag color="blue">{value.toFixed(5)}</Tag>;
+            return <Tag color="blue">{value.toFixed(4)}</Tag>;
         }
         return <Tag color="default">N/A</Tag>;
     };

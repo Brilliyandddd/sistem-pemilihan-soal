@@ -258,10 +258,10 @@ const DematelGenerateNumericStep = () => {
       if (influencingName && influencedName && areAllValuesValid) {
         const key = `${influencingName}_${influencedName}`;
         cellABCDValues[key] = { // Store the object directly
-          A: abcdValues.A.toFixed(2),
-          B: abcdValues.B.toFixed(2),
-          C: abcdValues.C.toFixed(2),
-          D: abcdValues.D.toFixed(2)
+          A: abcdValues.A.toFixed(4),
+          B: abcdValues.B.toFixed(4),
+          C: abcdValues.C.toFixed(4),
+          D: abcdValues.D.toFixed(4)
         };
       }
     });

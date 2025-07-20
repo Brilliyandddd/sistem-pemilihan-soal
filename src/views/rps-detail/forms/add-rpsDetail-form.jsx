@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+// forms/add-rpsDetail-form.jsx
 /* eslint-disable react/prop-types */
 import React, { useEffect } from "react";
 import { Form, InputNumber, Modal, Select, Input } from "antd";
@@ -9,17 +11,24 @@ const AddRPSForm = ({
   onCancel,
   onOk,
   confirmLoading,
-  formLearnings,
-  learningMethods,
-  assessmentCriterias,
-  appraisalForms,
+  formLearnings = [], // Only keep props that are actually used by the form fields below
+  // Removed learningMethods, assessmentCriterias, appraisalForms props as they are no longer needed here
 }) => {
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (!visible) {
+      form.resetFields();
+    }
+    // No need to log props here unless actively debugging prop passing
+  }, [visible, form]);
 
   const handleOk = () => {
     form
       .validateFields()
       .then((values) => {
+        // 'values' will now only contain 'week', 'sub_cp_mk', 'form_learning_id', 'weight'
+        // 'rps_id' will be added in the parent component before sending
         onOk(values);
         form.resetFields();
       })
@@ -28,15 +37,9 @@ const AddRPSForm = ({
       });
   };
 
-  useEffect(() => {
-    if (!visible) {
-      form.resetFields();
-    }
-  }, [visible, form]);
-
   return (
     <Modal
-      width={1000}
+      width={600}
       title="Tambah RPS"
       open={visible}
       onCancel={onCancel}
@@ -65,11 +68,11 @@ const AddRPSForm = ({
         </Form.Item>
 
         <Form.Item
-          label="Materi Pembelajaran:"
+          label="Pokok Bahasan:"
           name="learning_materials"
-          rules={[{ required: true, message: "Silahkan isikan materi pembelajaran" }]}
+          rules={[{ required: true, message: "Pokok Bahasan wajib diisi" }]}
         >
-          <Select mode="tags" style={{ width: 300 }} placeholder="Isikan Materi Pembelajaran" />
+          <TextArea style={{ width: 300 }} placeholder="Sub CP MK" />
         </Form.Item>
 
         <Form.Item
@@ -78,87 +81,16 @@ const AddRPSForm = ({
           rules={[{ required: true, message: "Silahkan pilih bentuk pembelajaran" }]}
         >
           <Select style={{ width: 300 }} placeholder="Pilih Bentuk Pembelajaran">
-            {formLearnings.map((item, idx) => (
-              <Select.Option key={`form-learning-${idx}`} value={item.id}>
+            {formLearnings.map((item) => (
+              <Select.Option key={item.id} value={item.id}>
                 {item.name}
               </Select.Option>
             ))}
           </Select>
         </Form.Item>
 
-        <Form.Item
-          label="Metode Pembelajaran:"
-          name="learning_methods"
-          rules={[{ required: true, message: "Silahkan pilih metode pembelajaran" }]}
-        >
-          <Select mode="multiple" style={{ width: 300 }} placeholder="Pilih Metode Pembelajaran">
-            {learningMethods.map((item, idx) => (
-              <Select.Option key={`learning-method-${idx}`} value={item.id}>
-                {item.name}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
-
-        <Form.Item
-          label="Penugasan:"
-          name="assignments"
-          rules={[{ required: true, message: "Silahkan isikan penugasan" }]}
-        >
-          <Select mode="tags" style={{ width: 300 }} placeholder="Isikan Penugasan" />
-        </Form.Item>
-
-        <Form.Item
-          label="Estimasi Waktu:"
-          name="estimated_times"
-          rules={[{ required: true, message: "Silahkan isi estimasi waktu" }]}
-        >
-          <Select mode="tags" style={{ width: 300 }} placeholder="Isikan Estimasi Waktu" />
-        </Form.Item>
-
-        <Form.Item
-          label="Pengalaman Belajar Mahasiswa:"
-          name="student_learning_experiences"
-          rules={[{ required: true, message: "Silahkan isi pengalaman belajar mahasiswa" }]}
-        >
-          <Select mode="tags" style={{ width: 300 }} placeholder="Isikan Pengalaman Belajar Mahasiswa" />
-        </Form.Item>
-
-        <Form.Item
-          label="Kriteria Penilaian:"
-          name="assessment_criterias"
-          rules={[{ required: true, message: "Silahkan pilih kriteria penilaian" }]}
-        >
-          <Select mode="multiple" style={{ width: 300 }} placeholder="Pilih Kriteria Penilaian">
-            {assessmentCriterias.map((item, idx) => (
-              <Select.Option key={`assessment-criteria-${idx}`} value={item.id}>
-                {item.name}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
-
-        <Form.Item
-          label="Bentuk Penilaian:"
-          name="appraisal_forms"
-          rules={[{ required: true, message: "Silahkan pilih bentuk penilaian" }]}
-        >
-          <Select mode="multiple" style={{ width: 300 }} placeholder="Pilih Bentuk Penilaian">
-            {appraisalForms.map((item, idx) => (
-              <Select.Option key={`appraisal-form-${idx}`} value={item.id}>
-                {item.name}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
-
-        <Form.Item
-          label="Indikator Penilaian:"
-          name="assessment_indicators"
-          rules={[{ required: true, message: "Silahkan isi indikator penilaian" }]}
-        >
-          <Select mode="tags" style={{ width: 300 }} placeholder="Isikan Indikator Penilaian" />
-        </Form.Item>
+        {/* Removed Learning Methods, Assessment Criterias, and Appraisal Forms */}
+        {/* If your backend truly does not need these for creation, remove them */}
 
         <Form.Item
           label="Bobot:"

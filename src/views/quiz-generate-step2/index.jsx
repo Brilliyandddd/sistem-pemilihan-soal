@@ -341,7 +341,7 @@ class QuizGenerate extends Component {
 
                     const overallAverage = count > 0 ? (sum / count) : null;
                     // FIX: Bulatkan overallAverage ke 2 desimal agar konsisten dengan tampilan dan perhitungan selanjutnya
-                    transformedQuestion.averageCriteria[criterionName] = overallAverage !== null ? parseFloat(overallAverage.toFixed(2)) : null;
+                    transformedQuestion.averageCriteria[criterionName] = overallAverage !== null ? parseFloat(overallAverage.toFixed(4)) : null;
                 }
                 return transformedQuestion;
             });
@@ -360,7 +360,7 @@ class QuizGenerate extends Component {
             criteriaNamesInOrder.forEach(name => {
                 const sumOfSquares = actualTempDenominatorsSumOfSquares[name];
                 // FIX: Bulatkan pembagi ke 2 desimal
-                finalDenominators[`criterion_${name}`] = (sumOfSquares > 0) ? parseFloat(Math.sqrt(sumOfSquares).toFixed(2)) : 0;
+                finalDenominators[`criterion_${name}`] = (sumOfSquares > 0) ? parseFloat(Math.sqrt(sumOfSquares).toFixed(4)) : 0;
             });
 
 
@@ -395,7 +395,7 @@ class QuizGenerate extends Component {
         if (selectedLecturerId === 'all-lecturers-average') {
             const avgValue = record.averageCriteria?.[criterionName]; // Ambil dari averageCriteria
             if (avgValue !== null && avgValue !== undefined && !isNaN(avgValue)) {
-                displayValue = avgValue.toFixed(2); // Bulatkan untuk tampilan
+                displayValue = avgValue.toFixed(4); // Bulatkan untuk tampilan
                 color = this.getColorForRole('average');
             }
         } else {
@@ -527,7 +527,7 @@ class QuizGenerate extends Component {
                         const weightValue = criteriaWeights[name];
                         if (weightValue !== null && weightValue !== undefined && !isNaN(weightValue)) {
                             // FIX: Bulatkan bobot ke 2 desimal
-                            return <Tag color={this.getColorForRole('info')}>{weightValue.toFixed(2)}</Tag>;
+                            return <Tag color={this.getColorForRole('info')}>{weightValue.toFixed(4)}</Tag>;
                         }
                         return <Tag color="red">(Bobot Belum Tersedia)</Tag>;
                     } else if (record.type === 'types') {
@@ -537,7 +537,7 @@ class QuizGenerate extends Component {
                         const denominator = denominators[`criterion_${name}`];
                         if (denominator !== null && denominator !== undefined && !isNaN(denominator)) {
                             // FIX: Bulatkan pembagi ke 2 desimal
-                            return <Tag color={this.getColorForRole('denominator')}>{denominator.toFixed(2)}</Tag>;
+                            return <Tag color={this.getColorForRole('denominator')}>{denominator.toFixed(4)}</Tag>;
                         }
                         return <Tag color="default">0.00</Tag>;
                     }

@@ -201,7 +201,7 @@ const DematelGenerateStep3 = () => {
             };
             orderedCriterionNames.forEach((colCritName, colIndex) => {
                 const value = totalRelationMatrixT_2D[rowIndex][colIndex];
-                rowData[colCritName] = typeof value === 'number' ? value.toFixed(2) : "N/A";
+                rowData[colCritName] = typeof value === 'number' ? value.toFixed(4) : "N/A";
             });
             return rowData;
         });
@@ -257,10 +257,10 @@ const DematelGenerateStep3 = () => {
         return {
             id: criterionName, // Unique ID for table row
             criterion: criterionName,
-            Di: diValue.toFixed(2),
-            Rj: rjValue.toFixed(2),
-            DplusR: dPlusR.toFixed(2),
-            DminusR: dMinusR.toFixed(2),
+            Di: diValue.toFixed(4),
+            Rj: rjValue.toFixed(4),
+            DplusR: dPlusR.toFixed(4),
+            DminusR: dMinusR.toFixed(4),
         };
     });
 

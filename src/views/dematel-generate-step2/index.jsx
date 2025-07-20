@@ -228,7 +228,7 @@ const DematelGenerateStep2 = () => {
             };
             orderedCriterionNames.forEach((colCritName, colIndex) => {
                 const value = totalRelationMatrixT_2D[rowIndex][colIndex];
-                rowData[colCritName] = typeof value === 'number' ? value.toFixed(2) : "N/A"; // Format to 2 decimal places
+                rowData[colCritName] = typeof value === 'number' ? value.toFixed(4) : "N/A"; // Format to 2 decimal places
             });
             return rowData;
         });

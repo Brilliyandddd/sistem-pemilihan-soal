@@ -60,7 +60,7 @@ const AddQuestionForm = ({ visible, onCancel, onOk, confirmLoading, rps }) => {
   const handleRpsChange = async (rpsId) => {
     console.log('RPS changed to:', rpsId);
     setSelectedRpsId(rpsId);
-    form.setFieldsValue({ rps_detail_id: undefined });
+    form.setFieldsValue({ rps_detail: undefined });
     await fetchRpsDetails(rpsId);
   };
 
@@ -96,7 +96,7 @@ const AddQuestionForm = ({ visible, onCancel, onOk, confirmLoading, rps }) => {
     formData.append('question_type', values.question_type);
     formData.append('answer_type', values.answer_type);
     formData.append('idRps', selectedRpsId);
-    formData.append('rps_detail_id', values.rps_detail_id);
+    formData.append('rps_detail', values.rps_detail);
 
     // Conditional fields
     if (examData.examType) formData.append('examType', examData.examType);
@@ -105,11 +105,7 @@ const AddQuestionForm = ({ visible, onCancel, onOk, confirmLoading, rps }) => {
     if (fileList[0]) formData.append('file', fileList[0]);
 
     // 4. Debug output
-    console.log('=== FormData Contents ===');
-    for (let [key, value] of formData.entries()) {
-      console.log(key, ':', value instanceof File ? `File: ${value.name}` : value);
-    }
-    console.log("id Question ", + formData);
+    console.log("payload yang akan dikirim:", values);
 
     // 5. Submit
     await onOk(formData);
@@ -150,7 +146,7 @@ const AddQuestionForm = ({ visible, onCancel, onOk, confirmLoading, rps }) => {
         initialValues={{
           question_type: 'NORMAL',
           answer_type: 'MULTIPLE_CHOICE',
-          rps_detail_id: undefined
+          rps_detail: undefined
         }}
       >
         <Form.Item
@@ -177,7 +173,7 @@ const AddQuestionForm = ({ visible, onCancel, onOk, confirmLoading, rps }) => {
 
         <Form.Item
           label="RPS Detail"
-          name="rps_detail_id"
+          name="rps_detail"
           rules={[{ required: true, message: "Silahkan pilih RPS Detail" }]}
         >
           <Select 

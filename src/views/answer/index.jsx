@@ -262,10 +262,10 @@ const Answer = () => {
 
       <EditAnswerForm
         visible={modal.editVisible}
-        loading={modal.editLoading}
+        confirmLoading={modal.editLoading} // Use confirmLoading as per EditAnswerForm props
         onCancel={() => setModal(prev => ({ ...prev, editVisible: false }))}
         onOk={handleEditSubmit}
-        initialValues={state.currentRowData}
+        currentRowData={state.currentRowData} // <-- Corrected prop name
       />
 
       <AddAnswerForm
